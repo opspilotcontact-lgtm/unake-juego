@@ -31,6 +31,8 @@ const POSES_NORMAL = ['caminando', 'hablando', 'riendo', 'sorprendido', 'fumando
 // Arte generado (jpg): solo lo que hay (js/arte.js lo escribe preparar_assets.py).
 ARTE.forEach(k => IMAGENES.push(k));
 ARTE_PNG.forEach(k => SPRITES.push(k));
+// Las canciones del grupo que ya estén (huecos de musica.js).
+const MUSICAS = (typeof MUSICA_DISPONIBLE !== 'undefined' ? MUSICA_DISPONIBLE : []);
 
 const SONIDOS = [
   'calada', 'tos', 'whoosh', 'neon', 'zumbido-m', 'pin-pin', 'puerta', 'toc-toc', 'nam', 'boing',
@@ -65,6 +67,7 @@ class Arranque extends Phaser.Scene {
     IMAGENES.forEach(k => this.load.image(k, `assets/img/${k}.jpg`));
     SPRITES.forEach(k => this.load.image(k, `assets/img/${k}.png`));
     SONIDOS.forEach(k => this.load.audio(k, `assets/snd/${k}.mp3`));
+    MUSICAS.forEach(h => this.load.audio(`m-${h}`, `assets/musica/${h}.mp3`));
   }
 
   create() {

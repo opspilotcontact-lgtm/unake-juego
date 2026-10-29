@@ -90,7 +90,6 @@ class Fumar extends Phaser.Scene {
     this.input.keyboard.on('keydown-P', () => this.pasar());
     this.input.keyboard.on('keydown-ESC', () => this.terminar());
 
-    this.musica = sfx(this, 'musica-intro', { volume: 0.22, loop: true });
     this.time.addEvent({ delay: 7500, loop: true, callback: () => this.charlaSofa() });
     this.time.addEvent({ delay: 14000, loop: true, callback: () => this.suceso() });
     entrar(this, datos);

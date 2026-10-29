@@ -62,6 +62,8 @@ function fondo(scene, clave) {
 
 function sfx(scene, clave, cfg = {}) {
   if (!scene.cache.audio.exists(clave)) return null;
+  // Volumen de efectos de las opciones del menú.
+  cfg = { ...cfg, volume: (cfg.volume ?? 1) * (typeof volumenEfectos === 'function' ? volumenEfectos() : 1) };
   const s = scene.sound.add(clave, cfg);
   s.play();
   s.once('complete', () => s.destroy());
@@ -160,7 +162,8 @@ function irA(scene, clave, datos = {}) {
   if (scene._saliendo) return;
   scene._saliendo = true;
   scene.input.enabled = false;
-  scene.sound.stopAll();
+  // Se paran los efectos; la música sigue y la escena siguiente decide si cambia (con fundido).
+  scene.sound.getAllPlaying().forEach(s => { if (!s.esMusica) s.stop(); });
   // Cada minijuego entra con la cortinilla de su personaje (comic.js); lo demás, con humo.
   const cortina = datos.cortina || (typeof CORTINA_DE !== 'undefined' && CORTINA_DE[clave]);
   const cubrir = cortina && typeof Comic !== 'undefined' && Comic.cubrir[cortina];
@@ -169,6 +172,7 @@ function irA(scene, clave, datos = {}) {
 
 function entrar(scene, datos) {
   scene._saliendo = false;
+  if (typeof Musica !== 'undefined' && scene.scene.key !== 'Portada') Musica.alEntrar(scene);
   scene.panelAbierto = false;
   if (datos && datos.humo) {
     if (datos.cortina && typeof Comic !== 'undefined' && Comic.destapar[datos.cortina]) Comic.destapar[datos.cortina](scene);

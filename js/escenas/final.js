@@ -8,7 +8,6 @@ class Final extends Phaser.Scene {
     ESTADO.capitulo = CAPITULOS.length;
     guardarPartida();
     fondo(this, 'bg-sofa');
-    sfx(this, 'musica-intro', { volume: 0.5 });
     // Llegan de uno en uno y se apelotonan en el sofá.
     const reparto = [
       ['lasslow-risa-floja', 300, 200], ['palicaso-riendo', 470, 230], ['vuper-fumado', 640, 230],

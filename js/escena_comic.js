@@ -90,7 +90,8 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
     let k = 0;
     txtObj.setText('');
     escribiendo = { fin: () => { if (escribiendo) { escribiendo.ev.remove(); escribiendo = null; txtObj.setText(txt); if (alFin) alFin(); } } };
-    escribiendo.ev = scene.time.addEvent({ delay: 24, repeat: txt.length - 1, callback: () => { k++; txtObj.setText(txt.slice(0, k)); if (k >= txt.length && escribiendo) { escribiendo = null; if (alFin) alFin(); } } });
+    const ritmo = { lenta: 44, normal: 24, rapida: 9 }[(ESTADO.opciones || {}).texto || 'normal'];
+    escribiendo.ev = scene.time.addEvent({ delay: ritmo, repeat: txt.length - 1, callback: () => { k++; txtObj.setText(txt.slice(0, k)); if (k >= txt.length && escribiendo) { escribiendo = null; if (alFin) alFin(); } } });
   };
   const vistas = (ESTADO.cartelasVistas = ESTADO.cartelasVistas || {});
   let ultimo = null;
@@ -102,6 +103,7 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
     limpiar();
     Comic.cubrir.iris(scene, () => {
       scene.cerrarModal();
+      if (typeof Musica !== 'undefined') Musica.alEntrar(scene);
       Comic.destapar.iris(scene, { x: scene.px, y: scene.py - 110 });
       if (alAcabar) alAcabar();
     }, { x: ANCHO / 2, y: ALTO / 2 - 60 });
@@ -231,6 +233,10 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
     }
   };
 
+  if (typeof Musica !== 'undefined') Musica.poner(scene, opciones.momento ? 'momento' : 'escena');
+  const saltar = boton(scene, ANCHO - 110, ALTO - 50, 'Saltar ▸', () => terminar(), { ancho: 170, alto: 50, tam: 20, color: HEX.crema });
+  saltar.etiqueta.setText('Saltar »');
+  raiz.add(saltar);
   velo.on('pointerdown', siguiente);
   scene.modalAccion = siguiente;
   scene.modalCerrar = terminar; // Esc: se salta la escena

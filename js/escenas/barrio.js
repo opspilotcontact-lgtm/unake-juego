@@ -354,6 +354,7 @@ class Barrio extends Phaser.Scene {
 
     Object.assign(ESTADO, { sala: nombre, x: this.px, y: this.py });
     guardarPartida();
+    if (typeof Musica !== 'undefined' && this.sys.isActive()) Musica.alEntrar(this);
   }
 
   montarCosa(cosa) {
@@ -1024,7 +1025,7 @@ class Barrio extends Phaser.Scene {
     };
     // El cierre del capítulo: su momento persona, en cómic.
     if (!cap.cierre) return seguir();
-    this.time.delayedCall(700, () => this.abrirEscena([['titulo', `Capítulo ${n + 1} completado · ${cap.titulo}`], ...cap.cierre], seguir, { cap: n }));
+    this.time.delayedCall(700, () => this.abrirEscena([['titulo', `Capítulo ${n + 1} completado · ${cap.titulo}`], ...cap.cierre], seguir, { cap: n, momento: true }));
   }
 
   abrirNoche([id, i, paso]) {
@@ -1792,7 +1793,8 @@ class Barrio extends Phaser.Scene {
     this.ultimoEncuentro = tipo;
 
     const al = lista => this.sinRepetir(lista);
-    if (tipo === 'tonteria') { this.poseNpc(c, 'hablando'); return this.charla(c, al(TONTERIAS[c.id])); }
+    // Casi la mitad de las veces, comentan lo que está pasando en la historia.
+    if (tipo === 'tonteria') { this.poseNpc(c, 'hablando'); return this.charla(c, (Math.random() < 0.45 && fraseCapitulo(c.id)) || al(TONTERIAS[c.id])); }
     if (tipo === 'colocada') { this.poseNpc(c, 'sorprendido'); return this.charla(c, al(COLOCADAS)); }
     if (tipo === 'pista') return this.pista(c, faltan);
     if (tipo === 'recado') return this.nuevoRecado(c);
@@ -2016,7 +2018,9 @@ class Barrio extends Phaser.Scene {
     if (this.modal || this.cambiando) return;
     const conImg = this.cosas.filter(c => c.img && QUIEN[c.id]);
     const por = id => conImg.find(c => c.id === id);
-    const posibles = DIALOGOS.filter(d => d.every(([id]) => por(id)));
+    // Las conversaciones del capítulo en curso tienen preferencia.
+    const delCap = (DIALOGOS_CAP[ESTADO.capitulo || 0] || []).filter(d => d.every(([id]) => por(id)));
+    const posibles = delCap.length && Math.random() < 0.6 ? delCap : DIALOGOS.filter(d => d.every(([id]) => por(id)));
     if (posibles.length && Math.random() < 0.7) {
       const charla = Phaser.Utils.Array.GetRandom(posibles);
       this.voz(() => charla.forEach(([id, frase], i) => this.time.delayedCall(i * 2400, () => { if (!this.modal) this.burbujaAmbiente(por(id), frase); })), { dura: charla.length * 2400 });
@@ -2025,7 +2029,8 @@ class Barrio extends Phaser.Scene {
     const lejos = conImg.filter(c => Math.abs(c.x - this.px) > 260 && TONTERIAS[c.id]);
     if (lejos.length && Math.random() < 0.8) {
       const c = Phaser.Utils.Array.GetRandom(lejos);
-      this.voz(() => this.burbujaAmbiente(c, Phaser.Utils.Array.GetRandom(ESTADO.colocon > 65 ? COLOCADAS : TONTERIAS[c.id])), { dura: 2400 });
+      const delCap = Math.random() < 0.55 && fraseCapitulo(c.id);
+      this.voz(() => this.burbujaAmbiente(c, delCap || Phaser.Utils.Array.GetRandom(ESTADO.colocon > 65 ? COLOCADAS : TONTERIAS[c.id])), { dura: 2400 });
     }
   }
 
