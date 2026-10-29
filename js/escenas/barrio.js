@@ -241,6 +241,12 @@ class Barrio extends Phaser.Scene {
     });
 
     this.panelObjetivos = this.add.container(ANCHO - 12, 76).setDepth(D).setVisible(!ESTADO.ocultarObjetivos);
+    // Botón para plegar los objetivos (en el móvil lo ponen los mandos táctiles).
+    if (!window.TACTIL_UI) {
+      // Debajo de «Menú» (arriba no cabe sin pisar el rótulo de la sala); el panel baja un poco.
+      this.botonObjetivos = boton(this, ANCHO - 84, 94, ESTADO.ocultarObjetivos ? 'Objetivos +' : 'Objetivos −', () => { if (!this.modal) this.alternarObjetivos(); }, { ancho: 150, alto: 36, tam: 16, color: HEX.azul }).setDepth(D + 1);
+      this.panelObjetivos.y = 122;
+    }
     this.firmaObjetivos = '';
     this.aviso = texto(this, 0, 0, '', 22, COLOR.amarillo).setDepth(902).setVisible(false);
     // En el móvil todo se ve a la mitad: objetivos y avisos, más grandes.
@@ -399,7 +405,7 @@ class Barrio extends Phaser.Scene {
         const est = estrellas(this, m.x, yMarca + 42, ESTADO.estrellas[clave] || 0, 11).setDepth(800);
         m.est = est;
         this.objSala.push(est);
-        if (m.tipo === 'senal' && (totalEstrellas() < 3 || this.mundo === 'normal')) { marca.setText('?').setColor(COLOR.crema); est.setVisible(false); }
+        if (m.tipo === 'senal' && ((totalEstrellas() < 3 && (ESTADO.capitulo || 0) !== 6) || this.mundo === 'normal')) { marca.setText('?').setColor(COLOR.crema); est.setVisible(false); }
       }
     }
     return m;
@@ -532,7 +538,7 @@ class Barrio extends Phaser.Scene {
 
     recogerPillables(this);
     if (pulsado(k.L)) return this.logros();
-    if (pulsado(k.O)) { ESTADO.ocultarObjetivos = !ESTADO.ocultarObjetivos; this.panelObjetivos.setVisible(!ESTADO.ocultarObjetivos); guardarPartida(); }
+    if (pulsado(k.O)) this.alternarObjetivos();
     this.recogidaCercana();
     if (this.notif && pulsado(k.M)) return this.abrirNotificacion();
     if (this.reparto && pulsado(k.ESC)) return this.dejarRacha();
@@ -877,6 +883,10 @@ class Barrio extends Phaser.Scene {
     const r = ESTADO.recado;
     if (r && r.a === c.id && (r.tipo === 'mensaje' || r.llevo)) return this.cumplirRecado(c);
     if (this.escenaHistoria(c)) return;
+    // Desde la inspección (cap. 7), la Pompa te pide sus discos: misión de sigilo (de día o de noche).
+    if (c.id === 'pompa' && (ESTADO.capitulo || 0) >= 6) {
+      return this.tarjeta('Sigilo', null, stat('gana_Sigilo') ? null : '«…Mis discos. Los tiene el casero. En su casa.»', [{ etiqueta: 'Charlar', accion: () => { this.cerrarModal(); this.encuentro(c); }, color: HEX.azul }]);
+    }
     // Perico es la puerta: con un encargo se pasa siempre, y de día hace de portero aunque tenga un problema.
     const esPuerta = c.tipo === 'puerta';
     if (esPuerta && this.reparto) {
@@ -916,7 +926,7 @@ class Barrio extends Phaser.Scene {
         return this.tarjeta('Reparto', () => this.empezarReparto(0));
       case 'senal':
         if (this.mundo === 'normal') return this.charla(c, 'De día la M no se enciende. Es solo un cartel.');
-        if (totalEstrellas() < 3) return this.charla(c, `La M está apagada. Se enciende cuando tengas 3 estrellas (llevas ${totalEstrellas()}).`);
+        if (totalEstrellas() < 3 && (ESTADO.capitulo || 0) !== 6) return this.charla(c, `La M está apagada. Se enciende cuando tengas 3 estrellas (llevas ${totalEstrellas()}).`);
         return this.tarjeta('Rescate', null, this.senal ? '¡Señal encendida: monchis x2!' : null);
       case 'puerta':
         if (this.reparto) {
@@ -1023,6 +1033,13 @@ class Barrio extends Phaser.Scene {
     });
   }
 
+  alternarObjetivos() {
+    ESTADO.ocultarObjetivos = !ESTADO.ocultarObjetivos;
+    this.panelObjetivos.setVisible(!ESTADO.ocultarObjetivos);
+    if (this.botonObjetivos) this.botonObjetivos.etiqueta.setText(ESTADO.ocultarObjetivos ? 'Objetivos +' : 'Objetivos −');
+    guardarPartida();
+  }
+
   // Escenas sueltas de la historia que salen al hablar con alguien (la pista de Perico, su secreto…).
   escenaHistoria(c) {
     const cap = ESTADO.capitulo || 0;
@@ -1031,7 +1048,7 @@ class Barrio extends Phaser.Scene {
         ['perico', 'Pin pin. ¿Quién va a la tienda a las cuatro? Una estrella. Una estrella que habla sola.'],
         ['perico', 'Le da a la palanca de la máquina y dice: «Escucha, escucha, esta sale». Nunca sale.'],
         ['narrador', 'Solo hay una estrella en el barrio que habla sola. Y está en la barra.'],
-      ], () => { sumarStat('pistaCaja'); this.toast('Pista: Palicaso', 'Rétale a El farol en la barra de Unaké'); }, { cap: 4 });
+      ], () => { sumarStat('pistaCaja'); this.toast('Pista: Palicaso', 'De noche, rétale a El farol en la barra de Unaké'); }, { cap: 4 });
       return true;
     }
     if (c.id === 'perico' && cap === 5 && this.mundo === 'normal' && stat('gana_Periquito') >= 1 && stat('sit_apuesta') >= 1 && stat('secretoPerico') < 1) {

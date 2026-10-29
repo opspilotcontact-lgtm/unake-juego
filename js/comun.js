@@ -317,6 +317,10 @@ const MISIONES = {
     nombre: 'El palo', sprite: 'cotine-plop', umbrales: [1000, 1350, 1700],
     texto: 'Perico tiene el palo de Cotine. Muévete, MANTÉN para disparar virutas de azúcar y esquiva sus pipas. Tres fases, como un jefe de verdad.',
   },
+  Sigilo: {
+    nombre: 'Los discos de la Pompa', sprite: 'pompa-mira', umbrales: [900, 1500, 2100],
+    texto: 'De día, cuélate en casa del casero y recupera los 3 discos. Evita los conos de visión, MANTÉN Mayús para no hacer ruido y escóndete en las macetas.',
+  },
   Reparto: {
     nombre: 'Encargos de la tienda', sprite: 'vuper-reparto', umbrales: [2, 4, 7],
     texto: 'Lleva monchis por el barrio antes de que se enfríen. Cada entrega seguida multiplica lo que cobras.',

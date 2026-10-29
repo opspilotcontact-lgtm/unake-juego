@@ -144,6 +144,7 @@ const CAPITULOS = [
       ESTADO.faltaCaja = falta;
       ESTADO.precinto = true;
     },
+    situaciones: [['blancaso', 'caja']],
     objetivos: [
       { texto: 'Cuadra la caja con Blancaso (gana «La caja no cuadra»)', hecho: () => desdeCap('gana_Cuentas') >= 1 },
       { texto: 'Pregúntale a Perico quién va a la tienda a las cuatro', hecho: () => stat('pistaCaja') >= 1 },
@@ -191,14 +192,13 @@ const CAPITULOS = [
     intro: [
       ['narrador', 'La noche de la inspección, a medio barrio le da un amarillo. La M de tu cuarto parpadea.'],
       ['casero', 'Buenas noches. Vengo a ver esta aso. Por dentro. Y a fondo.'],
-      ['pompa', '…Y yo pincho esta noche. Si alguien encuentra mis discos.'],
+      ['pompa', '…Y yo pincho esta noche. Si alguien recupera mis discos. El casero se los quedó de fianza.'],
       ['vuper', 'Vale, vale… Nadie sabe que soy yo. Que siga así.'],
     ],
-    situaciones: [['pompa', 'pinchar']],
     objetivos: [
-      { texto: 'Pasa la inspección del casero (está en Unaké)', hecho: () => stat('gana_Inspeccion') >= 1 },
-      { texto: 'La Pompa pincha la noche de la inspección', hecho: () => stat('sit_pinchar') >= 1 },
-      { texto: 'Al casero le ha dado un amarillo: rescate de Monchiman', hecho: () => desdeCap('gana_Rescate') >= 1 },
+      { texto: 'Recupera los discos de la Pompa: cuélate de día en casa del casero (habla con la Pompa)', hecho: () => stat('gana_Sigilo') >= 1 },
+      { texto: 'Pasa la inspección del casero (está en Unaké, de noche)', hecho: () => stat('gana_Inspeccion') >= 1 },
+      { texto: 'Al casero le ha dado un amarillo: la M de tu cuarto (rescate)', hecho: () => desdeCap('gana_Rescate') >= 1 },
       { texto: 'Unaké tiene que aguantar una inspección: «Bareto» (nivel 5)', hecho: () => cuentasNegocio().total >= 5, progreso: () => `${cuentasNegocio().total}/5` },
       { texto: 'Hucha de la aso: 750 monchis', hecho: () => ESTADO.hucha >= 750, progreso: () => `${ESTADO.hucha}/750` },
     ],

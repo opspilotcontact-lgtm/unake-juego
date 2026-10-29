@@ -27,6 +27,7 @@ const MANDOS = {
   Liar: { joy: 'h', botones: [['Acción', ' ', { mantener: true, color: '#ffd23f', grande: true }]] },
   Fumar: { botones: [['Calada', ' ', { mantener: true, color: '#ffd23f', grande: true }]] },
   Aires: { joy: 'h', botones: [['Pedo', ' ', { mantener: true, color: '#c8a83c', grande: true }]] },
+  Sigilo: { joy: 'libre', botones: [['Sigilo', 'Shift', { mantener: true, color: '#9fe7ff', grande: true }]] },
   Palo: { joy: 'libre', botones: [['Disparar', ' ', { mantener: true, color: '#ff8fc0', grande: true }]] },
 };
 

@@ -4,7 +4,8 @@
 // cartuchos amarillos para el narrador, pantalla de reacción en los «¿Una qué?» y cierre en iris.
 // Usa las mismas líneas de historia.js (['quien', 'texto']), así que no hay que reescribir nada.
 
-const FONDO_CAPITULO = ['fuera', 'dentro', 'sofa', 'dentro', 'dentro', 'dentro', 'dentro', 'sofa'];
+// Claves de SALAS (el sofá es «reservado»). Si alguna faltara, la escena usa el bar.
+const FONDO_CAPITULO = ['fuera', 'dentro', 'reservado', 'dentro', 'dentro', 'dentro', 'dentro', 'reservado'];
 
 const CARTELAS = {
   vuper: ['VUPER', 'el rider', COLOR.crema], palicaso: ['PALICASO', 'el que habla', COLOR.amarillo],
@@ -33,7 +34,8 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
   const humo = scene.mundo === 'humo';
   const n = Math.min(opciones.cap ?? (ESTADO.capitulo || 0), FONDO_CAPITULO.length - 1);
   const sala = FONDO_CAPITULO[n];
-  const fondoClave = humo ? SALAS[sala].fondo : SALAS[sala].fondoN;
+  const datosSala = SALAS[sala] || SALAS.dentro;
+  const fondoClave = humo ? datosSala.fondo : datosSala.fondoN;
 
   scene.objetivo = null;
   scene.aviso.setVisible(false);
