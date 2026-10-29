@@ -30,6 +30,7 @@ const POSES_NORMAL = ['caminando', 'hablando', 'riendo', 'sorprendido', 'fumando
 
 // Arte generado (jpg): solo lo que hay (js/arte.js lo escribe preparar_assets.py).
 ARTE.forEach(k => IMAGENES.push(k));
+ARTE_PNG.forEach(k => SPRITES.push(k));
 
 const SONIDOS = [
   'calada', 'tos', 'whoosh', 'neon', 'zumbido-m', 'pin-pin', 'puerta', 'toc-toc', 'nam', 'boing',

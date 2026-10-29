@@ -313,6 +313,17 @@ function estrellas(scene, x, y, n, tam = 22) {
   return c;
 }
 
+// La escalera de cada minijuego: las tres estrellas son los niveles 1-3 y después siempre hay uno más,
+// que pide un 20 % más y paga más. Así cada minijuego tiene algo que perseguir aunque ya tengas las estrellas.
+function nivelDe(clave) { return (ESTADO.niveles && ESTADO.niveles[clave]) || 1; }
+function metaNivel(clave, n = nivelDe(clave)) {
+  const u = MISIONES[clave].umbrales;
+  if (n <= 3) return u[n - 1];
+  const m = u[2] * (1 + 0.2 * (n - 3));
+  return u[2] >= 100 ? Math.round(m / 50) * 50 : Math.ceil(m);
+}
+function premioNivel(n) { return 20 + 15 * n; }
+
 // Apunta el resultado de una misión: récord, estrellas y monchis. Devuelve lo que ha cambiado.
 function apuntar(clave, puntos, monchis, gana = true) {
   const nuevoRecord = puntos > leerRecord(clave);
@@ -326,7 +337,18 @@ function apuntar(clave, puntos, monchis, gana = true) {
   sumarStat(`jugada_${clave}`);
   sumarStat('monchisGanados', monchis);
   if (gana) sumarStat('victorias');
-  return { nuevoRecord, estrellasNuevas: ahora - antes, ganadas: gana ? estrellasDe(clave, puntos) : 0 };
+  // Subir de nivel (uno por partida, aunque los puntos den para más: que haya siempre un siguiente).
+  const nivel = nivelDe(clave);
+  const meta = metaNivel(clave, nivel);
+  let subido = 0;
+  if (gana && puntos >= meta) {
+    ESTADO.niveles = ESTADO.niveles || {};
+    ESTADO.niveles[clave] = nivel + 1;
+    subido = premioNivel(nivel);
+    ESTADO.monchis += subido;
+    sumarStat('nivelesSubidos');
+  }
+  return { nuevoRecord, estrellasNuevas: ahora - antes, ganadas: gana ? estrellasDe(clave, puntos) : 0, nivel, meta, subido };
 }
 
 const PAGO_ESTRELLAS = [15, 35, 60, 90];
@@ -358,14 +380,19 @@ function panelFinal(scene, { titulo, linea, puntos, clave, gana = true, extraMon
   c.add(texto(scene, 0, -205, titulo, 54, gana ? COLOR.amarillo : COLOR.rosa, 740));
   c.add(texto(scene, 0, -122, linea, 26, COLOR.crema, 700));
   c.add(estrellas(scene, 0, -40, r.ganadas, 30));
-  c.add(texto(scene, 0, 30, `${puntos} puntos  ·  +${monchis} monchis`, 38, COLOR.azul));
+  c.add(texto(scene, 0, 26, `${puntos} puntos  ·  +${monchis + r.subido} monchis`, 36, COLOR.azul));
   const umbrales = MISIONES[clave].umbrales;
   const siguiente = umbrales.find(u => puntos < u);
   const pista = r.nuevoRecord && puntos > 0 ? '¡Nuevo récord!'
     : siguiente ? `Récord: ${leerRecord(clave)}  ·  Siguiente estrella: ${siguiente}` : `Récord: ${leerRecord(clave)}  ·  ¡Las tres estrellas!`;
-  c.add(texto(scene, 0, 84, pista, 24, r.nuevoRecord ? COLOR.amarillo : COLOR.crema, 720));
-  if (lineaSituacion) c.add(texto(scene, 0, 152, lineaSituacion, 20, COLOR.verde, 740));
-  if (r.estrellasNuevas > 0) c.add(texto(scene, 0, 124, `+${r.estrellasNuevas} estrella${r.estrellasNuevas > 1 ? 's' : ''} · llevas ${totalEstrellas()}`, 24, COLOR.verde));
+  c.add(texto(scene, 0, 76, pista, 22, r.nuevoRecord ? COLOR.amarillo : COLOR.crema, 720));
+  const lineaNivel = r.subido
+    ? `¡NIVEL ${r.nivel} SUPERADO! +${r.subido} monchis · Nivel ${r.nivel + 1}: ${metaNivel(clave, r.nivel + 1)}`
+    : `Nivel ${r.nivel}: llega a ${r.meta} (ganando) para subir`;
+  c.add(texto(scene, 0, 110, lineaNivel, r.subido ? 26 : 21, r.subido ? COLOR.amarillo : COLOR.azul, 740));
+  if (r.subido) scene.tweens.add({ targets: c.list[c.list.length - 1], scale: 1.08, duration: 300, yoyo: true, repeat: 3, delay: 600 });
+  if (lineaSituacion) c.add(texto(scene, 0, 144, lineaSituacion, 20, COLOR.verde, 740));
+  else if (r.estrellasNuevas > 0) c.add(texto(scene, 0, 144, `+${r.estrellasNuevas} estrella${r.estrellasNuevas > 1 ? 's' : ''} · llevas ${totalEstrellas()}`, 22, COLOR.verde));
   c.add(boton(scene, -185, 205, 'Otra vez (Enter)', () => irA(scene, scene.scene.key), { ancho: 330, tam: 26 }));
   c.add(boton(scene, 185, 205, 'Al barrio (Esc)', () => irA(scene, 'Barrio'), { ancho: 330, color: HEX.azul, tam: 26 }));
   scene.tweens.add({ targets: c, scale: 1, duration: 420, ease: 'Back.out', delay: 200 });

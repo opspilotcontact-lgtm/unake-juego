@@ -21,7 +21,7 @@ const SALAS = {
     cosas: [{
       id: 'blancaso', tipo: 'blancaso', sprite: 'blancaso', x: 900, y: 565, escala: 0.4, nombre: 'Blancaso',
       n: { sprite: 'n-blancaso', x: 820, y: 640, escala: 0.62 },
-    }, { id: 'carrera', tipo: 'carrera', sprite: 'pizarra-carrera', x: 420, y: 600, escala: 0.6, nombre: 'Carreras de humo (apuestas)' }],
+    }, { id: 'carrera', tipo: 'carrera', sprite: arteO('obj-pizarra-carrera', 'pizarra-carrera'), x: 420, y: 600, escala: 0.6, nombre: 'Carreras de humo (apuestas)' }],
   },
   fuera: {
     nombre: 'La puerta de Unaké', fondo: 'bg-fuera', escala: 1.25, fondoY: 515, fondoN: 'bgn-fuera', izq: 'plaza', der: 'tienda', suelo: [560, 680],
@@ -35,7 +35,7 @@ const SALAS = {
     cosas: [
       { id: 'mostrador', tipo: 'tienda', x: 640, y: 520, nombre: 'Mostrador', n: { x: 560 } },
       { id: 'encargos', tipo: 'reparto', x: 190, y: 600, nombre: 'Encargos' },
-      { id: 'tragaperras', tipo: 'tragaperras', sprite: 'tragaperras', x: 1060, y: 650, escala: 0.62, nombre: 'Tragaperras de Palicaso' },
+      { id: 'tragaperras', tipo: 'tragaperras', sprite: arteO('obj-tragaperras', 'tragaperras'), x: 1060, y: 650, escala: arteO('obj-tragaperras', '') ? 0.66 : 0.62, nombre: 'Tragaperras de Palicaso' },
     ],
   },
   dentro: {
@@ -92,6 +92,32 @@ const CHARLAS = {
   },
 };
 
+// Lo que hace Vuper si se le deja quieto.
+const GAGS_QUIETO = {
+  humo: [
+    { pose: 'vuper-calada', humo: true, sonido: 'calada', dice: ['Una caladita de mantenimiento.', 'Esto relaja. Esto lo arregla todo.'] },
+    { pose: 'vuper-tos', sonido: 'tos', dura: 1600, dice: ['*cof* …estoy bien. *COF*', 'Ha entrado por el otro lado.'] },
+    { pose: 'vuper-pasando', dura: 3200, dice: ['Zzz…', '¿Y si las nubes son humo de alguien?', 'Si me quedo quieto, ¿el tiempo también?'] },
+    { pose: 'vuper-fumado', dura: 2600, dice: ['Tengo hambre. Otra vez.', '¿Qué estaba haciendo? …Ah, nada.', 'Una más y lo dejo. Lo juro.'] },
+  ],
+  normal: [
+    { pose: 'vn-sorprendido', dice: ['¿He apagado el horno? No tengo horno.', '¿Qué día es hoy? Da igual.'] },
+    { pose: 'vn-riendo', sonido: 'risas', dice: ['Me acabo de acordar de una cosa de anoche. JAJAJA.', 'Lo del pedo de Lasslow… JAJAJA.'] },
+    { pose: 'vn-hablando', dice: ['De día todo es muy… nítido.', 'Esta noche me porto bien. (Mentira.)'] },
+  ],
+};
+
+// Lo que te sueltan al verte pasar.
+const SALUDOS = {
+  blancaso: { humo: ['¡Vuper! ¿Tienes para la cuota?', 'No me mires así, que me da el bajón.', 'Hoy cuadran. Hoy sí.'], normal: ['Buenos días… ¿o tardes?', 'De día ni me acuerdo de las cuentas.'] },
+  perico: { humo: ['Pin pin. Te veo.', '¿Contraseña? Es broma. O no.', '¿Pipa?'], normal: ['Buenos días. Las pipas son mías.', 'Te tengo fichado.'] },
+  palicaso: { humo: ['¡ESCUCHA! ¿A que no sabes qué?', '¡Mi cliente favorito!', '¡Hoy la máquina paga, te lo digo yo!'], normal: ['¡Un café, campeón!', '¡Escucha! De día también se habla.'] },
+  pompa: { humo: ['…hola.', '♪…', '…no me toques, que exploto.'], normal: ['Hola. Bajito.', '…'] },
+  lasslow: { humo: ['Buenas noches, caballero.', 'Hoy no se me escapa nada. Nada.', '¿Ha oído usted algo? Yo tampoco.'], normal: ['Buenos días, joven.', 'Un señor siempre saluda.'] },
+  cotine: { humo: ['¿Traes algo de comer?', 'No hay tarta. Ya no.', '¡Huele a monchis! ¿Eres tú?'], normal: ['Hoy hago tarta. Para todos. De verdad.', '¿Has desayunado? Yo dos veces.'] },
+  puky: { humo: ['Hola amigooo… *blurp*', '¿Me das un abrazo? Es que estoy pegajoso.'] },
+};
+
 // Encargos: a quién se le puede llevar algo.
 const DESTINOS = [
   { id: 'blancaso', sala: 'plaza' }, { id: 'perico', sala: 'fuera' }, { id: 'palicaso', sala: 'dentro' },
@@ -129,6 +155,10 @@ class Barrio extends Phaser.Scene {
     this.vuelta = 1;
     this.comiendo = 0;
     this.tRastro = 0;
+    this.vx = 0;
+    this.vy = 0;
+    this.frenazo = 0;
+    this.quieto = -6;
     this.tGuardar = 0;
     this.faseLatido = 0;
     this.tNotif = Phaser.Math.Between(25, 45);  // la primera notificación del móvil llega pronto
@@ -290,6 +320,7 @@ class Barrio extends Phaser.Scene {
 
     this.textoCaja = null;
     this.cosas = s.cosas.map(cosa => this.montarCosa(humo ? cosa : { ...cosa, ...(cosa.n || {}) }));
+    this.cosas.push(...visitasDeSala(this, nombre, humo));
     if (humo) this.montarClientela(nombre);
     this.montarDeco(nombre);
     this.montarBoquilla();
@@ -342,6 +373,7 @@ class Barrio extends Phaser.Scene {
       this.objetivo = { x: m.x + (this.px < m.x ? -110 : 110), y: this.py };
     });
     this.objSala.push(zona);
+    m.zona = zona;
 
     const clave = this.misionDe(m);
     const marcaTexto = m.tipo === 'tienda' ? '$' : m.tipo === 'sofa' ? '~' : m.tipo === 'barra' ? '¡' : m.tipo === 'negocio' ? 'N' : m.tipo === 'subir' ? '^' : m.tipo === 'tragaperras' || m.tipo === 'carrera' ? '€' : clave ? '!' : null;
@@ -359,6 +391,7 @@ class Barrio extends Phaser.Scene {
       this.objSala.push(marca);
       if (clave) {
         const est = estrellas(this, m.x, yMarca + 42, ESTADO.estrellas[clave] || 0, 11).setDepth(800);
+        m.est = est;
         this.objSala.push(est);
         if (m.tipo === 'senal' && (totalEstrellas() < 3 || this.mundo === 'normal')) { marca.setText('?').setColor(COLOR.crema); est.setVisible(false); }
       }
@@ -429,6 +462,7 @@ class Barrio extends Phaser.Scene {
     if (this.modal) {
       const num = this.modal.numeros ? [k.ONE, k.TWO, k.THREE, k.FOUR, k.FIVE, k.SIX, k.SEVEN, k.EIGHT, k.NINE].findIndex(t => pulsado(t)) : -1;
       if (num >= 0 && this.modal.numeros[num]) return this.modal.numeros[num]();
+      this.vx = 0; this.vy = 0;
       if (pulsado(k.ESC)) this.modalCerrar();
       else if (pulsado(k.E) || pulsado(k.ENTER) || pulsado(k.SPACE)) this.modalAccion();
       return;
@@ -450,8 +484,15 @@ class Barrio extends Phaser.Scene {
     // Con mucha hambre o poca vida se va más lento: el cuerpo lo pide.
     const flojo = ESTADO.vida < 35 ? 0.7 : 1;
     const vel = (this.reparto ? 470 : 360) * flojo;
-    this.px += dx * vel * dt;
-    this.py += dy * vel * 0.65 * dt;
+    // Arranca y frena con algo de peso (el humo también tiene inercia); al frenar en seco, se aplasta.
+    const suave = 1 - Math.exp(-dt * (dx || dy ? 11 : 9));
+    const rapidoAntes = Math.abs(this.vx) > vel * 0.7;
+    this.vx += (dx * vel - this.vx) * suave;
+    this.vy += (dy * vel * 0.65 - this.vy) * suave;
+    if (!dx && rapidoAntes && Math.abs(this.vx) <= vel * 0.7) this.frenazo = 1;
+    this.frenazo = Math.max(0, this.frenazo - dt * 4);
+    this.px += this.vx * dt;
+    this.py += this.vy * dt;
 
     const s = SALAS[this.sala];
     this.py = Phaser.Math.Clamp(this.py, s.suelo[0], s.suelo[1]);
@@ -467,7 +508,10 @@ class Barrio extends Phaser.Scene {
       this.px = ANCHO - 25; this.objetivo = null;
     }
 
-    this.dibujarJugador(dt, dx, Math.abs(dx) + Math.abs(dy) > 0.1);
+    const moviendo = Math.hypot(this.vx, this.vy) > 40;
+    this.dibujarJugador(dt, dx, moviendo);
+    this.ratoQuieto(dt, moviendo);
+    this.saludos();
 
     if (this.boquilla && Math.hypot(this.boquilla.b.x - this.px, this.boquilla.b.y - this.py) < 80) this.cogerBoquilla();
 
@@ -505,6 +549,8 @@ class Barrio extends Phaser.Scene {
     let tex = moviendo ? 'vn-caminando' : 'vuper-normal';
     if (humo) tex = this.comiendo > 0 ? 'vuper-comiendo' : this.reparto ? 'vuper-reparto' : ESTADO.colocon > 70 ? 'vuper-fumado' : 'vuper';
     else if (this.comiendo > 0) tex = 'vn-riendo';
+    if (this.pose && !moviendo && this.time.now < this.pose.hasta && this.textures.exists(this.pose.tex)) tex = this.pose.tex;
+    else this.pose = null;
     if (this.jugador.texture.key !== tex) this.jugador.setTexture(tex);
     this.comiendo = Math.max(0, this.comiendo - dt);
     const esc = humo ? 0.42 : 260 / this.jugador.height;
@@ -535,6 +581,8 @@ class Barrio extends Phaser.Scene {
     } else {
       sy = 1 + 0.012 * Math.sin(t / 420);
     }
+    sx *= 1 + 0.16 * this.frenazo;
+    sy *= 1 - 0.14 * this.frenazo;
     this.jugador.setScale(esc * sx * this.vuelta, esc * sy);
     this.jugador.setAngle(Phaser.Math.Linear(this.jugador.angle, angulo, 0.2));
     this.jugador.setPosition(this.px, this.py + yOff).setDepth(this.py);
@@ -576,6 +624,40 @@ class Barrio extends Phaser.Scene {
       const l = this.add.rectangle(atras, y, Phaser.Math.Between(30, 70), 5, 0xffffff, 0.9).setDepth(this.py - 2);
       this.tweens.add({ targets: l, x: atras - this.dir * 120, alpha: 0, duration: 260, onComplete: () => l.destroy() });
     }
+  }
+
+  // Si se le deja un rato quieto, Vuper hace lo suyo: una calada, toser, pensar tonterías, dormirse.
+  ratoQuieto(dt, moviendo) {
+    if (moviendo || this.reparto || this.bloqueado) { this.quieto = Math.min(this.quieto, 0); this.pose = null; return; }
+    this.quieto += dt;
+    if (this.quieto < 9) return;
+    this.quieto = -Phaser.Math.Between(8, 16);
+    const g = Phaser.Utils.Array.GetRandom(this.mundo === 'humo' ? GAGS_QUIETO.humo : GAGS_QUIETO.normal);
+    this.pose = { tex: g.pose, hasta: this.time.now + (g.dura || 2200) };
+    if (g.sonido) sfx(this, g.sonido, { volume: 0.4 });
+    if (g.humo) for (let i = 0; i < 4; i++) {
+      const h = this.add.image(this.px + this.dir * 30, this.py - 150, 'humo').setScale(0.06).setTint(0xd8cfe6).setAlpha(0.8).setDepth(this.py + 1);
+      this.tweens.add({ targets: h, scale: 0.22, alpha: 0, y: h.y - 90 - i * 20, x: h.x + Phaser.Math.Between(-30, 30), duration: 1500, delay: 500 + i * 220, onComplete: () => h.destroy() });
+    }
+    if (g.dice && !(this.burbuja && this.burbuja.active)) {
+      const b = this.burbuja = bocadillo(this, Phaser.Math.Clamp(this.px, 200, ANCHO - 200), Math.max(130, this.py - this.jugador.displayHeight - 60), Phaser.Utils.Array.GetRandom(g.dice), { tam: 20, ancho: 330 }).setDepth(850);
+      this.time.delayedCall(2600, () => { if (b.active) b.destroy(); });
+    }
+  }
+
+  // Los del barrio reaccionan al verte pasar (una vez por visita a la sala, y no siempre).
+  saludos() {
+    if (this.burbuja && this.burbuja.active) return;
+    if (this.time.now < (this.proximoSaludo || 0)) return;
+    const c = this.cosas.find(m => m.img && !m.oculta && !m.saludado && Math.abs(m.x - this.px) < 230 && SALUDOS[m.id]);
+    if (!c) return;
+    c.saludado = true;
+    this.proximoSaludo = this.time.now + 4000;
+    if (Math.random() < 0.4) return;
+    this.tweens.add({ targets: c.img, y: c.img.y - 18, duration: 140, yoyo: true, repeat: 1, ease: 'Sine.out' });
+    const lineas = SALUDOS[c.id][this.mundo] || SALUDOS[c.id].humo;
+    const b = this.burbuja = bocadillo(this, Phaser.Math.Clamp(c.x, 200, ANCHO - 200), Math.max(130, c.y - c.alto - 50), Phaser.Utils.Array.GetRandom(lineas), { tam: 19, ancho: 300 }).setDepth(840);
+    this.time.delayedCall(2000, () => { if (b.active) b.destroy(); });
   }
 
   // Pantalla que palpita con latido cuando el hambre aprieta o la vida baja.
@@ -658,6 +740,7 @@ class Barrio extends Phaser.Scene {
     if (this.tLogros <= 0) { this.tLogros = 1; this.revisarLogros(); }
     this.tAmbiente -= dt;
     if (this.tAmbiente <= 0) { this.tAmbiente = Phaser.Math.Between(9, 15); this.charlaAmbiente(); }
+    rutinasNpc(this, dt);
     if (ESTADO.blancazoEn > 0 && enMundoHumo()) {
       ESTADO.blancazoEn -= dt;
       if (ESTADO.blancazoEn <= 0) this.empezarBlancazo();
@@ -1866,8 +1949,9 @@ te ha mandado esto`, 24, COLOR.amarillo));
       c.add(estrellas(this, 110, 40, ESTADO.estrellas[clave] || 0, 20));
       const rec = leerRecord(clave);
       const unidad = clave === 'Reparto' ? 'entregas seguidas' : 'puntos';
-      c.add(texto(this, 110, 86, `${rec ? `Récord: ${rec} ${unidad}  ·  ` : ''}Estrellas: ${m.umbrales.join(' · ')}`, 18, COLOR.crema, 540));
-      if (nota) c.add(texto(this, 110, 122, nota, 22, COLOR.amarillo, 540));
+      c.add(texto(this, 110, 82, `Nivel ${nivelDe(clave)}: llega a ${metaNivel(clave)} ${unidad} para subir (+${premioNivel(nivelDe(clave))} monchis)`, 20, COLOR.azul, 560));
+      c.add(texto(this, 110, 108, `${rec ? `Récord: ${rec}  ·  ` : ''}Estrellas: ${m.umbrales.join(' · ')}`, 16, COLOR.crema, 540));
+      if (nota) c.add(texto(this, 110, 138, nota, 20, COLOR.amarillo, 540));
       const botones = [
         { etiqueta: 'Jugar (E)', accion: jugar, color: HEX.amarillo },
         ...extras,
@@ -2103,6 +2187,7 @@ te ha mandado esto`, 24, COLOR.amarillo));
     this.charla(c, Phaser.Utils.Array.GetRandom(['¡Gracias, rider!', '¡Por fin!', 'Justo lo que necesitaba.', '¿Y la propina? …Era broma.']));
     golpeTexto(this, this.px, this.py - 200, `+${pago} monchis`, COLOR.amarillo, 44);
     if (res.estrellasNuevas) this.time.delayedCall(500, () => golpeTexto(this, ANCHO / 2, 260, '¡Estrella nueva!', COLOR.verde, 56));
+    if (res.subido) this.time.delayedCall(1100, () => golpeTexto(this, ANCHO / 2, 330, `¡Encargos: nivel ${res.nivel} superado! +${res.subido}`, COLOR.amarillo, 40));
     this.time.delayedCall(900, () => { if (!this.cambiando) this.empezarReparto(racha); });
   }
 

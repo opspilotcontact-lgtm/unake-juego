@@ -71,6 +71,7 @@ const CAPITULOS = [
       ['blancaso', 'Gracias… otra vez. Pero el casero viene a cenar para inspeccionar, y se me han volado sus facturas.'],
       ['lasslow', 'Para una cena con el casero hace falta un señor. Y el señor soy yo. Si encuentro mi pajarita.'],
       ['perico', 'Pin pin. He oído que en tu cuarto inventas cosas, rider. Cosas de héroe.'],
+      ['palicaso', '¡Escucha! Si la hucha no llega, en la tienda he puesto una tragaperras, y en la plaza se apuesta a las carreras. Paga. A veces.'],
     ],
     situaciones: [['lasslow', 'pajarita'], ['blancaso', 'facturas']],
     objetivos: [

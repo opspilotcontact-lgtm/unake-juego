@@ -113,7 +113,7 @@ function selectorApuesta(scene, y, inicial = 25) {
 
 function lluviaDeMonchis(scene, n, x = ANCHO / 2, y = ALTO / 2) {
   for (let i = 0; i < Math.min(40, n); i++) {
-    const m = scene.add.image(x, y, Phaser.Utils.Array.GetRandom(['patatas', 'caramelo', 'lata'])).setDepth(90);
+    const m = scene.add.image(x, y, scene.textures.exists('obj-ficha-monchi') && Math.random() < 0.7 ? 'obj-ficha-monchi' : Phaser.Utils.Array.GetRandom(['patatas', 'caramelo', 'lata'])).setDepth(90);
     m.setScale(46 / m.height);
     scene.tweens.add({
       targets: m, x: x + Phaser.Math.Between(-520, 520), y: ALTO + 80, angle: Phaser.Math.Between(-540, 540),
@@ -247,6 +247,11 @@ class Tragaperras extends Phaser.Scene {
       sfx(this, tipo === 'tres' || tipo === 'gordo' ? 'platillo' : 'pop', { volume: 0.5 });
       this.cameras.main.shake(tipo === 'gordo' ? 700 : 200, tipo === 'gordo' ? 0.012 : 0.004);
       this.decir(Phaser.Utils.Array.GetRandom(tipo === 'gordo' ? FRASES_TRAGAPERRAS.gordo : FRASES_TRAGAPERRAS.gana));
+      if (mult >= 5 && this.textures.exists('obj-monton-monchis')) {
+        const m = this.add.image(ANCHO / 2, 470, 'obj-monton-monchis').setDepth(80).setScale(0);
+        const e = (tipo === 'gordo' ? 260 : 150) / m.height;
+        this.tweens.chain({ targets: m, tweens: [{ scale: e, duration: 350, ease: 'Back.out' }, { scale: e, duration: 1200 }, { alpha: 0, duration: 300 }], onComplete: () => m.destroy() });
+      }
     } else if (cobro === apuesta) {
       avisoApuesta(this, 'Monchiman te salva: recuperas', COLOR.azul);
       this.decir('Monchiman no deja a nadie tirado. Ni en la máquina.');
@@ -255,6 +260,11 @@ class Tragaperras extends Phaser.Scene {
       avisoApuesta(this, `Puky se come ${apuesta}`, COLOR.rosa);
       this.cameras.main.flash(250, 220, 200, 40);
       sfx(this, 'blurp', { volume: 0.5 });
+      if (this.textures.exists('fx-charco-amarillo')) {
+        const c = this.add.image(ANCHO / 2 + Phaser.Math.Between(-150, 150), 260, 'fx-charco-amarillo').setDepth(80).setAlpha(0.95).setScale(0);
+        const e = 260 / c.height;
+        this.tweens.chain({ targets: c, tweens: [{ scale: e, duration: 180, ease: 'Back.out' }, { y: 300, duration: 1100 }, { alpha: 0, duration: 300 }], onComplete: () => c.destroy() });
+      }
       this.decir(Phaser.Utils.Array.GetRandom(FRASES_TRAGAPERRAS.puky));
     } else {
       this.palicaso.setTexture('palicaso-contando');
@@ -300,6 +310,11 @@ class Carrera extends Phaser.Scene {
       return carril;
     });
     this.add.rectangle(1150, 170 + 2 * 86, 10, 5 * 86, 0xffffff).setStrokeStyle(3, HEX.tinta);
+    if (this.textures.exists('obj-bandera-meta')) {
+      const b = this.add.image(1150, 136, 'obj-bandera-meta').setOrigin(0.15, 1).setDepth(30);
+      b.setScale(64 / b.height);
+      this.tweens.add({ targets: b, angle: 4, duration: 500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    }
     this.marco = this.add.graphics().setDepth(5);
 
     this.sel = selectorApuesta(this, 650 - 4, 25);

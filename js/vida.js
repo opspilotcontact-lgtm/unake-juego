@@ -28,6 +28,11 @@ const LOGROS = [
   { id: 'tres-iguales', nombre: 'Línea', texto: 'Saca tres iguales en la tragaperras', hecho: () => stat('tresIguales') >= 1, premio: 30 },
   { id: 'carreras5', nombre: 'Ojo de tasador', texto: 'Acierta 5 carreras de humo', hecho: () => stat('carrerasGanadas') >= 5, premio: 80 },
   { id: 'batacazo', nombre: 'Batacazo', texto: 'Gana una carrera con cuota x5 o más', hecho: () => stat('batacazo') >= 1, premio: 100 },
+  { id: 'gatos5', nombre: 'Amigo de los gatos', texto: 'Acaricia (o intenta) 5 veces al gato tuerto', hecho: () => stat('gatos') >= 5, premio: 40 },
+  { id: 'pedos3', nombre: 'Nariz de acero', texto: 'Cómete 3 pedos de Lasslow', hecho: () => stat('pedosRespirados') >= 3, premio: 30 },
+  { id: 'nivel5', nombre: 'Escalador', texto: 'Llega al nivel 5 en un minijuego', hecho: () => Object.values(ESTADO.niveles || {}).some(n => n >= 5), premio: 120 },
+  { id: 'nivel10', nombre: 'Esto ya es vicio', texto: 'Llega al nivel 10 en un minijuego', hecho: () => Object.values(ESTADO.niveles || {}).some(n => n >= 10), premio: 400 },
+  { id: 'niveles20', nombre: 'Todoterreno', texto: 'Sube 20 niveles en total', hecho: () => stat('nivelesSubidos') >= 20, premio: 250 },
   { id: 'sit5', nombre: 'El que lo arregla todo', texto: 'Resuelve 5 problemas', hecho: () => stat('situaciones') >= 5, premio: 100 },
   { id: 'sit20', nombre: 'Psicólogo del barrio', texto: 'Resuelve 20 problemas', hecho: () => stat('situaciones') >= 20, premio: 400 },
   { id: 'blancazo3', nombre: 'Ángel de Blancaso', texto: 'Salva a Blancaso 3 veces', hecho: () => stat('blancazos') >= 3, premio: 150 },
@@ -60,6 +65,10 @@ function comprobarLogros() {
 // ---------- Retos de la noche: tres por día, iguales para todo el que juegue ese día ----------
 
 const RETOS = [
+  { stat: 'nivelesSubidos', n: 1, texto: 'Sube un nivel en cualquier minijuego', premio: 90 },
+  { stat: 'nivelesSubidos', n: 2, texto: 'Sube dos niveles esta noche', premio: 150 },
+  { stat: 'apuestas', n: 5, texto: 'Apuesta 5 veces (tragaperras o carreras)', premio: 40 },
+  { stat: 'carreras', n: 2, texto: 'Apuesta en 2 carreras de humo', premio: 40 },
   { stat: 'partidas', n: 5, texto: 'Juega 5 minijuegos', premio: 60 },
   { stat: 'victorias', n: 3, texto: 'Gana 3 minijuegos', premio: 80 },
   { stat: 'fumadas', n: 2, texto: 'Fúmate 2 en el sofá', premio: 50 },
@@ -207,7 +216,8 @@ const SUCESOS = [
     for (let i = 0; i < 6; i++) {
       const x = Phaser.Math.Between(120, ANCHO - 120);
       const y = Phaser.Math.Between(200, 600);
-      [-14, 14].forEach(dx => ojos.push(s.add.ellipse(x + dx, y, 14, 20, 0xffffff).setDepth(891).setAlpha(0)));
+      if (s.textures.exists('fx-ojos-oscuridad')) { const o = s.add.image(x, y, 'fx-ojos-oscuridad').setDepth(891).setAlpha(0); o.setScale(Phaser.Math.FloatBetween(50, 90) / o.height); ojos.push(o); }
+      else [-14, 14].forEach(dx => ojos.push(s.add.ellipse(x + dx, y, 14, 20, 0xffffff).setDepth(891).setAlpha(0)));
     }
     s.tweens.add({ targets: ojos, alpha: 1, duration: 200, delay: s.tweens.stagger(80) });
     s.tweens.add({ targets: ojos, scaleY: 0.1, duration: 80, yoyo: true, repeat: 3, delay: 900 });
@@ -226,6 +236,86 @@ const SUCESOS = [
     s.tweens.add({ targets: p, y: 170, angle: { from: -8, to: 8 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     pillable(s, p, () => { ESTADO.monchis += 15; return 'La Pompa: «…gracias. Toma 15»'; }, 9000, { lejos: true });
     return 'La Pompa se ha soltado del techo';
+  } },
+  // El gato tuerto del barrio (día y noche): acarícialo… si se deja.
+  { id: 'gato', ambos: true, req: 'obj-gato', peso: 2, hacer: s => {
+    const suelo = SALAS[s.sala].suelo;
+    const y = suelo[1] - 6;
+    const izq = Math.random() < 0.5;
+    const g = s.add.image(izq ? -80 : ANCHO + 80, y, 'obj-gato').setOrigin(0.5, 1).setDepth(y).setFlipX(!izq);
+    g.setScale(110 / g.height);
+    const medio = Phaser.Math.Between(380, ANCHO - 380);
+    s.tweens.chain({ targets: g, tweens: [
+      { x: medio, duration: 2600, ease: 'Sine.out' },
+      { x: medio, duration: 5000 },
+      { x: izq ? ANCHO + 100 : -100, duration: 2600, ease: 'Sine.in' },
+    ], onComplete: () => g.destroy() });
+    pillable(s, g, () => {
+      sumarStat('gatos');
+      if (Math.random() < 0.6) {
+        ESTADO.vida = Math.min(100, ESTADO.vida + 12);
+        if (s.textures.exists('fx-corazon')) {
+          const c = s.add.image(g.x, g.y - 120, 'fx-corazon').setDepth(1000).setScale(0.15);
+          s.tweens.add({ targets: c, y: c.y - 70, alpha: 0, scale: 0.25, duration: 1200, onComplete: () => c.destroy() });
+        }
+        return 'Prrrr… el gato se deja · vida +12';
+      }
+      ESTADO.vida = Math.max(1, ESTADO.vida - 5);
+      s.cameras.main.shake(150, 0.006);
+      return '¡FSSS! Te ha arañado · vida −5';
+    }, 10000, { lejos: true });
+    return 'Pasa el gato tuerto del barrio…';
+  } },
+  // Una paloma se posa junto a tus monchis: espántala antes de que se los lleve.
+  { id: 'paloma', humo: false, req: 'obj-paloma', peso: 1.5, hacer: s => {
+    const x = Phaser.Math.Between(260, ANCHO - 260);
+    const y = SALAS[s.sala].suelo[0] + 30;
+    const p = s.add.image(x + 400, -80, 'obj-paloma').setOrigin(0.5, 1).setDepth(y);
+    p.setScale(90 / p.height);
+    s.tweens.add({ targets: p, x, y, duration: 900, ease: 'Sine.out' });
+    let espantada = false;
+    pillable(s, p, () => { espantada = true; return '¡Fuera, rata con alas! · +3 monchis'; }, 5200, { lejos: true });
+    s.time.delayedCall(5000, () => {
+      if (espantada || !p.active) return;
+      const roba = Math.min(ESTADO.monchis, 10);
+      ESTADO.monchis -= roba;
+      guardarPartida();
+      if (s.refrescarHud) s.refrescarHud();
+      golpeTexto(s, Phaser.Math.Clamp(p.x, 200, ANCHO - 200), 220, `La paloma se lleva ${roba} monchis`, COLOR.rosa, 26).setDepth(1001);
+      s.tweens.add({ targets: p, x: p.x - 500, y: -100, duration: 1200, onComplete: () => p.destroy() });
+    });
+    return 'Una paloma te mira los monchis… ¡espántala!';
+  } },
+  // Comida por la calle (de día): alguien se ha dejado algo. Se coge al pasar.
+  { id: 'comida', humo: false, req: 'obj-kebab', peso: 1.5, hacer: s => {
+    const opciones = ['obj-kebab', 'obj-pizza', 'obj-donut', 'obj-bocata'].filter(k => s.textures.exists(k));
+    const clave = Phaser.Utils.Array.GetRandom(opciones);
+    const suelo = SALAS[s.sala].suelo;
+    const x = Phaser.Math.Between(200, ANCHO - 200);
+    const y = Phaser.Math.Between(suelo[0], suelo[1]);
+    const p = s.add.image(x, y - 10, clave).setDepth(y);
+    p.setScale(70 / p.height);
+    s.tweens.add({ targets: p, y: y - 24, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    pillable(s, p, () => { ESTADO.hambre = Math.max(0, ESTADO.hambre - 25); sumarStat('comidas'); return 'Comida de la calle. No preguntes · hambre −25'; }, 15000);
+    return 'Huele a comida…';
+  } },
+  // Una nube de pedo de Lasslow cruza el barrio: esquívala o lo vas a notar.
+  { id: 'pedo', humo: true, req: 'fx-nube-pedo', peso: 1.5, hacer: s => {
+    const y = s.py - 60;
+    const izq = s.px > ANCHO / 2;
+    const n = s.add.image(izq ? -120 : ANCHO + 120, y, 'fx-nube-pedo').setDepth(s.py + 5).setAlpha(0.9);
+    n.setScale(150 / n.height);
+    sfx(s, 'pedo-tuba', { volume: 0.4 });
+    s.tweens.add({ targets: n, x: izq ? ANCHO + 140 : -140, duration: 7000, onComplete: () => n.destroy() });
+    s.tweens.add({ targets: n, scale: n.scale * 1.15, duration: 600, yoyo: true, repeat: -1 });
+    pillable(s, n, () => {
+      ESTADO.vida = Math.max(1, ESTADO.vida - 6);
+      ESTADO.colocon = Math.min(100, ESTADO.colocon + 4);
+      sumarStat('pedosRespirados');
+      sfx(s, 'tos', { volume: 0.5 });
+      return 'Te has comido el pedo de Lasslow · vida −6';
+    }, 7000);
+    return '¡Cuidado! Una nube de Lasslow viene hacia aquí';
   } },
   // Mundo normal: alguien del grupo pasa por la calle, te saluda y a veces suelta algo.
   { id: 'paseo', humo: false, peso: 3, hacer: s => {
@@ -252,10 +342,11 @@ const SUCESOS = [
     const suelo = SALAS[s.sala].suelo;
     const x = Phaser.Math.Between(200, ANCHO - 200);
     const y = Phaser.Math.Between(suelo[0], suelo[1]);
-    const p = s.add.image(x, y - 20, 'caramelo').setScale(0.13).setDepth(y);
+    const p = s.add.image(x, y - 20, arteO('obj-ficha-monchi', 'caramelo')).setDepth(y);
+    p.setScale(46 / p.height);
     s.tweens.add({ targets: p, y: y - 34, duration: 500, yoyo: true, repeat: -1 });
     s.tweens.add({ targets: p, angle: 360, duration: 2000, repeat: -1 });
-    pillable(s, p, () => { ESTADO.hambre = Math.max(0, ESTADO.hambre - 10); ESTADO.monchis += 8; return 'Un caramelo en el suelo · +8 monchis'; }, 14000);
+    pillable(s, p, () => { ESTADO.hambre = Math.max(0, ESTADO.hambre - 10); ESTADO.monchis += 8; return '¡Un monchi tirado en el suelo! · +8'; }, 14000);
     return 'Algo brilla en el suelo…';
   } },
 ];
@@ -295,7 +386,7 @@ function recogerPillables(s) {
 
 function sucesoBarrio(s) {
   const humo = enMundoHumo();
-  const posibles = SUCESOS.filter(x => x.humo === humo && x.id !== s.ultimoSuceso);
+  const posibles = SUCESOS.filter(x => (x.ambos || x.humo === humo) && x.id !== s.ultimoSuceso && (!x.req || s.textures.exists(x.req)));
   const total = posibles.reduce((a, x) => a + x.peso, 0);
   let r = Math.random() * total;
   const suc = posibles.find(x => (r -= x.peso) <= 0) || posibles[0];
