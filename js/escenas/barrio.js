@@ -261,7 +261,7 @@ class Barrio extends Phaser.Scene {
     guardarPartida();
     this.abrirModal(c => {
       c.add(texto(this, 0, -170, 'El barrio', 50, COLOR.amarillo));
-      c.add(texto(this, 0, -150, 'Muévete con las flechas (o WASD) o tocando el suelo. Acércate a alguien y pulsa E.\n\nLos «!» dan misiones: estrellas y monchis.\nVigila el HAMBRE y la VIDA: se come en la tienda.\nPara fumar en el sofá de Unaké hace falta papel, boquilla, la bolsita y mechero.\nColocado estás en el mundo humo: las misiones pagan más.', 21, COLOR.crema, 700).setOrigin(0.5, 0));
+      c.add(texto(this, 0, -122, 'Muévete con las flechas (o WASD) o tocando el suelo. Acércate a alguien y pulsa E.\n\nLos «!» dan misiones (de noche, en el mundo humo): estrellas y monchis.\nL: logros y retos de la noche. O: esconder objetivos.\nVigila el HAMBRE y la VIDA: se come en la tienda.\nPara fumar en el sofá de Unaké hace falta papel, boquilla, la bolsita y mechero.\nColocado estás en el mundo humo: las misiones pagan más.', 21, COLOR.crema, 700).setOrigin(0.5, 0));
       c.add(boton(this, 0, 170, 'Vamos (E)', () => this.cerrarModal(), { ancho: 260 }));
     }, () => this.cerrarModal());
   }
@@ -893,7 +893,7 @@ class Barrio extends Phaser.Scene {
       return `${QUIEN[id].nombre}: ${estado}`;
     });
     const cn = cuentasNegocio();
-    if (cn.total > 0) sits.push(`Unaké (${cn.rango}): ${Math.floor(cn.clientes)} clientes · ${cn.porMin.toFixed(1)}/min · caja ${Math.floor(negocio().caja)}`);
+    if (cn.total > 0) sits.push(`${cn.rango}: ${Math.floor(cn.clientes)} clientes · caja ${Math.floor(negocio().caja)}`);
     const R = retosDeHoy();
     const hechos = R.lista.filter(r => r.hecho).length;
     sits.push(hechos < 3 ? `Retos de la noche: ${hechos}/3 · pulsa L` : 'Retos de la noche: ¡los tres! Vuelve mañana');
@@ -1067,11 +1067,16 @@ class Barrio extends Phaser.Scene {
     for (let i = 0; i < n; i++) {
       const [x, y] = sitios[i];
       const f = this.add.container(x, y - 40).setDepth(y - 2);
-      f.add(this.add.image(0, 0, 'humo').setScale(0.32).setTint(tonos[i % tonos.length]));
-      [-10, 10].forEach(dx => {
-        f.add(this.add.circle(dx, -2, 6, 0xffffff).setStrokeStyle(2, HEX.tinta));
-        f.add(this.add.circle(dx + 1, -1, 3, HEX.tinta));
+      f.add(this.add.image(0, 0, 'humo').setScale(0.46).setTint(tonos[i % tonos.length]));
+      [-13, 13].forEach(dx => {
+        f.add(this.add.circle(dx, -3, 8, 0xffffff).setStrokeStyle(2, HEX.tinta));
+        f.add(this.add.circle(dx + 1, -2, 4, HEX.tinta));
       });
+      const paga = this.time.addEvent({ delay: Phaser.Math.Between(2600, 5200), loop: true, callback: () => {
+        if (!f.active) return paga.remove();
+        const t = texto(this, f.x, f.y - 40, `+${Math.max(1, Math.round(c.porCliente))}`, 20, COLOR.amarillo).setDepth(f.depth + 1);
+        this.tweens.add({ targets: t, y: t.y - 50, alpha: 0, duration: 1100, onComplete: () => t.destroy() });
+      } });
       this.tweens.add({ targets: f, y: y - 46, duration: 700 + i * 90, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       this.objSala.push(f);
     }
@@ -1124,7 +1129,7 @@ class Barrio extends Phaser.Scene {
     this.abrirModal(m => {
       // Columna izquierda: cómo va el local.
       m.add(texto(this, -250, -210, 'El negocio de Unaké', 30, COLOR.amarillo));
-      m.add(texto(this, -250, -172, `Rango: ${c.rango}${rangoSiguiente(c.total) ? ` · siguiente: ${rangoSiguiente(c.total)}` : ''}`, 16, COLOR.rosa, 360));
+      m.add(texto(this, -250, -176, `Rango: ${c.rango}${rangoSiguiente(c.total) ? `\nsiguiente: ${rangoSiguiente(c.total)}` : ''}`, 15, COLOR.rosa, 300));
       const datos = [
         `Clientes: ${Math.floor(c.clientes)} (caben ${c.aforo})`,
         `Cada cliente deja ${c.porCliente.toFixed(1)}/min`,
@@ -1132,7 +1137,7 @@ class Barrio extends Phaser.Scene {
         `Caja: ${Math.floor(n.caja)} / ${c.tope}`,
         c.minPorBolsita ? `Bolsitas listas: ${Math.floor(n.bolsitas)} (una cada ${Math.round(c.minPorBolsita)} min)` : 'Bolsitas: compra la máquina',
       ];
-      m.add(this.add.text(-390, -140, datos.join('\n'), { fontFamily: FUENTE, fontSize: '18px', color: COLOR.crema, lineSpacing: 8 }));
+      m.add(this.add.text(-390, -136, datos.join('\n'), { fontFamily: FUENTE, fontSize: '18px', color: COLOR.crema, lineSpacing: 8 }));
       m.add(this.add.rectangle(-390, 40, 280, 14, 0x000000, 0.5).setOrigin(0, 0.5).setStrokeStyle(2, HEX.crema));
       m.add(this.add.rectangle(-390, 40, 280 * Math.min(1, n.caja / c.tope), 14, HEX.amarillo).setOrigin(0, 0.5));
       m.add(boton(this, -250, 100, `Cobrar la caja (E)`, cobrar, { ancho: 300, alto: 60, tam: 22, color: HEX.verde }));
@@ -1146,7 +1151,7 @@ class Barrio extends Phaser.Scene {
         const nv = nivelNegocio(mj.id);
         m.add(this.add.text(-40, y - 16, `${i + 1} · ${mj.nombre}`, { fontFamily: FUENTE, fontSize: '18px', color: COLOR.crema }));
         m.add(this.add.text(-40, y + 6, mj.desc, { fontFamily: FUENTE, fontSize: '13px', color: COLOR.azul }));
-        for (let k = 0; k < NIVEL_MAX; k++) m.add(this.add.circle(180 + k * 16, y - 6, 6, k < nv ? HEX.amarillo : 0x000000, k < nv ? 1 : 0.4).setStrokeStyle(2, HEX.crema));
+        for (let k = 0; k < NIVEL_MAX; k++) m.add(this.add.circle(210 + k * 13, y + 14, 5, k < nv ? HEX.amarillo : 0x000000, k < nv ? 1 : 0.4).setStrokeStyle(2, HEX.crema));
         if (nv >= NIVEL_MAX) m.add(texto(this, 330, y, 'Al máximo', 16, COLOR.verde));
         else {
           const precio = precioMejora(mj);

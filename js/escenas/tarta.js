@@ -72,11 +72,11 @@ class Tarta extends Phaser.Scene {
     this.receta.removeAll(true);
     const ancho = this.pasos.length * 96;
     const g = this.add.graphics();
-    g.fillStyle(HEX.tinta, 0.75).fillRoundedRect(-ancho / 2 - 70, -36, ancho + 90, 72, 18);
+    g.fillStyle(HEX.tinta, 0.75).fillRoundedRect(-ancho / 2 - 70, -36, ancho + 120, 72, 18);
     this.receta.add(g);
     this.receta.add(this.add.text(-ancho / 2 - 58, 0, 'Receta', { fontFamily: FUENTE, fontSize: '18px', color: COLOR.crema }).setOrigin(0, 0.5));
     this.pasos.forEach((p, i) => {
-      const x = -ancho / 2 + 40 + i * 96;
+      const x = -ancho / 2 + 70 + i * 96;
       const img = this.add.image(x, 0, p.clave).setScale(p.clave === 'guinda' ? 0.7 : 0.5);
       if (i < this.hecho) img.setAlpha(0.3);
       if (i === this.hecho) {
