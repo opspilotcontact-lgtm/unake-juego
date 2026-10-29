@@ -204,6 +204,177 @@ const MENSAJES = [
 ];
 const RESPUESTAS = ['¿Eso te ha dicho? Dile que vale.', 'Pff. Siempre igual.', 'Gracias, rider. ¿Te debo algo? No.', 'Apuntado. Bueno, no. Pero me acuerdo.'];
 
+// ---------- Segunda tanda de material (29/10): que no se repita en horas ----------
+
+TONTERIAS.puky.push(
+  'Hoy he limpiado el baño. Bueno, lo he mirado fuerte.',
+  'Si oyes un «blurp» detrás de ti, no te gires. Es mejor así.',
+  'Me han dicho que soy un amarillo con personalidad. Me lo quedo.',
+  'Huelo a limón. Es mentira, pero me gusta decirlo.',
+);
+TONTERIAS.palicaso.push(
+  '¡Escucha! Si el bar se llama Unaké y yo soy de Unaké, ¿soy una qué? ¡Una aso!',
+  'He contado los vasos: hay muchos. El número exacto es secreto profesional.',
+  'Hoy he puesto música en la barra. Era yo cantando.',
+  '¡Escucha! Estoy pensando en hacerme un tatuaje que diga «escucha».',
+  'Mi cóctel nuevo se llama «el último». Siempre hay otro después.',
+  'Ayer hablé con una lámpara. Muy buena conversadora. No me interrumpió.',
+  'Las estrellas fugaces vamos muy rápido. Por eso nadie nos entiende.',
+);
+TONTERIAS.blancaso.push(
+  'He hecho un presupuesto para la semana. Ya lo he gastado.',
+  'Hoy he respirado hondo tres veces. Récord personal.',
+  'Si me pongo blanco es normal. Si me pongo amarillo, corre.',
+  'Estoy pensando en abrir una cuenta de ahorro. Para pensarlo.',
+  'El casero me ha mandado un mensaje. Lo he archivado sin leer. Paz.',
+  'Me gusta la plaza: aquí nadie me pide facturas. Bueno, tú a veces.',
+  'He soñado que las cuentas cuadraban. Me he despertado llorando.',
+);
+TONTERIAS.pompa.push(
+  '…¿eh?',
+  'Hoy he flotado un metro más que ayer. Progreso.',
+  'Me han pinchado una vez. No hablo de eso.',
+  'La música buena se escucha con la piel. Y la mía es muy fina.',
+  'Si pongo un tema lento, es que estoy bien. Si pongo silencio, mejor.',
+  'Perdona, me he quedado mirando el techo. Es mi techo.',
+);
+TONTERIAS.lasslow.push(
+  'Caballero, ¿huele usted eso? Es la elegancia.',
+  'He aprendido a bailar el vals. Lo que no he aprendido es a no tirarme uno.',
+  'La pajarita aprieta, pero la dignidad aprieta más.',
+  'Un señor siempre deja propina. Y a veces algo más. Perdón.',
+  'Tengo un chiste nuevo. No te lo cuento, que me río antes yo.',
+  'Me han invitado a una boda. Ya les he pedido perdón por adelantado.',
+  'JA… no. No me reía. Era el aire acondicionado.',
+);
+TONTERIAS.cotine.push(
+  'He horneado una tarta. Tenía forma de tarta un ratito.',
+  'Las migas no cuentan. Son tarta pequeña que se ha ido.',
+  '¿Huele a chocolate? Es mi colonia. Y mi cena.',
+  'Mi receta secreta: probarlo todo antes. Todo. Varias veces.',
+  'Hoy no he comido nada. Excepto lo que he comido.',
+  'Si la nevera pita es que me ha visto venir.',
+  'He hecho galletas para todos. Para todos los que soy yo.',
+);
+TONTERIAS.perico.push(
+  'Pin pin. ¿Sabes quién ha entrado hoy? Yo sí. Pregúntame.',
+  'La contraseña de hoy es secreta. Hasta para mí.',
+  'He visto a Lasslow sin pajarita. No puedo olvidarlo.',
+  'Cuando nadie mira, abro la puerta yo solo. Por practicar.',
+  'Me llamo Perico. Ni periquito, ni loro, ni nada. Perico.',
+  '¿Pipas? Bueno, una. Una cáscara.',
+  'Desde aquí se ve todo el barrio. Y se oye. Y se huele. Lasslow…',
+);
+COLOCADAS.push(
+  '¿Las nubes nos fuman a nosotros? Lo estoy pensando en serio.',
+  'Si cierro los ojos, el bar sigue ahí. Lo he comprobado. Dos veces.',
+  'Acabo de oír un color. Era morado y decía «pin pin».',
+  'Tengo una idea genial. …Se ha ido. Era genial.',
+  'Mira mis manos. No, no. Mira, mira. ¿Lo ves? Yo tampoco.',
+  'Las patatas están crujientes por dentro de mi cabeza.',
+  '¿Cuánto rato llevamos aquí? ¿Un siglo? ¿Un minuto? Sí.',
+  'El suelo está blandito. ¿O soy yo?',
+  'Creo que la Pompa me está hablando con la mente. Dice «…».',
+  'Me ha mirado un monchi. Me he puesto rojo.',
+);
+MEMES.push(
+  { sprite: 'perico-horror', arriba: 'Cuando te llaman periquito', abajo: 'en tu propia puerta', fondo: 0xd8e6ff },
+  { sprite: 'blancaso-derritiendose', arriba: 'Yo el lunes', abajo: 'después de un finde en Unaké', fondo: 0xd8f0ff },
+  { sprite: 'lasslow-aguantando', arriba: 'Aguantándolo en la cena', abajo: 'como un señor', fondo: 0xffd8b8 },
+  { sprite: 'puky-charco', arriba: 'Yo cuando dicen «hay que limpiar»', abajo: '', fondo: 0xfff3a0 },
+  { sprite: 'pompa-horror', arriba: 'Cuando alguien trae un alfiler', abajo: 'a la fiesta', fondo: 0xc9f3ff },
+  { sprite: 'vuper-comiendo', arriba: '«Solo voy a picar algo»', abajo: 'La tienda entera:', fondo: 0xd0ffd0 },
+  { sprite: 'perico-pipas', arriba: 'Yo enterándome de todo', abajo: 'desde la puerta', fondo: 0xe0d0ff },
+  { sprite: 'palicaso-riendo', arriba: 'Cuando el chiste lo cuentas tú', abajo: 'y te ríes tú solo', fondo: 0xfff0b0 },
+  { sprite: 'monchiman-picado', arriba: 'Monchiman a las 4:20', abajo: 'buscando a quien salvar', fondo: 0xffe066 },
+  { sprite: 'lasslow-risa-floja', arriba: 'Cuando te dicen «no te rías»', abajo: 'en el peor momento', fondo: 0xffd8b8 },
+  { sprite: 'blancaso-esperanza', arriba: 'Blancaso: «hoy no me da»', abajo: 'Spoiler:', fondo: 0xd8f0ff },
+  { sprite: 'vuper-fumado', arriba: 'Mi cerebro después de la primera', abajo: 'cargando…', fondo: 0xe0d0ff },
+  { sprite: 'cotine-plop', arriba: 'Cuando la tarta es para compartir', abajo: 'pero hay tarta', fondo: 0xffc2dc },
+  { sprite: 'perico-graznando', arriba: 'Perico cuando no sabes la contraseña', abajo: '', fondo: 0xd8e6ff },
+);
+CUANDOS.push(
+  'se acaba el papel', 'no encuentras el mechero y lo tienes en la mano', 'Lasslow está muy callado', 'la Pompa contesta rápido',
+  'Palicaso dice «una cosa rápida»', 'Blancaso dice «hoy sí»', 'Puky dice «¿me llamabais?»', 'cierran la tienda de 24 h',
+  'el casero pregunta por el ruido', 'te piden la cuota de la aso', 'suena la M del cuarto', 'vuelves al mundo normal',
+);
+VIDEOS.push(
+  { sprite: 'blancaso-derritiendose', pie: 'Timelapse: Blancaso mirando una factura', sonido: 'deshinchar', likes: '980 mil', mov: 'quieto' },
+  { sprite: 'perico-pipas', pie: 'Reto: Perico comiendo 100 pipas sin tirar cáscaras (spoiler: no)', sonido: 'pin-pin', likes: '1,8 M', mov: 'bota' },
+  { sprite: 'lasslow-pedo', pie: 'Lasslow intenta tocar la tuba. Sin tuba', sonido: 'pedo-tuba', likes: '4,4 M', mov: 'bota' },
+  { sprite: 'pompa-horror', pie: 'La Pompa ve un cactus por primera vez', sonido: 'aaah', likes: '2,7 M', mov: 'quieto' },
+  { sprite: 'puky-riendo', pie: 'Puky aprende a bailar (no debió)', sonido: 'puky-gracioso', likes: '310 mil', mov: 'gira' },
+  { sprite: 'monchiman', pie: 'Monchiman: cámara oculta. Nadie se da cuenta de que es Vuper', sonido: 'zumbido-m', likes: '5 M', mov: 'cruza' },
+  { sprite: 'palicaso-contando', pie: 'Palicaso explica la física cuántica (es una anécdota de su primo)', sonido: 'risa-fondo', likes: '720 mil', mov: 'bota' },
+  { sprite: 'cotine', pie: 'Unboxing de una tarta. No quedó caja. Ni tarta', sonido: 'nam', likes: '1,1 M', mov: 'bota' },
+);
+NOTICIAS.push(
+  { sprite: 'puky-charco', titular: 'Aparece un charco amarillo en Unaké. Puky: «Es arte»' },
+  { sprite: 'lasslow-digno', titular: 'Lasslow, nombrado «Señor del año». Se le escapó en la gala' },
+  { sprite: 'perico-volando', titular: 'Perico vuela por primera vez. Dice que fue sin querer' },
+  { sprite: 'cotine-plop', titular: 'Desaparecen 40 magdalenas de la panadería. Una pista: migas hasta la cocina de Cotine' },
+  { sprite: 'blancaso-esperanza', titular: 'Blancaso aguanta una noche entera sin bajón. Los expertos no se lo creen' },
+  { sprite: 'pompa', titular: 'La Pompa pincha 6 horas seguidas sin moverse. El público tampoco' },
+  { sprite: 'palicaso-riendo', titular: 'Palicaso deja de hablar 30 segundos. Se declara el día festivo' },
+  { sprite: 'vuper-reparto', titular: 'Un rider entrega un pedido antes de tiempo. Investigan si es humano' },
+  { sprite: 'perico-cotilleando', titular: 'La comunidad pide a Perico que deje de cotillear. Perico: «¿Quién ha dicho eso?»' },
+  { sprite: 'monchiman-picado', titular: 'Monchiman salva a un vecino de un bajón. El vecino pide otro' },
+);
+CHATS.push(
+  [['lasslow', 'Caballeros, mañana vengo de esmoquin'], ['palicaso', '¿Por qué?'], ['lasslow', 'Por si me pasa lo de siempre, que sea elegante'], ['perico', 'pin pin']],
+  [['cotine', '¿Alguien ha visto mi tarta?'], ['perico', 'La tienes en la cara'], ['cotine', 'Ah. Gracias'], ['cotine', 'Estaba buena']],
+  [['perico', 'Contraseña nueva para esta noche'], ['palicaso', '¿Cuál?'], ['perico', 'No la puedo decir por aquí'], ['perico', 'Es pipas'], ['blancaso', 'Perico…']],
+  [['pompa', '.'], ['palicaso', '¿Estás bien?'], ['pompa', '..'], ['lasslow', 'Eso es un sí'], ['pompa', '...']],
+  [['blancaso', 'He cuadrado las cuentas'], ['palicaso', '¡No puede ser!'], ['blancaso', 'Me he equivocado de mes'], ['blancaso', 'Otra vez no…']],
+  [['vuper', '¿Alguien tiene papel?'], ['palicaso', 'En la tienda'], ['cotine', 'Yo tengo de magdalena'], ['vuper', 'Vale, vale…']],
+  [['puky', '¿Me habéis añadido al grupo?'], ['blancaso', '¿QUIÉN HA SIDO?'], ['perico', 'pin pin'], ['puky', 'Ya estoy aquí']],
+  [['palicaso', 'Mañana karaoke'], ['pompa', 'Yo no canto, que exploto'], ['lasslow', 'Yo pongo los efectos de sonido'], ['blancaso', 'NO']],
+);
+DIALOGOS.push(
+  [['cotine', '¿Alguien quiere tarta?'], ['palicaso', '¡Yo!'], ['cotine', 'Ya no queda.']],
+  [['lasslow', 'Señorita Pompa, ¿me concede este baile?'], ['pompa', 'Si te tiras uno, exploto.']],
+  [['palicaso', '¡Escucha, Pompa! Pon algo de mi época.'], ['pompa', 'Tu época es ahora. …Ya está puesto.']],
+  [['lasslow', 'Un señor nunca…'], ['palicaso', '…¿nunca qué?'], ['lasslow', 'Perdón, se me ha escapado la frase.']],
+  [['pompa', '¿Habéis visto mi techo?'], ['palicaso', 'Está encima.'], ['pompa', 'Ah. Siempre está ahí.']],
+  [['palicaso', 'Hoy viene mucha gente, ¿eh?'], ['lasslow', 'Será por mí, caballero. O por el olor.']],
+);
+TRIVIAL.push(
+  { p: '¿Qué le pasa a la Pompa si la pinchan?', r: ['Explota', 'Se ríe', 'Se pone a pinchar música'] },
+  { p: '¿Qué hace Cotine con las tartas?', r: ['Se las come', 'Las vende', 'Las tira'] },
+  { p: '¿Cuál es la hora del móvil de todos?', r: ['4:20', '3:00', '12:00'] },
+  { p: '¿Quién es la estrella fugaz de Unaké?', r: ['Palicaso', 'Perico', 'Puky'] },
+  { p: '¿Qué le da a Blancaso cuando fuma mucho?', r: ['Un blancaso', 'Hambre', 'Sueño'] },
+  { p: '¿De qué color es Puky?', r: ['Amarillo', 'Verde', 'Morado'] },
+  { p: '¿Qué necesitas para liarte uno?', r: ['Papel, boquilla, bolsita y mechero', 'Solo papel', 'Una tarta'] },
+);
+MENSAJES.push(
+  'que Cotine le ha guardado tarta. Que corra',
+  'que la Pompa le ha contestado. Del mes pasado',
+  'que Lasslow pide perdón. Por adelantado',
+  'que el casero ha preguntado por él. Que no está',
+  'que esta noche hay karaoke. Que traiga tapones',
+);
+
+// Chats que hablan de cómo va tu partida: la hucha, el negocio, el hambre…
+function chatDinamico() {
+  const al = l => Phaser.Utils.Array.GetRandom(l);
+  const opciones = [];
+  if (typeof META_HUCHA !== 'undefined' && (ESTADO.capitulo || 0) >= 1) {
+    const falta = Math.max(0, META_HUCHA - (ESTADO.hucha || 0));
+    opciones.push([['blancaso', `La hucha va por ${ESTADO.hucha || 0}`], ['blancaso', `Faltan ${falta} para el casero`], ['palicaso', '¡Eso está hecho!'], ['blancaso', 'Eso dices siempre']]);
+  }
+  const cn = typeof cuentasNegocio === 'function' ? cuentasNegocio() : null;
+  if (cn && cn.total > 0) opciones.push([['palicaso', `Hoy Unaké está a tope: ${Math.floor(cn.clientes)} clientes`], ['perico', 'Y todos me han dicho la contraseña mal'], ['palicaso', `Somos «${cn.rango}»`], ['lasslow', 'Gracias a mi presencia, caballeros']]);
+  if (ESTADO.hambre > 55) opciones.push([['cotine', 'Vuper, se te oyen las tripas desde la cocina'], ['vuper', 'Vale, vale…'], ['cotine', 'Ve a la tienda, que me lo como yo todo']]);
+  if (ESTADO.monchis > 500) opciones.push([['perico', `Dicen que Vuper tiene ${ESTADO.monchis} monchis`], ['palicaso', '¡Invita él!'], ['vuper', '¿A una qué?'], ['palicaso', '¡A UNA ASO!']]);
+  if (ESTADO.monchis < 20) opciones.push([['blancaso', 'Vuper, ¿cómo vas de monchis?'], ['vuper', 'Mal'], ['blancaso', 'Hay encargos en la tienda de 24 h'], ['vuper', 'Vale, vale…']]);
+  if (totalEstrellas() > 0) opciones.push([['palicaso', `¡Vuper lleva ${totalEstrellas()} estrellas!`], ['perico', 'Yo tengo pipas'], ['pompa', '…felicidades'], ['lasslow', 'JA… perdón. Bravo.']]);
+  return opciones.length ? al(opciones) : al(CHATS);
+}
+function chatAlAzar() {
+  return Math.random() < 0.35 ? chatDinamico() : Phaser.Utils.Array.GetRandom(CHATS);
+}
+
 // ---------- El móvil ----------
 
 // Dibuja un móvil con el contenido dentro. Devuelve el contenedor (centrado en 0,0) y una

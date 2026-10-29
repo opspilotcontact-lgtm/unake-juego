@@ -51,7 +51,7 @@ class Cuentas extends Phaser.Scene {
     this.textoPuntos = texto(this, 150, 40, '0 puntos', 30, COLOR.amarillo).setDepth(50);
     this.textoTiempo = texto(this, ANCHO - 120, 40, '', 30, COLOR.crema).setDepth(50);
     this.textoHucha = texto(this, 150, 80, 'Para la hucha: 0', 22, COLOR.verde).setDepth(50);
-    this.vidasBajon = [0, 1, 2].map(i => this.add.circle(ANCHO - 170 + i * 50, 84, 14, 0x7ee081).setStrokeStyle(4, HEX.tinta).setDepth(50));
+    this.vidasBajon = [0, 1, 2, 3, 4].map(i => this.add.circle(ANCHO - 250 + i * 40, 84, 13, 0x7ee081).setStrokeStyle(4, HEX.tinta).setDepth(50));
 
     this.input.keyboard.on('keydown', e => {
       const d = { ArrowLeft: 0, ArrowRight: 1, ArrowDown: 2, a: 0, d: 1, s: 2, A: 0, D: 1, S: 2 }[e.key];
@@ -104,10 +104,10 @@ class Cuentas extends Phaser.Scene {
     this.cameras.main.shake(200, 0.008);
     golpeTexto(this, 640, 330, t, COLOR.rosa, 30);
     // A Blancaso le va dando el bajón: se hunde y se derrite.
-    this.blancaso.setTexture(this.bajon >= 2 ? 'blancaso-derritiendose' : 'blancaso-mareado');
+    this.blancaso.setTexture(this.bajon >= 3 ? 'blancaso-derritiendose' : 'blancaso-mareado');
     this.blancaso.setScale(150 / this.blancaso.height);
-    this.tweens.add({ targets: this.blancaso, y: 190 + this.bajon * 12, duration: 300 });
-    if (this.bajon >= 3) this.final(false);
+    this.tweens.add({ targets: this.blancaso, y: 190 + this.bajon * 8, duration: 300 });
+    if (this.bajon >= 5) this.final(false);
   }
 
   update(_t, dms) {

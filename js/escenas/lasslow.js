@@ -19,7 +19,7 @@ const CHISTES = [
 ];
 const RUIDOS = [
   { quien: 'perico-horror', texto: '¡CRASH!', sonido: 'cristal', x: 1060 },
-  { quien: 'palicaso-contando', texto: '¡ESCUCHA, ESCUCHA!', sonido: 'bocina', x: 980 },
+  { quien: 'palicaso-contando', texto: '¡ESCUCHA, ESCUCHA!', sonido: 'bocina', x: 1020 },
   { quien: 'pompa-horror', texto: '¡ACHÍS!', sonido: 'pop', x: 1080 },
 ];
 const ANILLO = 62;
@@ -161,10 +161,16 @@ class Lasslow extends Phaser.Scene {
   ruido() {
     if (!this.prueba || this.prueba.tipo !== 'tripa') return;
     const r = Phaser.Utils.Array.GetRandom(RUIDOS);
-    const img = this.add.image(r.x, 560, r.quien).setOrigin(0.5, 1).setDepth(7).setScale(0);
-    const esc = 200 / img.height;
-    this.tweens.add({ targets: img, scale: esc, duration: 160, ease: 'Back.out' });
-    this.time.delayedCall(1000, () => this.tweens.add({ targets: img, scale: 0, duration: 150, onComplete: () => img.destroy() }));
+    if (r.quien.startsWith('palicaso')) {
+      this.palicaso.setTexture(r.quien);
+      this.tweens.add({ targets: this.palicaso, y: 540, duration: 120, yoyo: true, repeat: 2 });
+      this.time.delayedCall(1000, () => this.palicaso.setTexture('palicaso'));
+    } else {
+      const img = this.add.image(r.x, 560, r.quien).setOrigin(0.5, 1).setDepth(7).setScale(0);
+      const esc = 200 / img.height;
+      this.tweens.add({ targets: img, scale: esc, duration: 160, ease: 'Back.out' });
+      this.time.delayedCall(1000, () => this.tweens.add({ targets: img, scale: 0, duration: 150, onComplete: () => img.destroy() }));
+    }
     sfx(this, r.sonido, { volume: 0.8 });
     golpeTexto(this, r.x, 300, r.texto, COLOR.amarillo, 44);
     this.cartel.setText('¡RUIDO! ¡AHORA! (P)').setColor(COLOR.amarillo);
@@ -264,7 +270,7 @@ class Lasslow extends Phaser.Scene {
       const enRuido = p.t >= p.ruido[0] && p.t <= p.ruido[1];
       this.lasslow.setScale(this.escLasslow * (1 + (1 - f) * 0.12), this.escLasslow * (1 + (1 - f) * 0.08));
       this.lasslow.x = 640 + Math.sin(this.time.now / 25) * (2 + (1 - f) * 4);
-      if (!enRuido && p.t > p.ruido[1]) this.cartel.setText('¡Aguanta…!');
+      if (!enRuido && p.t > p.ruido[1]) this.cartel.setText('Se pasó el ruido… ¡ya no hay quien lo tape!').setColor(COLOR.rosa);
       if (p.t >= p.dur) this.mal('revienta');
     }
   }

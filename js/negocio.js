@@ -20,10 +20,10 @@ const RANGOS = [
 const METAS_NEGOCIO = [
   { texto: 'Compra tu primera mejora', hecho: c => c.total >= 1, premio: 20 },
   { texto: 'Ten 3 clientes a la vez', hecho: c => c.clientes >= 3, premio: 40 },
-  { texto: 'Gana 8 monchis por minuto', hecho: c => c.porMin >= 8, premio: 60 },
+  { texto: 'Gana 15 monchis por minuto', hecho: c => c.porMin >= 15, premio: 60 },
   { texto: 'Todas las mejoras a nivel 1', hecho: c => MEJORAS_NEGOCIO.every(m => c.niv[m.id] >= 1), premio: 100 },
   { texto: 'Rango «Aso de barrio» (nivel 12)', hecho: c => c.total >= 12, premio: 150 },
-  { texto: 'Gana 25 monchis por minuto', hecho: c => c.porMin >= 25, premio: 200 },
+  { texto: 'Gana 50 monchis por minuto', hecho: c => c.porMin >= 50, premio: 200 },
   { texto: 'Todas las mejoras a nivel 3', hecho: c => MEJORAS_NEGOCIO.every(m => c.niv[m.id] >= 3), premio: 300 },
   { texto: 'Leyenda del humo (nivel 28)', hecho: c => c.total >= 28, premio: 500 },
 ];
@@ -47,9 +47,9 @@ function cuentasNegocio() {
   const aforo = 2 + 2 * niv.sofas + salas.reduce((x, a) => x + a.aforo, 0);
   const atraccion = 1 + 1.6 * niv.neon + 1.2 * niv.dj + salas.reduce((x, a) => x + a.atraccion, 0) + bonoDeco('atraccion');
   const clientes = Math.min(aforo, atraccion);
-  const porCliente = 1.2 + 0.9 * niv.barra + bonoDeco('porCliente');
-  const porMin = clientes * porCliente + 2.5 * niv.maquina + 3 * niv.horno;
-  const tope = Math.round(Math.max(40, porMin * (30 + 15 * niv.maquina) * (1 + bonoDeco('tope'))));
+  const porCliente = 3 + 2 * niv.barra + bonoDeco('porCliente');
+  const porMin = clientes * porCliente + 6 * niv.maquina + 5 * niv.horno;
+  const tope = Math.round(Math.max(60, porMin * (90 + 15 * niv.maquina) * (1 + bonoDeco('tope'))));
   const minPorBolsita = niv.bolsitas ? 24 / niv.bolsitas : 0;
   const rango = RANGOS.filter(([n]) => total >= n).pop()[1];
   return { niv, total, aforo, atraccion, clientes, porCliente, porMin, tope, minPorBolsita, rango };

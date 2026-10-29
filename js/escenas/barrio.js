@@ -46,7 +46,7 @@ const SALAS = {
         id: 'palicaso', tipo: 'barra', sprite: 'palicaso', x: 640, y: 458, escala: 0.4, nombre: 'Palicaso (la barra)',
         n: { sprite: 'n-palicaso', y: 462, escala: 0.62, recorte: 0.55 },
       },
-      { id: 'pompa', tipo: 'charla', sprite: 'pompa', x: 960, y: 250, escala: 0.3, nombre: 'La Pompa', n: { sprite: 'n-pompa', x: 960, y: 650, escala: 0.55 } },
+      { id: 'pompa', tipo: 'charla', sprite: 'pompa', x: 830, y: 240, escala: 0.3, nombre: 'La Pompa', n: { sprite: 'n-pompa', x: 960, y: 650, escala: 0.55 } },
       { id: 'lasslow', tipo: 'mision', mision: 'Lasslow', sprite: 'lasslow-digno', x: 1170, y: 640, escala: 0.45, nombre: 'Lasslow', n: { sprite: 'n-lasslow', y: 660, escala: 0.56 } },
     ],
   },
@@ -137,13 +137,17 @@ class Barrio extends Phaser.Scene {
     this.tSituacion = 30;
     this.marcasSit = [];
     this.recogiblesSala = [];
+    this.tSuceso = Phaser.Math.Between(25, 45);
+    this.tLogros = 2;
+    this.pillables = [];
+    this.objSuceso = [];
 
     this.sombra = this.add.ellipse(0, 0, 120, 26, 0x000000, 0.35);
     this.jugador = this.add.image(0, 0, 'vuper').setOrigin(0.5, 1);
     this.px = ESTADO.x;
     this.py = ESTADO.y;
 
-    this.teclas = this.input.keyboard.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D,E,ENTER,SPACE,ESC,ONE,TWO,THREE,FOUR,FIVE,SIX,SEVEN,EIGHT,NINE,M,O');
+    this.teclas = this.input.keyboard.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D,E,ENTER,SPACE,ESC,ONE,TWO,THREE,FOUR,FIVE,SIX,SEVEN,EIGHT,NINE,M,O,L');
     this.input.on('pointerdown', (p, sobre) => {
       if (this.modal || sobre.length) return;
       this.objetivo = { x: p.x, y: p.y };
@@ -191,6 +195,7 @@ class Barrio extends Phaser.Scene {
     this.textoSala = texto(this, ANCHO / 2, 36, '', 30, COLOR.crema).setDepth(D + 1);
     this.textoMundo = texto(this, ANCHO / 2, 72, '', 18, COLOR.azul).setDepth(D + 1);
     boton(this, ANCHO - 84, 40, 'Menú', () => irA(this, 'Portada'), { ancho: 130, alto: 48, tam: 20, color: HEX.crema }).setDepth(D + 1);
+    this.botonLogros = boton(this, ANCHO - 226, 40, 'Logros', () => { if (!this.modal) this.logros(); }, { ancho: 140, alto: 48, tam: 20, color: HEX.amarillo }).setDepth(D + 1);
 
     // Lo que llevas para liar.
     const gi = this.add.graphics().setDepth(D);
@@ -266,6 +271,9 @@ class Barrio extends Phaser.Scene {
   cargarSala(nombre, entrada) {
     this.objSala.forEach(o => { this.tweens.killTweensOf(o); o.destroy(); });
     this.objSala = [];
+    (this.objSuceso || []).forEach(o => o.active && o.destroy());
+    this.objSuceso = [];
+    this.pillables = [];
     if (this.burbuja) this.burbuja.destroy();
     this.burbujasAmb.forEach(b => b.active && b.destroy());
     this.burbujasAmb = [];
@@ -462,6 +470,8 @@ class Barrio extends Phaser.Scene {
 
     if (this.boquilla && Math.hypot(this.boquilla.b.x - this.px, this.boquilla.b.y - this.py) < 80) this.cogerBoquilla();
 
+    recogerPillables(this);
+    if (pulsado(k.L)) return this.logros();
     if (pulsado(k.O)) { ESTADO.ocultarObjetivos = !ESTADO.ocultarObjetivos; this.panelObjetivos.setVisible(!ESTADO.ocultarObjetivos); guardarPartida(); }
     this.recogidaCercana();
     if (this.notif && pulsado(k.M)) return this.abrirNotificacion();
@@ -594,7 +604,8 @@ class Barrio extends Phaser.Scene {
   // Necesidades, encargos, señal amarilla y el blancazo corren aunque no te muevas.
   tiempos(dt) {
     const eraHumo = enMundoHumo();
-    ESTADO.colocon = Math.max(0, ESTADO.colocon - dt / 3 * (1 + bonoDeco('colocon')));
+    const liado = Object.values(ESTADO.situaciones || {}).some(x => x.aceptada) ? 0.6 : 1;
+    ESTADO.colocon = Math.max(0, ESTADO.colocon - dt / 7 * liado * (1 + bonoDeco('colocon')));
     ESTADO.hambre = Math.min(100, ESTADO.hambre + dt * (0.15 + ESTADO.colocon * 0.006) * (1 + bonoDeco('hambre')));
     if (ESTADO.hambre >= 85) ESTADO.vida -= dt * 1.8;
     else if (ESTADO.hambre < 50) ESTADO.vida = Math.min(100, ESTADO.vida + dt * 0.4);
@@ -635,9 +646,15 @@ class Barrio extends Phaser.Scene {
     }
     this.tHistoria = (this.tHistoria || 0) - dt;
     if (this.tHistoria <= 0) { this.tHistoria = 0.4; this.historia(); }
+    if (!this.reparto && !this.modal) {
+      this.tSuceso -= dt;
+      if (this.tSuceso <= 0) { this.tSuceso = Phaser.Math.Between(40, 75); sucesoBarrio(this); }
+    }
+    this.tLogros -= dt;
+    if (this.tLogros <= 0) { this.tLogros = 1; this.revisarLogros(); }
     this.tAmbiente -= dt;
     if (this.tAmbiente <= 0) { this.tAmbiente = Phaser.Math.Between(9, 15); this.charlaAmbiente(); }
-    if (ESTADO.blancazoEn > 0) {
+    if (ESTADO.blancazoEn > 0 && enMundoHumo()) {
       ESTADO.blancazoEn -= dt;
       if (ESTADO.blancazoEn <= 0) this.empezarBlancazo();
     }
@@ -713,6 +730,7 @@ class Barrio extends Phaser.Scene {
     this.time.delayedCall(900, () => cortinaHumo(this, () => {
       const perdidos = Math.min(20, ESTADO.monchis);
       Object.assign(ESTADO, { vida: 45, hambre: 30, colocon: 0, monchis: ESTADO.monchis - perdidos });
+      sumarStat('desmayos');
       this.py = 600;
       this.cargarSala('cuarto');
       this.px = 420;
@@ -823,9 +841,11 @@ class Barrio extends Phaser.Scene {
     const n = ESTADO.capitulo || 0;
     const cap = capituloActual();
     if (ESTADO.introCap !== n) {
-      ESTADO.introCap = n;
-      guardarPartida();
-      return this.abrirEscena([['titulo', `Capítulo ${n + 1} · ${cap.titulo}`, cap.arte], ...cap.intro, ['objetivos', '']], () => this.situacionesDeCapitulo(cap));
+      return this.abrirEscena([['titulo', `Capítulo ${n + 1} · ${cap.titulo}`, cap.arte], ...cap.intro, ['objetivos', '']], () => {
+        ESTADO.introCap = n;
+        guardarPartida();
+        this.situacionesDeCapitulo(cap);
+      });
     }
     if ((cap.situaciones || []).some(([id, pl]) => stat(`sit_${pl}`) < 1 && !(ESTADO.situaciones[id] && (ESTADO.situaciones[id].pl === pl || ESTADO.situaciones[id].aceptada)))) this.situacionesDeCapitulo(cap);
     if (cap.objetivos.every(o => o.hecho())) this.completarCapitulo(cap, n);
@@ -874,6 +894,9 @@ class Barrio extends Phaser.Scene {
     });
     const cn = cuentasNegocio();
     if (cn.total > 0) sits.push(`Unaké (${cn.rango}): ${Math.floor(cn.clientes)} clientes · ${cn.porMin.toFixed(1)}/min · caja ${Math.floor(negocio().caja)}`);
+    const R = retosDeHoy();
+    const hechos = R.lista.filter(r => r.hecho).length;
+    sits.push(hechos < 3 ? `Retos de la noche: ${hechos}/3 · pulsa L` : 'Retos de la noche: ¡los tres! Vuelve mañana');
     const firma = JSON.stringify([n, lineas, ESTADO.hucha, sits]);
     if (firma === this.firmaObjetivos) return;
     const nuevo = this.firmaObjetivos !== '' && firma !== this.firmaObjetivos;
@@ -1067,6 +1090,7 @@ class Barrio extends Phaser.Scene {
       n.caja -= m;
       n.bolsitas -= b;
       if (bono) n.ultimoDia = hoy;
+      sumarStat('cobros');
       ESTADO.monchis += m + bono;
       ESTADO.inv.bolsita += b;
       guardarPartida();
@@ -1240,6 +1264,57 @@ class Barrio extends Phaser.Scene {
     guardarPartida();
     this.marcarSituaciones();
     this.toast(`${QUIEN[id].nombre} tiene un problema`, `«${s.titulo}» · búscale (${SALAS[this.salaDe(id)].nombre})`);
+  }
+
+  // Logros y retos: se miran cada segundo; lo nuevo sale en aviso dorado (de uno en uno).
+  revisarLogros() {
+    if (this.cambiando) return;
+    const cola = this.colaDorada = this.colaDorada || [];
+    comprobarLogros().forEach(l => cola.push([`¡Logro! ${l.nombre}`, `${l.texto} · +${l.premio} monchis`]));
+    const { nuevos, tres } = comprobarRetos();
+    nuevos.forEach(r => cola.push(['Reto de la noche cumplido', `${r.texto} · +${r.premio} monchis`]));
+    if (tres) cola.push(['¡Los tres retos de hoy!', `+${PREMIO_TRES_RETOS} monchis · mañana, otros tres`]);
+    if (cola.length && !this.modal && this.time.now > (this.siguienteDorado || 0)) {
+      avisoDorado(this, ...cola.shift());
+      this.siguienteDorado = this.time.now + 4800;
+      this.refrescarHud();
+    }
+  }
+
+  // Los retos de hoy y todos los logros, por páginas.
+  logros(pagina = 0) {
+    const porPagina = 10;
+    const paginas = Math.ceil(LOGROS.length / porPagina);
+    pagina = (pagina + paginas) % paginas;
+    ESTADO.logros = ESTADO.logros || {};
+    const R = retosDeHoy();
+    this.abrirModal(c => {
+      c.add(texto(this, 0, -222, 'Retos de la noche', 30, COLOR.amarillo));
+      R.lista.forEach((r, i) => {
+        const y = -184 + i * 30;
+        const p = progresoReto(r);
+        c.add(this.add.circle(-370, y, 9, r.hecho ? 0x7ee081 : 0x000000, r.hecho ? 1 : 0.35).setStrokeStyle(2, HEX.crema));
+        c.add(this.add.text(-350, y, r.texto, { fontFamily: FUENTE, fontSize: '18px', color: r.hecho ? '#9be7a0' : COLOR.crema }).setOrigin(0, 0.5));
+        c.add(this.add.rectangle(120, y, 160, 12, 0x000000, 0.4).setOrigin(0, 0.5).setStrokeStyle(2, HEX.crema));
+        c.add(this.add.rectangle(120, y, 160 * p / r.n, 12, r.hecho ? 0x7ee081 : HEX.amarillo).setOrigin(0, 0.5));
+        c.add(this.add.text(390, y, r.hecho ? '¡Hecho!' : `${p}/${r.n} · +${r.premio}`, { fontFamily: FUENTE, fontSize: '15px', color: COLOR.amarillo }).setOrigin(1, 0.5));
+      });
+      const conseguidos = LOGROS.filter(l => ESTADO.logros[l.id]).length;
+      c.add(texto(this, 0, -80, `Logros · ${conseguidos}/${LOGROS.length}`, 26, COLOR.rosa));
+      LOGROS.slice(pagina * porPagina, (pagina + 1) * porPagina).forEach((l, i) => {
+        const x = i % 2 ? 20 : -390;
+        const y = -38 + Math.floor(i / 2) * 50;
+        const si = !!ESTADO.logros[l.id];
+        c.add(this.add.star(x + 16, y + 6, 5, 7, 15, si ? HEX.amarillo : 0x4a3d5c).setStrokeStyle(3, HEX.tinta));
+        c.add(this.add.text(x + 40, y - 10, l.nombre, { fontFamily: FUENTE, fontSize: '17px', color: si ? COLOR.amarillo : '#b9aecb' }));
+        c.add(this.add.text(x + 40, y + 12, `${l.texto} · ${si ? 'conseguido' : `+${l.premio}`}`, { fontFamily: FUENTE, fontSize: '13px', color: si ? '#9be7a0' : COLOR.crema }));
+      });
+      c.add(boton(this, -250, 215, '← (1)', () => this.logros(pagina - 1), { ancho: 130, alto: 46, tam: 18, color: HEX.azul }));
+      c.add(texto(this, -100, 215, `${pagina + 1}/${paginas}`, 18, COLOR.crema));
+      c.add(boton(this, 50, 215, '→ (2)', () => this.logros(pagina + 1), { ancho: 130, alto: 46, tam: 18, color: HEX.azul }));
+      c.add(boton(this, 260, 215, 'Cerrar (Esc)', () => this.cerrarModal(), { ancho: 200, alto: 46, tam: 18, color: HEX.crema }));
+    }, () => this.cerrarModal(), () => this.logros(pagina + 1));
+    this.modal.numeros = [() => this.logros(pagina - 1), () => this.logros(pagina + 1)];
   }
 
   // Aviso que entra por la derecha y se va solo.
@@ -1432,7 +1507,7 @@ class Barrio extends Phaser.Scene {
     const contenido = tipo === 'meme' ? { tipo, m: Math.random() < 0.55 ? memeGenerado() : al(MEMES) }
       : tipo === 'video' ? { tipo, v: al(VIDEOS) }
         : tipo === 'noticia' ? { tipo, n: al(NOTICIAS) }
-          : { tipo: 'chat', mensajes: al(CHATS) };
+          : { tipo: 'chat', mensajes: Math.random() < 0.35 ? chatDinamico() : al(CHATS) };
     this.poseNpc(c, 'riendo');
     this.charla(c, al(['¡Mira esto, mira!', '¿Has visto esto? JAJA', 'Te lo enseño, que es buenísimo', 'Ojo a esto…', 'Esto lo tienes que ver']));
     this.bloqueado = true;
@@ -1524,7 +1599,7 @@ class Barrio extends Phaser.Scene {
       this.cerrarModal();
       if (o === q.r[0]) {
         ESTADO.monchis += 15;
-        guardarPartida();
+        sumarStat('trivial');
         this.refrescarHud();
         sfx(this, 'campanita');
         this.poseNpc(c, 'riendo');
@@ -1578,7 +1653,7 @@ class Barrio extends Phaser.Scene {
     const r = ESTADO.recado;
     ESTADO.recado = null;
     ESTADO.monchis += r.premio;
-    guardarPartida();
+    sumarStat('recados');
     this.refrescarHud();
     this.marcarRecado();
     sfx(this, 'campanita');
@@ -1606,7 +1681,7 @@ class Barrio extends Phaser.Scene {
     const remitente = Phaser.Utils.Array.GetRandom(['palicaso', 'blancaso', 'pompa', 'lasslow', 'cotine', 'perico']);
     const tipo = Phaser.Utils.Array.GetRandom(['meme', 'meme', 'video', 'noticia', 'chat']);
     const al = l => this.sinRepetir(l);
-    const contenido = tipo === 'meme' ? { tipo, m: Math.random() < 0.55 ? memeGenerado() : al(MEMES) } : tipo === 'video' ? { tipo, v: al(VIDEOS) } : tipo === 'noticia' ? { tipo, n: al(NOTICIAS) } : { tipo, mensajes: al(CHATS) };
+    const contenido = tipo === 'meme' ? { tipo, m: Math.random() < 0.55 ? memeGenerado() : al(MEMES) } : tipo === 'video' ? { tipo, v: al(VIDEOS) } : tipo === 'noticia' ? { tipo, n: al(NOTICIAS) } : { tipo, mensajes: Math.random() < 0.35 ? chatDinamico() : al(CHATS) };
     const que = { meme: 'un meme', video: 'un vídeo', noticia: 'una noticia', chat: 'mensajes en el grupo' }[tipo];
     const t = this.add.container(-260, 320).setDepth(905);
     const g = this.add.graphics();
@@ -1688,6 +1763,7 @@ class Barrio extends Phaser.Scene {
 te ha mandado esto`, 24, COLOR.amarillo));
     if (this.burbuja) this.burbuja.destroy();
     const m = movil(this, contenido);
+    sumarStat('movil');
     m.c.setScale(0.92).setPosition(660, ALTO + 420);
     cont.add(m.c);
     this.tweens.add({ targets: m.c, y: 370, angle: { from: 8, to: -2 }, duration: 480, ease: 'Back.out' });
@@ -1701,7 +1777,7 @@ te ha mandado esto`, 24, COLOR.amarillo));
     const reir = () => {
       sfx(this, 'risas', { volume: 0.4 });
       ESTADO.monchis += 2;
-      guardarPartida();
+      sumarStat('risas');
       this.refrescarHud();
       golpeTexto(this, 1020, 300, '+2 de buen rollo', COLOR.amarillo, 30).setDepth(1001);
       cerrar();
@@ -1726,7 +1802,7 @@ te ha mandado esto`, 24, COLOR.amarillo));
     const { img, brillo } = this.boquilla;
     this.boquilla = null;
     ESTADO.boquillaEn = null;
-    ESTADO.inv.boquilla++;
+    ESTADO.inv.boquilla += 2;
     guardarPartida();
     sfx(this, 'campanita');
     brillo.destroy();
@@ -1907,7 +1983,7 @@ te ha mandado esto`, 24, COLOR.amarillo));
     ESTADO.hambre = Math.max(0, ESTADO.hambre - (p.hambre || 0));
     ESTADO.vida = Math.min(100, ESTADO.vida + (p.vida || 0));
     ESTADO.colocon = Math.max(0, ESTADO.colocon + (p.colocon || 0));
-    guardarPartida();
+    sumarStat('comidas');
     this.comiendo = 1.4;
     const comida = this.add.image(this.px + this.dir * 40, this.py - 120, p.sprite).setScale(0.25).setDepth(this.py + 1);
     this.tweens.add({ targets: comida, scale: 0.05, x: this.px, y: this.py - 90, duration: 900, ease: 'Sine.in', onComplete: () => comida.destroy() });

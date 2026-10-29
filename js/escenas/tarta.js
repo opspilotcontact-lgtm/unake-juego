@@ -146,7 +146,7 @@ class Tarta extends Phaser.Scene {
     this.pila.setAngle(-dir * 3);
 
     // El hambre sube sola; arriba del todo, Cotine se come el piso de arriba.
-    this.hambre += dt * (8 + this.servidas * 1.2);
+    this.hambre += dt * (5 + this.servidas * 1.2);
     if (this.hambre >= 100) this.bocado();
     this.barraHambre.width = 308 * Math.min(1, this.hambre / 100);
     this.cotine.setTint(this.hambre > 70 ? 0xffb0c8 : 0xffffff);

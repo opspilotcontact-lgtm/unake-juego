@@ -232,7 +232,10 @@ class Portada extends Phaser.Scene {
     c.add(this.add.text(-170, -32, 'Hoy en Unaké', { fontFamily: FUENTE, fontSize: '16px', color: COLOR.rosa }));
     c.add(this.add.star(-158, 8, 5, 6, 14, HEX.amarillo).setStrokeStyle(3, HEX.tinta));
     const caja = Math.floor(negocio().caja);
-    c.add(this.add.text(-138, -6, `${totalEstrellas()} estrellas · ${cn.rango}${cn.total ? ` · caja ${caja}` : ''}`, { fontFamily: FUENTE, fontSize: '17px', color: COLOR.crema }));
+    c.add(this.add.text(-138, -14, `${totalEstrellas()} estrellas · ${cn.rango}${cn.total ? ` · caja ${caja}` : ''}`, { fontFamily: FUENTE, fontSize: '17px', color: COLOR.crema }));
+    const retos = retosDeHoy().lista.filter(r => r.hecho).length;
+    const logros = LOGROS.filter(l => (ESTADO.logros || {})[l.id]).length;
+    c.add(this.add.text(-138, 10, `Retos de hoy ${retos}/3 · Logros ${logros}/${LOGROS.length}`, { fontFamily: FUENTE, fontSize: '15px', color: COLOR.amarillo }));
     this.tweens.add({ targets: c, alpha: 1, duration: 500, delay: 300 });
     this.tarjetaHoy = c;
   }

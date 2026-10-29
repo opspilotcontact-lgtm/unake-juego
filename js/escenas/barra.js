@@ -94,7 +94,7 @@ class Barra extends Phaser.Scene {
     const arco = this.add.graphics().setDepth(21);
     sitio.cliente = { img, esc, pedido, puky, paciencia, t: paciencia, b, arco, clave };
     sfx(this, puky ? 'blurp' : 'pop', { volume: 0.5 });
-    if (puky) bocadillo(this, sitio.x, 220, '¿Me llamabais?', { tam: 20 }).setDepth(22);
+    if (puky) sitio.cliente.dice = bocadillo(this, sitio.x, 220, '¿Me llamabais?', { tam: 20 }).setDepth(22);
   }
 
   servir(n) {
@@ -144,6 +144,7 @@ class Barra extends Phaser.Scene {
     this.tweens.add({ targets: img, x: img.x + 500, angle: 200, y: img.y - 200, duration: 450, ease: 'Sine.in', onComplete: () => img.destroy() });
     s.cliente.b.destroy();
     s.cliente.arco.destroy();
+    if (s.cliente.dice) s.cliente.dice.destroy();
     s.cliente = null;
   }
 
@@ -153,6 +154,7 @@ class Barra extends Phaser.Scene {
     s.cliente = null;
     c.b.destroy();
     c.arco.destroy();
+    if (c.dice) c.dice.destroy();
     this.tweens.add({ targets: c.img, scaleY: c.esc * 1.15, duration: 120, yoyo: true });
     this.tweens.add({ targets: c.img, y: ALTO + 260, duration: 420, delay: contento ? 250 : 500, ease: 'Back.in', onComplete: () => c.img.destroy() });
     if (!contento) c.img.setTint(0xff9a9a);
@@ -206,7 +208,7 @@ class Barra extends Phaser.Scene {
       titulo: this.vidas > 0 ? '¡Cierre de barra!' : 'La barra se vacía',
       linea: `Has servido a ${this.servidos} de la aso. ${this.vidas > 0 ? 'Palicaso no ha parado de hablar en toda la noche.' : 'Demasiada gente enfadada. Palicaso sigue hablando solo.'}`,
       // Ganar = acabar la noche con vidas y llegar a la primera estrella (si no, no cuenta para la situación).
-      puntos: this.puntos, clave: 'Barra', gana: this.vidas > 0 && this.puntos >= MISIONES.Barra.umbrales[0],
+      puntos: this.puntos, clave: 'Barra', gana: this.vidas > 0 && this.puntos >= 900, // aprobar es fácil; las estrellas, no
     }));
   }
 }

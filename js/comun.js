@@ -268,7 +268,7 @@ const MISIONES = {
     texto: 'A Blancaso le ha dado un blancaso y Puky viene a por él. Monchiman contra Puky: esquiva la pota, dispara caramelos y lánzale un resucitador.',
   },
   Barra: {
-    nombre: 'Noche de barra', sprite: 'palicaso', umbrales: [400, 900, 1500],
+    nombre: 'Noche de barra', sprite: 'palicaso', umbrales: [1500, 3000, 4500],
     texto: 'Los de la aso piden a la barra. Sirve a cada uno lo suyo (1-4) antes de que se cansen. Si se cuela Puky, échalo (X).',
   },
   Pipas: {
@@ -276,7 +276,7 @@ const MISIONES = {
     texto: 'Mete pipas en la papelera: fija el ángulo y la fuerza con ESPACIO. Ojo al viento.',
   },
   DJ: {
-    nombre: 'La Pompa pincha', sprite: 'pompa', umbrales: [1500, 3500, 6000],
+    nombre: 'La Pompa pincha', sprite: 'pompa', umbrales: [4000, 8000, 12000],
     texto: 'Las burbujas caen al ritmo: pulsa ← ↓ → (o A S D) cuando lleguen a la línea. Si fallas mucho, la Pompa revienta.',
   },
   Cuentas: {
@@ -322,16 +322,23 @@ function apuntar(clave, puntos, monchis, gana = true) {
   const ahora = gana ? Math.max(antes, estrellasDe(clave, puntos)) : antes;
   ESTADO.estrellas[clave] = ahora;
   ESTADO.monchis += monchis;
-  guardarPartida();
+  sumarStat('partidas');
+  sumarStat(`jugada_${clave}`);
+  sumarStat('monchisGanados', monchis);
+  if (gana) sumarStat('victorias');
   return { nuevoRecord, estrellasNuevas: ahora - antes, ganadas: gana ? estrellasDe(clave, puntos) : 0 };
 }
+
+const PAGO_ESTRELLAS = [15, 35, 60, 90];
 
 // Panel de final de misión, común a todas.
 function panelFinal(scene, { titulo, linea, puntos, clave, gana = true, extraMonchis = 1 }) {
   // De noche, en el mundo humo, se cobra más: es el empujón para liarse uno.
   const humo = enMundoHumo() ? 1.5 : 1;
   const divisor = MISIONES[clave].divisor || 20;
-  const monchis = Math.min(150, Math.round((puntos / divisor) * extraMonchis * humo * (1 + bonoDeco('pago'))));
+  // Se cobra por estrellas: jugar bien se nota; perdiendo, solo unas migajas.
+  const base = gana ? PAGO_ESTRELLAS[estrellasDe(clave, puntos)] : Math.min(10, Math.round(puntos / divisor));
+  const monchis = Math.round(base * extraMonchis * humo * (1 + bonoDeco('pago')));
   const r = apuntar(clave, puntos, monchis, gana);
   let lineaSituacion = '';
   if (ESTADO.situacionEnJuego) {

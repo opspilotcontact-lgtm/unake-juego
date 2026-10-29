@@ -470,7 +470,9 @@ class Fumar extends Phaser.Scene {
     if (this.acabado || this.ocupado > 0 || this.inhala > 0) return;
     this.pases++;
     this.porro -= 10;
-    const id = this.pases % 2 === 1 ? 'lasslow' : 'blancaso';
+    // En la historia del blancazo, el primer pase es para Blancaso (es lo que pide el objetivo).
+    const primeroBlancaso = (ESTADO.capitulo || 0) >= 2 && stat('blancasoFumo') < 1;
+    const id = (this.pases % 2 === 1) !== primeroBlancaso ? 'lasslow' : 'blancaso';
     const otro = id === 'lasslow' ? 'blancaso' : 'lasslow';
     const desde = this.puntaPorro() || this.boca('vuper');
     this.porroFuera = true;
@@ -667,7 +669,7 @@ class Fumar extends Phaser.Scene {
     ESTADO.colocon = Math.min(100, ESTADO.colocon + this.subido);
     ESTADO.hambre = Math.min(100, ESTADO.hambre + 15);
     const historiaBlancazo = (ESTADO.capitulo || 0) >= 2;
-    if (this.blancasoFumo && !ESTADO.blancazo && historiaBlancazo) ESTADO.blancazoEn = 25;
+    if (this.blancasoFumo && !ESTADO.blancazo && historiaBlancazo) ESTADO.blancazoEn = 12;
     if (this.subido > 0) sumarStat('fumadas');
     if (this.blancasoFumo && historiaBlancazo) sumarStat('blancasoFumo');
     const premio = this.perfectas * 2 + this.pases * 3;
