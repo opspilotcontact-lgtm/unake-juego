@@ -242,6 +242,8 @@ class Barrio extends Phaser.Scene {
     this.panelObjetivos = this.add.container(ANCHO - 12, 76).setDepth(D).setVisible(!ESTADO.ocultarObjetivos);
     this.firmaObjetivos = '';
     this.aviso = texto(this, 0, 0, '', 22, COLOR.amarillo).setDepth(902).setVisible(false);
+    // En el móvil todo se ve a la mitad: objetivos y avisos, más grandes.
+    if (window.TACTIL_UI) { this.panelObjetivos.setScale(1.4); this.aviso.setFontSize(32); }
     // En el móvil: botón grande para hablar con lo que tengas cerca (sustituye a la E).
     this.tactil = this.sys.game.device.input.touch;
     this.botonHablar = boton(this, ANCHO - 110, ALTO - 120, 'Hablar', () => {
@@ -539,7 +541,7 @@ class Barrio extends Phaser.Scene {
     }
 
     if (this.reparto) this.comprobarEntrega();
-    this.botonHablar.setVisible(this.tactil && !!cerca && !this.modal);
+    this.botonHablar.setVisible(this.tactil && !window.TACTIL_UI && !!cerca && !this.modal);
   }
 
   // Vuper animado: textura según el momento, giro en espejo animado, andares y estela.

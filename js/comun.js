@@ -157,6 +157,7 @@ function irA(scene, clave, datos = {}) {
 
 function entrar(scene, datos) {
   scene._saliendo = false;
+  scene.panelAbierto = false;
   if (datos && datos.humo) destaparHumo(scene);
   if (datos && datos.rotulo) rotulo(scene, datos.rotulo);
 }
@@ -355,6 +356,7 @@ const PAGO_ESTRELLAS = [15, 35, 60, 90];
 
 // Panel de final de misión, común a todas.
 function panelFinal(scene, { titulo, linea, puntos, clave, gana = true, extraMonchis = 1 }) {
+  scene.panelAbierto = true; // los mandos táctiles se apartan para no tapar los botones
   // De noche, en el mundo humo, se cobra más: es el empujón para liarse uno.
   const humo = enMundoHumo() ? 1.5 : 1;
   const divisor = MISIONES[clave].divisor || 20;
