@@ -142,6 +142,9 @@ function hacerLoSuyo(s, c) {
   }
   if (!ok) return;
   if (humo && a.fx) efectoActividad(s, c, a.fx);
+  // El emote de cada uno (dibujos de Gemini): mareo de Blancaso, chispas de Palicaso, corazón de Cotine…
+  const emote = { blancaso: 'mareo', palicaso: 'chispas', cotine: 'corazon', puky: 'calavera', perico: 'rayo' }[c.id];
+  if (humo && emote && typeof Comic !== 'undefined') Comic.emote(s, c.x, c.y - c.alto - 30, emote, { tam: emote === 'mareo' ? 90 : 60 });
   if (humo && a.sonido && Math.abs(c.x - s.px) < 600) sfx(s, a.sonido, { volume: 0.3 });
   if (humo && a.dice && Math.random() < 0.6 && !(s.burbuja && s.burbuja.active)) s.burbujaAmbiente(c, Phaser.Utils.Array.GetRandom(a.dice));
   if (humo && a.reaccion) {

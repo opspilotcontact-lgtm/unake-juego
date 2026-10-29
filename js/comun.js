@@ -152,13 +152,19 @@ function irA(scene, clave, datos = {}) {
   scene._saliendo = true;
   scene.input.enabled = false;
   scene.sound.stopAll();
-  cortinaHumo(scene, () => scene.scene.start(clave, { ...datos, humo: true }));
+  // Cada minijuego entra con la cortinilla de su personaje (comic.js); lo demás, con humo.
+  const cortina = datos.cortina || (typeof CORTINA_DE !== 'undefined' && CORTINA_DE[clave]);
+  const cubrir = cortina && typeof Comic !== 'undefined' && Comic.cubrir[cortina];
+  (cubrir || cortinaHumo)(scene, () => scene.scene.start(clave, { ...datos, humo: true, cortina: cubrir ? cortina : null }));
 }
 
 function entrar(scene, datos) {
   scene._saliendo = false;
   scene.panelAbierto = false;
-  if (datos && datos.humo) destaparHumo(scene);
+  if (datos && datos.humo) {
+    if (datos.cortina && typeof Comic !== 'undefined' && Comic.destapar[datos.cortina]) Comic.destapar[datos.cortina](scene);
+    else destaparHumo(scene);
+  }
   if (datos && datos.rotulo) rotulo(scene, datos.rotulo);
 }
 
@@ -355,8 +361,19 @@ function apuntar(clave, puntos, monchis, gana = true) {
 const PAGO_ESTRELLAS = [15, 35, 60, 90];
 
 // Panel de final de misión, común a todas.
-function panelFinal(scene, { titulo, linea, puntos, clave, gana = true, extraMonchis = 1 }) {
+// Antes del panel, el remate de cómic: perder es una pantalla de reacción; las tres estrellas, viñetas del bar.
+function panelFinal(scene, opciones) {
   scene.panelAbierto = true; // los mandos táctiles se apartan para no tapar los botones
+  const { clave, puntos, gana = true } = opciones;
+  let remate = Promise.resolve();
+  if (typeof Comic !== 'undefined') {
+    if (!gana && REACCION_PIERDE[clave]) remate = Comic.reaccion(scene, REACCION_PIERDE[clave][0], { color: REACCION_PIERDE[clave][1] });
+    else if (gana && estrellasDe(clave, puntos) === 3) remate = Comic.vinetas(scene, ['palicaso-riendo', 'lasslow-risa-floja', 'perico-graznando', 'pompa-mira']);
+  }
+  remate.then(() => { if (scene.sys.isActive()) mostrarPanelFinal(scene, opciones); });
+}
+
+function mostrarPanelFinal(scene, { titulo, linea, puntos, clave, gana = true, extraMonchis = 1 }) {
   // De noche, en el mundo humo, se cobra más: es el empujón para liarse uno.
   const humo = enMundoHumo() ? 1.5 : 1;
   const divisor = MISIONES[clave].divisor || 20;
@@ -392,7 +409,10 @@ function panelFinal(scene, { titulo, linea, puntos, clave, gana = true, extraMon
     ? `¡NIVEL ${r.nivel} SUPERADO! +${r.subido} monchis · Nivel ${r.nivel + 1}: ${metaNivel(clave, r.nivel + 1)}`
     : `Nivel ${r.nivel}: llega a ${r.meta} (ganando) para subir`;
   c.add(texto(scene, 0, 110, lineaNivel, r.subido ? 26 : 21, r.subido ? COLOR.amarillo : COLOR.azul, 740));
-  if (r.subido) scene.tweens.add({ targets: c.list[c.list.length - 1], scale: 1.08, duration: 300, yoyo: true, repeat: 3, delay: 600 });
+  if (r.subido) {
+    scene.tweens.add({ targets: c.list[c.list.length - 1], scale: 1.08, duration: 300, yoyo: true, repeat: 3, delay: 600 });
+    if (typeof Comic !== 'undefined') scene.time.delayedCall(650, () => { Comic.impacto(scene, ANCHO / 2 - 300, ALTO / 2 + 110, { profundidad: 610 }); Comic.confeti(scene, { profundidad: 620 }); sfx(scene, 'platillo', { volume: 0.5 }); });
+  }
   if (lineaSituacion) c.add(texto(scene, 0, 144, lineaSituacion, 20, COLOR.verde, 740));
   else if (r.estrellasNuevas > 0) c.add(texto(scene, 0, 144, `+${r.estrellasNuevas} estrella${r.estrellasNuevas > 1 ? 's' : ''} · llevas ${totalEstrellas()}`, 22, COLOR.verde));
   c.add(boton(scene, -185, 205, 'Otra vez (Enter)', () => irA(scene, scene.scene.key), { ancho: 330, tam: 26 }));

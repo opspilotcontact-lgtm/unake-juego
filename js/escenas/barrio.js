@@ -130,6 +130,7 @@ const PEDIDOS = [
 // Lo que vende la tienda de 24 h: la comida se come en el momento.
 const TIENDA = [
   { id: 'patatas', nombre: 'Patatas (salado)', sprite: 'patatas', precio: 15, efecto: 'Hambre −40', hambre: 40 },
+  { id: 'kebab', nombre: 'Kebab de madrugada', sprite: arteO('obj-kebab', 'patatas'), precio: 30, efecto: 'Hambre −80 · Vida +10', hambre: 80, vida: 10 },
   { id: 'caramelo', nombre: 'Caramelo (dulce)', sprite: 'caramelo', precio: 10, efecto: 'Hambre −20 · Vida +10', hambre: 20, vida: 10 },
   { id: 'lata', nombre: 'Resucitador', sprite: 'lata', precio: 20, efecto: 'Vida +45 · te despeja un poco', vida: 45, colocon: -10 },
   { id: 'papel', nombre: 'Papel de liar', sprite: 'obj-papel', precio: 8, efecto: 'Para liar (uno)' },
@@ -410,6 +411,15 @@ class Barrio extends Phaser.Scene {
     if (this.cambiando) return;
     this.cambiando = true;
     this.objetivo = null;
+    // Por la puerta, iris (como en la serie); por la escalera del techo, la burbuja de la Pompa.
+    const tipo = entrada === 'puerta' ? 'iris' : entrada === 'escalera' ? 'burbuja' : null;
+    if (tipo && typeof Comic !== 'undefined') {
+      return Comic.cubrir[tipo](this, () => {
+        this.cargarSala(nueva, entrada);
+        Comic.destapar[tipo](this, { x: this.px, y: this.py - 110 });
+        this.cambiando = false;
+      }, { x: this.px, y: this.py - 110 });
+    }
     sfx(this, 'whoosh', { volume: 0.3 });
     this.cameras.main.fadeOut(130, 27, 16, 40);
     this.cameras.main.once('camerafadeoutcomplete', () => {
@@ -2053,7 +2063,7 @@ te ha mandado esto`, 24, COLOR.amarillo));
     this.abrirModal(c => {
       c.add(texto(this, 0, -210, 'La tienda de 24 h', 40, COLOR.amarillo));
       c.add(texto(this, 0, -168, `Tienes ${ESTADO.monchis} monchis · Hambre ${Math.round(ESTADO.hambre)} · Vida ${Math.round(ESTADO.vida)}`, 20, COLOR.crema));
-      this.lista(c, filas, filas.length > 5 ? -128 : -116, filas.length > 5 ? 56 : 66);
+      this.lista(c, filas, filas.length > 6 ? -134 : filas.length > 5 ? -128 : -116, filas.length > 6 ? 48 : filas.length > 5 ? 56 : 66);
       c.add(boton(this, 0, 215, 'Cerrar (Esc)', () => this.cerrarModal(), { ancho: 220, alto: 46, tam: 20, color: HEX.crema }));
     }, () => this.cerrarModal());
     this.modal.numeros = filas.map(f => (f.hecho ? () => {} : f.accion));

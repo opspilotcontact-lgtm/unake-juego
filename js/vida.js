@@ -128,7 +128,8 @@ function avisoDorado(scene, titulo, sub) {
   g.fillStyle(HEX.amarillo, 1).fillRoundedRect(-270, -42, 540, 84, 22);
   g.lineStyle(5, HEX.tinta, 1).strokeRoundedRect(-270, -42, 540, 84, 22);
   c.add(g);
-  c.add(scene.add.star(-226, 0, 5, 12, 28, 0xffffff).setStrokeStyle(4, HEX.tinta));
+  if (scene.textures.exists('obj-trofeo')) { const tr = scene.add.image(-226, 0, 'obj-trofeo'); tr.setScale(64 / tr.height); c.add(tr); }
+  else c.add(scene.add.star(-226, 0, 5, 12, 28, 0xffffff).setStrokeStyle(4, HEX.tinta));
   c.add(scene.add.text(-188, -30, titulo, { fontFamily: FUENTE, fontSize: '22px', color: '#1b1028' }));
   c.add(scene.add.text(-188, 2, sub, { fontFamily: FUENTE, fontSize: '16px', color: '#5a2a7a', wordWrap: { width: 440 } }));
   scene.tweens.add({ targets: c, y: 130, duration: 500, ease: 'Back.out' });
