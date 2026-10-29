@@ -136,7 +136,7 @@ function hacerLoSuyo(s, c) {
   const humo = s.mundo === 'humo';
   // Cap. 6: Perico grita el secreto por el bar y los demás se ríen (nadie le cree).
   if (c.id === 'perico' && (ESTADO.capitulo || 0) === 5 && stat('secretoPerico') < 1 && humo && Math.random() < 0.6) {
-    s.burbujaAmbiente(c, Phaser.Utils.Array.GetRandom(['¡VUPER ES MONCHIMAN!', '¡Que Vuper es Monchiman, os lo juro!', 'Pin pin… ¡MONCHIMAN! ¡VUPER!']));
+    if (!s.voz(() => s.burbujaAmbiente(c, Phaser.Utils.Array.GetRandom(['¡VUPER ES MONCHIMAN!', '¡Que Vuper es Monchiman, os lo juro!', 'Pin pin… ¡MONCHIMAN! ¡VUPER!'])), { prioridad: 2, dura: 2600 })) return;
     s.time.delayedCall(900, () => s.cosas.filter(o => o !== c && o.img && o.img.active).forEach(o => poseUnRato(s, o, { lasslow: 'lasslow-risa-floja', palicaso: 'palicaso-riendo' }[o.id] || o.sprite, 1500)));
     return;
   }
@@ -155,7 +155,8 @@ function hacerLoSuyo(s, c) {
   const emote = { blancaso: 'mareo', palicaso: 'chispas', cotine: 'corazon', puky: 'calavera', perico: 'rayo' }[c.id];
   if (humo && emote && typeof Comic !== 'undefined') Comic.emote(s, c.x, c.y - c.alto - 30, emote, { tam: emote === 'mareo' ? 90 : 60 });
   if (humo && a.sonido && Math.abs(c.x - s.px) < 600) sfx(s, a.sonido, { volume: 0.3 });
-  if (humo && a.dice && Math.random() < 0.6 && !(s.burbuja && s.burbuja.active)) s.burbujaAmbiente(c, Phaser.Utils.Array.GetRandom(a.dice));
+  // La frase solo si hay turno; la acción (pose, efecto) se ve igual.
+  if (humo && a.dice && Math.random() < 0.6 && !(s.burbuja && s.burbuja.active)) s.voz(() => s.burbujaAmbiente(c, Phaser.Utils.Array.GetRandom(a.dice)), { dura: 2300 });
   if (humo && a.reaccion) {
     // El pedo de Lasslow: los de al lado se dan cuenta.
     s.time.delayedCall(900, () => s.cosas.filter(o => o !== c && o.img && o.img.active && Math.abs(o.x - c.x) < 500).forEach((o, i) => {
@@ -213,7 +214,7 @@ function visitasDeSala(s, nombre, humo) {
   [c.img, c.zona].filter(Boolean).forEach(o => { o.x = desde; });
   c.x = desde;
   moverNpc(s, c, x, () => {
-    if (s.burbujaAmbiente && !(s.burbuja && s.burbuja.active)) s.burbujaAmbiente(c, Phaser.Utils.Array.GetRandom(v.dice));
+    s.voz(() => { if (c.img && c.img.active) s.burbujaAmbiente(c, Phaser.Utils.Array.GetRandom(v.dice)); }, { prioridad: 2, dura: 2400, encolar: true });
   });
   // Al rato se va (si sigues en la sala).
   s.time.delayedCall(Phaser.Math.Between(40000, 70000), () => {

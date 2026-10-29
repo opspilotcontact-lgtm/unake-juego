@@ -548,7 +548,7 @@ class Barrio extends Phaser.Scene {
     const cerca = this.bloqueado ? null : this.masCercana();
     if (cerca) {
       const sobre = cerca.marca ? (this.misionDe(cerca) ? 105 : 84) : 40;
-      const hablando = this.burbuja && this.burbuja.active;
+      const hablando = (this.burbuja && this.burbuja.active) || (this.bocadillos || []).some(o => o.active && Math.abs(o.x - cerca.x) < 260 && o.y < cerca.y);
       // Si Vuper está encima de la cosa, el aviso sube por encima de su cabeza (no le tapa la cara).
       let yAviso = cerca.y - cerca.alto - sobre;
       if (Math.abs(cerca.x - this.px) < 140) yAviso = Math.min(yAviso, this.py - this.jugador.displayHeight - 30);
@@ -663,8 +663,8 @@ class Barrio extends Phaser.Scene {
       const h = this.add.image(this.px + this.dir * 30, this.py - 150, 'humo').setScale(0.06).setTint(0xd8cfe6).setAlpha(0.8).setDepth(this.py + 1);
       this.tweens.add({ targets: h, scale: 0.22, alpha: 0, y: h.y - 90 - i * 20, x: h.x + Phaser.Math.Between(-30, 30), duration: 1500, delay: 500 + i * 220, onComplete: () => h.destroy() });
     }
-    if (g.dice && !(this.burbuja && this.burbuja.active)) {
-      const b = this.burbuja = bocadillo(this, Phaser.Math.Clamp(this.px, 200, ANCHO - 200), Math.max(130, this.py - this.jugador.displayHeight - 60), Phaser.Utils.Array.GetRandom(g.dice), { tam: 20, ancho: 330 }).setDepth(850);
+    if (g.dice && !(this.burbuja && this.burbuja.active) && this.voz(() => {}, { prioridad: 2, dura: 2600 })) {
+      const b = this.burbuja = this.colocarBocadillo(bocadillo(this, Phaser.Math.Clamp(this.px, 200, ANCHO - 200), Math.max(130, this.py - this.jugador.displayHeight - 60), Phaser.Utils.Array.GetRandom(g.dice), { tam: 20, ancho: 330 }).setDepth(850), 2);
       this.time.delayedCall(2600, () => { if (b.active) b.destroy(); });
     }
   }
@@ -677,10 +677,10 @@ class Barrio extends Phaser.Scene {
     if (!c) return;
     c.saludado = true;
     this.proximoSaludo = this.time.now + 4000;
-    if (Math.random() < 0.4) return;
+    if (Math.random() < 0.4 || !this.voz(() => {}, { prioridad: 2, dura: 2200 })) return;
     this.tweens.add({ targets: c.img, y: c.img.y - 18, duration: 140, yoyo: true, repeat: 1, ease: 'Sine.out' });
     const lineas = SALUDOS[c.id][this.mundo] || SALUDOS[c.id].humo;
-    const b = this.burbuja = bocadillo(this, Phaser.Math.Clamp(c.x, 200, ANCHO - 200), Math.max(130, c.y - c.alto - 50), Phaser.Utils.Array.GetRandom(lineas), { tam: 19, ancho: 300 }).setDepth(840);
+    const b = this.burbuja = this.colocarBocadillo(bocadillo(this, Phaser.Math.Clamp(c.x, 200, ANCHO - 200), Math.max(130, c.y - c.alto - 50), Phaser.Utils.Array.GetRandom(lineas), { tam: 19, ancho: 300 }).setDepth(840), 2);
     this.time.delayedCall(2000, () => { if (b.active) b.destroy(); });
   }
 
@@ -746,7 +746,7 @@ class Barrio extends Phaser.Scene {
     }
     if (!this.reparto && !this.notif && !guiaActiva()) {
       this.tNotif -= dt;
-      if (this.tNotif <= 0) this.notificar();
+      if (this.tNotif <= 0 && !this.voz(() => this.notificar(), { prioridad: 2, dura: 3200 })) this.tNotif = 4;
     }
     this.tNegocio = (this.tNegocio || 0) - dt;
     if (this.tNegocio <= 0) {
@@ -758,7 +758,7 @@ class Barrio extends Phaser.Scene {
     if (this.tHistoria <= 0) { this.tHistoria = 0.4; this.historia(); }
     if (!this.reparto && !this.modal && !guiaActiva()) {
       this.tSuceso -= dt;
-      if (this.tSuceso <= 0) { this.tSuceso = Phaser.Math.Between(40, 75); sucesoBarrio(this); }
+      if (this.tSuceso <= 0) this.tSuceso = this.voz(() => sucesoBarrio(this), { prioridad: 2, dura: 4500 }) ? Phaser.Math.Between(45, 80) : 4;
     }
     this.tLogros -= dt;
     if (this.tLogros <= 0) { this.tLogros = 1; if (!guiaActiva()) this.revisarLogros(); }
@@ -769,7 +769,8 @@ class Barrio extends Phaser.Scene {
     this.botonLogros.setVisible(!enGuia);
     if (this.botonObjetivos) this.botonObjetivos.setVisible(!enGuia);
     this.tAmbiente -= dt;
-    if (this.tAmbiente <= 0) { this.tAmbiente = Phaser.Math.Between(9, 15); this.charlaAmbiente(); }
+    if (this.tAmbiente <= 0) { this.tAmbiente = Phaser.Math.Between(7, 11); this.charlaAmbiente(); }
+    this.turnoVoz();
     rutinasNpc(this, dt);
     if (ESTADO.blancazoEn > 0 && enMundoHumo()) {
       ESTADO.blancazoEn -= dt;
@@ -1098,6 +1099,7 @@ class Barrio extends Phaser.Scene {
     const ancho = 340;
     const filas = acabada ? 1 : lineas.length;
     const alto = 42 + filas * 30 + (n >= 1 ? 28 : 0) + sits.length * 24 + (sits.length ? 8 : 0);
+    this.panelObjetivos.medida = { ancho, alto }; // el fondo es un dibujo: Phaser no le mide el tamaño
     c.add(this.add.graphics().fillStyle(HEX.tinta, 0.78).fillRoundedRect(-ancho, 0, ancho, alto, 16));
     c.add(this.add.text(-ancho + 14, 10, acabada ? 'Modo libre' : `Cap. ${n + 1} · ${cap.titulo}`, { fontFamily: FUENTE, fontSize: '17px', color: COLOR.amarillo }));
     if (acabada) c.add(this.add.text(-ancho + 14, 40, 'Unaké se ha salvado. ¡A por los récords!', { fontFamily: FUENTE, fontSize: '14px', color: COLOR.crema }));
@@ -1518,14 +1520,108 @@ class Barrio extends Phaser.Scene {
 
   // Aviso que entra por la derecha y se va solo.
   toast(titulo, sub) {
-    const t = this.add.container(-260, 230).setDepth(905);
+    this.toasts = (this.toasts || []).filter(o => o.active);
+    if (this.toasts.length >= 3) { this.toasts.shift().destroy(); this.toasts.forEach((o, i) => this.tweens.add({ targets: o, y: 230 + i * 90, duration: 150 })); }
+    const t = this.add.container(-260, 230 + this.toasts.length * 90).setDepth(905);
+    this.toasts.push(t);
     t.add(this.add.graphics().fillStyle(HEX.tinta, 0.92).fillRoundedRect(-230, -40, 460, 80, 18).lineStyle(3, HEX.rosa, 0.8).strokeRoundedRect(-230, -40, 460, 80, 18));
     t.add(texto(this, -196, 0, '?', 40, COLOR.rosa));
     t.add(this.add.text(-170, -26, titulo, { fontFamily: FUENTE, fontSize: '19px', color: COLOR.crema }));
     t.add(this.add.text(-170, 4, sub, { fontFamily: FUENTE, fontSize: '14px', color: COLOR.amarillo, wordWrap: { width: 380 } }));
     this.tweens.add({ targets: t, x: 250, duration: 380, ease: 'Back.out' });
     sfx(this, 'campanita', { volume: 0.5 });
-    this.time.delayedCall(6000, () => this.tweens.add({ targets: t, x: -260, duration: 260, onComplete: () => t.destroy() }));
+    this.time.delayedCall(6000, () => this.tweens.add({ targets: t, x: -260, duration: 260, onComplete: () => {
+      t.destroy();
+      this.toasts = (this.toasts || []).filter(o => o.active);
+      this.toasts.forEach((o, i) => this.tweens.add({ targets: o, y: 230 + i * 90, duration: 200 }));
+    } }));
+  }
+
+  // ---------- El director de ambiente: una voz cada vez ----------
+  // Todo lo que habla solo (charlas entre ellos, actividades, saludos, gags, visitas, sucesos y el
+  // móvil) pide turno. Mientras uno está en pantalla, los demás esperan; entre uno y otro, un respiro.
+  // Prioridad: 2 = lo que importa (sucesos, móvil, saludos), 1 = relleno. El relleno que no cabe se
+  // descarta; lo importante puede esperar en una cola corta.
+  voz(fn, { prioridad = 1, dura = 2600, encolar = false } = {}) {
+    if (this.modal || this.cambiando) return false;
+    const ahora = this.time.now;
+    if (ahora < (this.vozLibre || 0)) {
+      this.colaVoz = this.colaVoz || [];
+      if (encolar && this.colaVoz.length < 2) this.colaVoz.push({ fn, prioridad, dura });
+      return false;
+    }
+    this.vozLibre = ahora + dura + Phaser.Math.Between(1600, 2800);
+    fn();
+    return true;
+  }
+
+  turnoVoz() {
+    if (this.modal || !this.colaVoz || !this.colaVoz.length || this.time.now < (this.vozLibre || 0)) return;
+    this.colaVoz.sort((a, b) => b.prioridad - a.prioridad);
+    const v = this.colaVoz.shift();
+    this.voz(v.fn, v);
+  }
+
+  // Cuando hablas tú con alguien, el ambiente se calla.
+  callarAmbiente(ms = 2600) {
+    (this.burbujasAmb || []).forEach(b => { if (b.active) b.destroy(); });
+    this.vozLibre = Math.max(this.vozLibre || 0, this.time.now + ms);
+  }
+
+  // ---------- Que nada se monte encima de nada ----------
+
+  // Zonas fijas de la interfaz que un bocadillo no debe tapar.
+  zonasOcupadas() {
+    const z = [
+      new Phaser.Geom.Rectangle(12, 10, 330, 150),        // marcador
+      new Phaser.Geom.Rectangle(370, 0, 540, 74),         // rótulo de la sala
+      new Phaser.Geom.Rectangle(960, 10, 320, 120),       // Logros, Menú, Objetivos
+      new Phaser.Geom.Rectangle(0, ALTO - 64, ANCHO, 64), // línea de aviso e inventario
+    ];
+    const po = this.panelObjetivos;
+    if (po && po.visible && po.medida) z.push(new Phaser.Geom.Rectangle(po.x - po.medida.ancho * po.scaleX, po.y, po.medida.ancho * po.scaleX, po.medida.alto * po.scaleY));
+    if (this.guia && this.guia.c.visible) z.push(this.guia.c.getBounds());
+    (this.toasts || []).forEach(t => { if (t.active) z.push(new Phaser.Geom.Rectangle(250 - 230, t.y - 40, 460, 80)); }); // su sitio final, aunque aún esté entrando
+    if (this.notif) z.push(new Phaser.Geom.Rectangle(20, ALTO - 190, 460, 80));
+    return z;
+  }
+
+  rectBocadillo(b, x = b.x, y = b.y) {
+    const w = b.anchoB || 300;
+    const h = b.altoB || 100;
+    return new Phaser.Geom.Rectangle(x - w / 2, y - (h - 32) / 2, w, h);
+  }
+
+  // Coloca un bocadillo donde no tape nada: prueba a subirlo, bajarlo o correrlo; si no cabe,
+  // el bocadillo menos importante cede (3 = lo que tú has pedido, 2 = te hablan, 1 = ambiente).
+  colocarBocadillo(b, prioridad = 1) {
+    this.bocadillos = (this.bocadillos || []).filter(o => o.active);
+    b.prioridad = prioridad;
+    const zonas = this.zonasOcupadas();
+    const choca = r => zonas.some(z => Phaser.Geom.Intersects.RectangleToRectangle(r, z))
+      || this.bocadillos.some(o => Phaser.Geom.Intersects.RectangleToRectangle(r, this.rectBocadillo(o)));
+    const dentro = r => r.x >= 8 && r.right <= ANCHO - 8 && r.y >= 8 && r.bottom <= ALTO - 64;
+    const h = b.altoB || 100;
+    const w = b.anchoB || 300;
+    const candidatos = [[0, 0]];
+    for (let k = 1; k <= 3; k++) candidatos.push([0, -k * (h * 0.6)], [-k * (w * 0.6), 0], [k * (w * 0.6), 0], [0, k * (h * 0.6)]);
+    for (const [dx, dy] of candidatos) {
+      const x = Phaser.Math.Clamp(b.x + dx, w / 2 + 8, ANCHO - w / 2 - 8);
+      const r = this.rectBocadillo(b, x, b.y + dy);
+      if (dentro(r) && !choca(r)) { b.setPosition(x, b.y + dy); this.bocadillos.push(b); return b; }
+    }
+    // No cabe: ceden los de menos (o igual) importancia que se le crucen; si no, cede él.
+    const r = this.rectBocadillo(b);
+    const estorban = this.bocadillos.filter(o => Phaser.Geom.Intersects.RectangleToRectangle(r, this.rectBocadillo(o)));
+    if (estorban.every(o => o.prioridad <= prioridad)) {
+      estorban.forEach(o => o.destroy());
+      this.bocadillos = this.bocadillos.filter(o => o.active);
+      this.bocadillos.push(b);
+      return b;
+    }
+    b.setVisible(false);
+    this.time.delayedCall(10, () => b.destroy());
+    return b;
   }
 
   marcarSituaciones() {
@@ -1882,7 +1978,7 @@ class Barrio extends Phaser.Scene {
     const al = l => this.sinRepetir(l);
     const contenido = tipo === 'meme' ? { tipo, m: Math.random() < 0.55 ? memeGenerado() : al(MEMES) } : tipo === 'video' ? { tipo, v: al(VIDEOS) } : tipo === 'noticia' ? { tipo, n: al(NOTICIAS) } : { tipo, mensajes: Math.random() < 0.35 ? chatDinamico() : al(CHATS) };
     const que = { meme: 'un meme', video: 'un vídeo', noticia: 'una noticia', chat: 'mensajes en el grupo' }[tipo];
-    const t = this.add.container(-260, 320).setDepth(905);
+    const t = this.add.container(-260, ALTO - 150).setDepth(905);
     const g = this.add.graphics();
     g.fillStyle(HEX.tinta, 0.92).fillRoundedRect(-230, -40, 460, 80, 18).lineStyle(3, HEX.crema, 0.6).strokeRoundedRect(-230, -40, 460, 80, 18);
     // El iconito del móvil.
@@ -1922,13 +2018,14 @@ class Barrio extends Phaser.Scene {
     const por = id => conImg.find(c => c.id === id);
     const posibles = DIALOGOS.filter(d => d.every(([id]) => por(id)));
     if (posibles.length && Math.random() < 0.7) {
-      Phaser.Utils.Array.GetRandom(posibles).forEach(([id, frase], i) => this.time.delayedCall(i * 2200, () => this.burbujaAmbiente(por(id), frase)));
+      const charla = Phaser.Utils.Array.GetRandom(posibles);
+      this.voz(() => charla.forEach(([id, frase], i) => this.time.delayedCall(i * 2400, () => { if (!this.modal) this.burbujaAmbiente(por(id), frase); })), { dura: charla.length * 2400 });
       return;
     }
     const lejos = conImg.filter(c => Math.abs(c.x - this.px) > 260 && TONTERIAS[c.id]);
-    if (lejos.length && Math.random() < 0.45) {
+    if (lejos.length && Math.random() < 0.8) {
       const c = Phaser.Utils.Array.GetRandom(lejos);
-      this.burbujaAmbiente(c, Phaser.Utils.Array.GetRandom(ESTADO.colocon > 65 ? COLOCADAS : TONTERIAS[c.id]));
+      this.voz(() => this.burbujaAmbiente(c, Phaser.Utils.Array.GetRandom(ESTADO.colocon > 65 ? COLOCADAS : TONTERIAS[c.id])), { dura: 2400 });
     }
   }
 
@@ -1937,7 +2034,7 @@ class Barrio extends Phaser.Scene {
     this.poseNpc(c, 'hablando', 2000);
     // Por encima de las marcas («!», estrellas, «E · …») para que no se tapen.
     const y = c.y - c.alto - (this.misionDe(c) ? 150 : 95);
-    const b = bocadillo(this, Phaser.Math.Clamp(c.x, 190, ANCHO - 190), Math.max(150, y), frase, { tam: 19, ancho: 320 }).setDepth(850);
+    const b = this.colocarBocadillo(bocadillo(this, Phaser.Math.Clamp(c.x, 190, ANCHO - 190), Math.max(150, y), frase, { tam: 19, ancho: 320 }).setDepth(850), 1);
     this.burbujasAmb.push(b);
     sfx(this, 'pop', { volume: 0.15 });
     this.time.delayedCall(2300, () => { if (b.active) this.tweens.add({ targets: b, alpha: 0, scale: 0.8, duration: 200, onComplete: () => b.destroy() }); });
@@ -1990,8 +2087,9 @@ te ha mandado esto`, 24, COLOR.amarillo));
 
   charla(c, linea) {
     if (this.burbuja) this.burbuja.destroy();
+    this.callarAmbiente();
     const y = Math.max(140, c.y - c.alto - 70);
-    this.burbuja = bocadillo(this, Phaser.Math.Clamp(c.x, 230, ANCHO - 230), y, linea, { tam: 24, ancho: 420 }).setDepth(850);
+    this.burbuja = this.colocarBocadillo(bocadillo(this, Phaser.Math.Clamp(c.x, 230, ANCHO - 230), y, linea, { tam: 24, ancho: 420 }).setDepth(850), 3);
     sfx(this, 'pop', { volume: 0.4 });
     const b = this.burbuja;
     this.time.delayedCall(2600, () => { if (b.active) b.destroy(); });

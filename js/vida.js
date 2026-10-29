@@ -336,13 +336,15 @@ const SUCESOS = [
     const izq = Math.random() < 0.5;
     const y = SALAS[s.sala].suelo[1] - 10;
     const p = s.add.image(izq ? -120 : ANCHO + 120, y, clave).setOrigin(0.5, 1).setDepth(y);
-    p.setScale(300 / p.height).setFlipX(!izq);
+    // Mira hacia donde anda (según hacia dónde mira el dibujo).
+    p.setScale(300 / p.height).setFlipX(izq ? (MIRA[clave] || 1) < 0 : (MIRA[clave] || 1) > 0);
     s.tweens.add({ targets: p, x: izq ? ANCHO + 140 : -140, duration: 7000, onComplete: () => p.destroy() });
     s.tweens.add({ targets: p, y: y - 8, duration: 220, yoyo: true, repeat: -1 });
     s.time.delayedCall(2600, () => {
       if (!p.active) return;
       const frase = Phaser.Utils.Array.GetRandom(['¡Ey! ¿Esta noche qué?', '¿Vamos a Unaké luego?', 'Qué buen día. Sospechoso.', '¡Hola, Vuper!', 'Voy por pan. Y por lo otro.']);
       const b = bocadillo(s, Phaser.Math.Clamp(p.x, 200, ANCHO - 200), y - p.displayHeight - 40, frase, { tam: 20, ancho: 280 }).setDepth(880);
+      if (s.colocarBocadillo) s.colocarBocadillo(b, 1);
       s.time.delayedCall(2200, () => b.destroy());
     });
     pillable(s, p, () => { ESTADO.monchis += 5; return `${QUIEN[quien].nombre} te invita a un café · +5`; }, 7000, { lejos: true });

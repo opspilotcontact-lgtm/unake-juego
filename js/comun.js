@@ -107,6 +107,8 @@ function bocadillo(scene, x, y, str, { ancho = 380, tam = 28, cola = 'abajo' } =
   g.fillTriangle(...pico);
   g.lineBetween(pico[0], pico[1] + 3, pico[4], pico[5]).lineBetween(pico[2], pico[3] + 3, pico[4], pico[5]);
   const c = scene.add.container(x, y, [g, t]).setDepth(50).setScale(0);
+  c.anchoB = w;
+  c.altoB = h + 32; // con el pico
   scene.tweens.add({ targets: c, scale: 1, duration: 260, ease: 'Back.out' });
   return c;
 }
@@ -241,6 +243,9 @@ function enMundoHumo() { return ESTADO.colocon >= UMBRAL_HUMO; }
 // Hacia dónde mira cada dibujo tal cual está pintado (1 = derecha, -1 = izquierda).
 // Los que no están se tratan como de frente: el espejo da igual.
 const MIRA = { 'vuper-reparto': -1, 'monchiman-picado': -1, 'puky-eructo': 1, 'puky-riendo': 1, 'vn-caminando': -1 };
+// Los dibujos de caminar del mundo normal (cuerpo de persona) miran a la izquierda, como el de Vuper:
+// comprobado en el juego el 30/10 (Lasslow andaba de espaldas al pasear).
+['palicaso', 'blancaso', 'cotine', 'lasslow', 'pompa', 'perico'].forEach(id => { MIRA[`n-${id}-caminando`] = -1; });
 let ESTADO = cargarPartida();
 
 function cargarPartida() {
