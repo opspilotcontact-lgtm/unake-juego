@@ -187,6 +187,7 @@ function rutinasNpc(s, dt) {
 
 // Al entrar en una sala, a veces hay visita. Devuelve las cosas nuevas (ya montadas).
 function visitasDeSala(s, nombre, humo) {
+  if (typeof guiaActiva === 'function' && guiaActiva()) return []; // en el prólogo, sin visitas que distraigan
   const lista = (VISITAS[nombre] || []).filter(v => {
     if (ESTADO.situaciones[v.id]) return false;
     if (v.requiere && !v.requiere()) return false;

@@ -23,8 +23,10 @@ const CAPITULOS = [
     titulo: '¿Una qué?',
     arte: 'cap-cap1',
     intro: [
-      ['narrador', 'Anoche probaste el mundo humo. Hoy es de día y todo es normal. Demasiado normal.'],
-      ['vuper', 'Quiero volver. Dicen que en Unaké, la aso del barrio, saben cómo. Solo entra quien se sabe la contraseña.'],
+      // La idea del juego, antes que nada: los dos mundos.
+      ['narrador', 'Esto es el barrio. De día es un barrio normal: la tienda, la plaza, gente con prisa.'],
+      ['narrador', 'Pero cuando fumas y te hace efecto, pasas al MUNDO HUMO: el mismo barrio, de noche, con neones, nubes… y Unaké abierto.'],
+      ['vuper', 'Anoche estuve allí. Quiero volver. Dicen que en Unaké, la aso del barrio, se está de lujo. Solo entra quien se sabe la contraseña.'],
       // El bucle de la contraseña, tal cual el E00 (guion-v1-canon.md).
       ['perico', '¿Contraseña? ¿Contraseña?'],
       ['vuper', 'Unaké.'],
@@ -34,7 +36,7 @@ const CAPITULOS = [
       ['vuper', 'De los hermanos Aso, Palicaso y Blancaso, que tienen Unaké.'],
       ['perico', '¿Una qué?'],
       ['narrador', 'Vuper abre la boca… y la cierra. Está en un bucle.'],
-      ['narrador', 'Para liarte hace falta papel, boquilla, la bolsita de la aso y mechero. Y para todo eso, monchis.'],
+      ['narrador', 'Para fumar hace falta papel, boquilla, mechero y la bolsita de la aso. Y para todo eso, monchis. Vamos paso a paso.'],
     ],
     objetivos: [
       { texto: 'Gana monchis: haz un encargo de la tienda de 24 h', hecho: () => stat('entregas') >= 1 },
@@ -46,6 +48,10 @@ const CAPITULOS = [
       ['perico', 'Pasa, pasa. Pero que conste que te he visto, rider.'],
       ['vuper', '¿Visto el qué?'],
       ['perico', 'Pin pin.'],
+      ['narrador', 'Bienvenido al mundo humo. Aquí están las misiones (los «!» sobre la gente) y todo paga más.'],
+      ['narrador', 'Mira las barras de arriba: el COLOCÓN baja solo, y cuando se acaba vuelves al día. El HAMBRE sube: come en la tienda o perderás VIDA.'],
+      ['vuper', 'Vale, vale… ¿Y ahora qué?'],
+      ['narrador', 'Ahora el barrio es tuyo. Tus objetivos, arriba a la derecha. Tus logros, en «Logros». Y la historia acaba de empezar.'],
     ],
     premio: 30,
   },

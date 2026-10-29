@@ -188,10 +188,12 @@ class Barrio extends Phaser.Scene {
 
     this.vineta = this.add.image(ANCHO / 2, ALTO / 2, 'vineta').setDepth(880).setAlpha(0);
     this.hud();
+    Guia.montar(this);
     if (!ESTADO.boquillaEn && !ESTADO.inv.boquilla) this.esconderBoquilla();
     this.cargarSala(ESTADO.sala in SALAS ? ESTADO.sala : 'fuera');
     entrar(this, datos);
     if (datos && datos.aviso) this.time.delayedCall(700, () => golpeTexto(this, ANCHO / 2, 300, datos.aviso, COLOR.amarillo, 44));
+    if (guiaActiva()) ESTADO.ayudaVista = true;
     if (!ESTADO.ayudaVista) this.time.delayedCall(900, () => this.ayudaCuandoSePueda());
     const fuera = actualizarNegocio();
     if (fuera.minutos > 5 && negocio().caja >= 5 && cuentasNegocio().total > 0) {
@@ -514,6 +516,7 @@ class Barrio extends Phaser.Scene {
     this.frenazo = Math.max(0, this.frenazo - dt * 4);
     this.px += this.vx * dt;
     this.py += this.vy * dt;
+    if (guiaActiva()) this.recorridoGuia = (this.recorridoGuia || 0) + Math.hypot(this.vx, this.vy) * dt;
 
     const s = SALAS[this.sala];
     this.py = Phaser.Math.Clamp(this.py, s.suelo[0], s.suelo[1]);
@@ -733,15 +736,15 @@ class Barrio extends Phaser.Scene {
     if (this.senal) {
       this.senal.restante -= dt;
       if (this.senal.restante <= 0) this.senal = null;
-    } else if (!this.reparto && totalEstrellas() >= 3 && enMundoHumo() && !ESTADO.blancazo) {
+    } else if (!this.reparto && totalEstrellas() >= 3 && enMundoHumo() && !ESTADO.blancazo && !guiaActiva()) {
       this.tSenal -= dt;
       if (this.tSenal <= 0) this.encenderSenal();
     }
-    if (enMundoHumo() && !this.reparto) {
+    if (enMundoHumo() && !this.reparto && !guiaActiva()) {
       this.tSituacion -= dt;
       if (this.tSituacion <= 0) { this.tSituacion = Phaser.Math.Between(60, 110); this.nuevaSituacionBarrio(); }
     }
-    if (!this.reparto && !this.notif) {
+    if (!this.reparto && !this.notif && !guiaActiva()) {
       this.tNotif -= dt;
       if (this.tNotif <= 0) this.notificar();
     }
@@ -753,12 +756,18 @@ class Barrio extends Phaser.Scene {
     }
     this.tHistoria = (this.tHistoria || 0) - dt;
     if (this.tHistoria <= 0) { this.tHistoria = 0.4; this.historia(); }
-    if (!this.reparto && !this.modal) {
+    if (!this.reparto && !this.modal && !guiaActiva()) {
       this.tSuceso -= dt;
       if (this.tSuceso <= 0) { this.tSuceso = Phaser.Math.Between(40, 75); sucesoBarrio(this); }
     }
     this.tLogros -= dt;
-    if (this.tLogros <= 0) { this.tLogros = 1; this.revisarLogros(); }
+    if (this.tLogros <= 0) { this.tLogros = 1; if (!guiaActiva()) this.revisarLogros(); }
+    Guia.actualizar(this);
+    // Lo que no se usa en el prólogo, ni se ve.
+    const enGuia = guiaActiva();
+    this.panelObjetivos.setVisible(!ESTADO.ocultarObjetivos && !enGuia);
+    this.botonLogros.setVisible(!enGuia);
+    if (this.botonObjetivos) this.botonObjetivos.setVisible(!enGuia);
     this.tAmbiente -= dt;
     if (this.tAmbiente <= 0) { this.tAmbiente = Phaser.Math.Between(9, 15); this.charlaAmbiente(); }
     rutinasNpc(this, dt);
@@ -968,7 +977,7 @@ class Barrio extends Phaser.Scene {
     const n = ESTADO.capitulo || 0;
     const cap = capituloActual();
     if (ESTADO.introCap !== n) {
-      return this.abrirEscena([['titulo', `Capítulo ${n + 1} · ${cap.titulo}`, cap.arte], ...cap.intro, ['objetivos', '']], () => {
+      return this.abrirEscena([['titulo', `Capítulo ${n + 1} · ${cap.titulo}`, cap.arte], ...cap.intro, ...(n === 0 ? [] : [['objetivos', '']])], () => {
         ESTADO.introCap = n;
         // Foto de los contadores: los objetivos «de este capítulo» cuentan desde aquí.
         ESTADO.baseCap = { ...(ESTADO.stats || {}) };
