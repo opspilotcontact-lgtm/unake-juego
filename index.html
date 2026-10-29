@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#1b1028">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Unaké · la noche</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caprasimo&display=swap" rel="stylesheet">
+  <style>
+    :root { --tinta: #1b1028; }
+    html, body { margin: 0; height: 100%; background: var(--tinta); overflow: hidden; overscroll-behavior: none; }
+    body { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+    #juego { width: 100vw; height: 100vh; height: 100dvh; }
+    canvas { touch-action: none; }
+    /* En el móvil en vertical: que lo gire (el juego es horizontal). */
+    #girar { display: none; position: fixed; inset: 0; z-index: 10; background: var(--tinta); color: #fff6e8;
+      font-family: 'Caprasimo', serif; text-align: center; align-items: center; justify-content: center; flex-direction: column; gap: 18px; padding: 24px; }
+    #girar .movil { width: 64px; height: 110px; border: 6px solid #ffd23f; border-radius: 14px; animation: girar 1.8s ease-in-out infinite; }
+    #girar p { font-size: 26px; margin: 0; }
+    #girar small { font-size: 16px; color: #5ad1ff; }
+    @keyframes girar { 0%, 30% { transform: rotate(0deg); } 60%, 100% { transform: rotate(-90deg); } }
+    @media (orientation: portrait) and (pointer: coarse) { #girar { display: flex; } }
+  </style>
+</head>
+<body>
+  <div id="juego"></div>
+  <div id="girar"><div class="movil"></div><p>Gira el móvil</p><small>Unaké se juega en horizontal</small></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
+  <script src="js/comun.js"></script>
+  <script src="js/arte.js"></script>
+  <script src="js/encuentros.js"></script>
+  <script src="js/historia.js"></script>
+  <script src="js/situaciones.js"></script>
+  <script src="js/negocio.js"></script>
+  <script src="js/escenas/arranque.js"></script>
+  <script src="js/escenas/portada.js"></script>
+  <script src="js/escenas/intro.js"></script>
+  <script src="js/escenas/barrio.js"></script>
+  <script src="js/escenas/contrasena.js"></script>
+  <script src="js/escenas/tarta.js"></script>
+  <script src="js/escenas/rescate.js"></script>
+  <script src="js/escenas/lasslow.js"></script>
+  <script src="js/escenas/liar.js"></script>
+  <script src="js/escenas/fumar.js"></script>
+  <script src="js/escenas/blancazo.js"></script>
+  <script src="js/escenas/final.js"></script>
+  <script src="js/escenas/barra.js"></script>
+  <script src="js/escenas/pipas.js"></script>
+  <script src="js/escenas/dj.js"></script>
+  <script src="js/escenas/cuentas.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
