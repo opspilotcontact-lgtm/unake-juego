@@ -889,7 +889,8 @@ class Barrio extends Phaser.Scene {
       case 'charla': return this.encuentro(c);
       case 'mision':
         if (this.mundo === 'normal') return this.deNoche(c);
-        return this.tarjeta(c.mision, null, null, [charlar]);
+        // Las noches de cada uno abren minijuegos nuevos en su tarjeta (Por los aires, El palo).
+        return this.tarjeta(c.mision, null, null, [charlar, ...minijuegosAbiertos(c.id).map(k => ({ etiqueta: MISIONES[k].nombre, accion: () => this.tarjeta(k), color: HEX.rosa }))]);
       case 'taller': return this.taller();
       case 'tienda': return this.tienda();
       case 'barra': return this.barra(c);
@@ -945,6 +946,12 @@ class Barrio extends Phaser.Scene {
 
   historia() {
     this.pintarObjetivos();
+    // Las noches de cada personaje: cuando su minijuego llega al nivel, su escena (fuera de las de capítulo).
+    if (!this.modal && !this.cambiando && !this.reparto && this.time.now >= (this.pausaHistoria || 0)
+      && (historiaAcabada() || ESTADO.introCap === (ESTADO.capitulo || 0))) {
+      const np = nochePendiente();
+      if (np) return this.abrirNoche(np);
+    }
     if (historiaAcabada() || this.modal || this.cambiando) return;
     // Tras cerrar un capítulo, un respiro para leer el «completado» antes de la escena siguiente.
     if (this.time.now < (this.pausaHistoria || 0)) return;
@@ -998,6 +1005,22 @@ class Barrio extends Phaser.Scene {
     // El cierre del capítulo: su momento persona, en cómic.
     if (!cap.cierre) return seguir();
     this.time.delayedCall(700, () => this.abrirEscena([['titulo', `Capítulo ${n + 1} completado · ${cap.titulo}`], ...cap.cierre], seguir, { cap: n }));
+  }
+
+  abrirNoche([id, i, paso]) {
+    const n = NOCHES[id];
+    this.pausaHistoria = this.time.now + 600000;
+    ESTADO.noches[`${id}-${i}`] = true;
+    guardarPartida();
+    this.abrirEscena([['titulo', `${n.nombre} · ${i + 1} de ${n.pasos.length}`], ...paso.lineas], () => {
+      this.pausaHistoria = this.time.now + 2500;
+      ESTADO.monchis += paso.premio;
+      sumarStat('nochesVistas');
+      guardarPartida();
+      this.refrescarHud();
+      golpeTexto(this, ANCHO / 2, 300, `${n.nombre}: +${paso.premio} monchis`, COLOR.amarillo, 40);
+      if (paso.abre) this.time.delayedCall(900, () => this.toast('Minijuego nuevo', `${MISIONES[paso.abre].nombre}: habla con ${QUIEN[id] ? QUIEN[id].nombre : id}`));
+    });
   }
 
   // Escenas sueltas de la historia que salen al hablar con alguien (la pista de Perico, su secreto…).

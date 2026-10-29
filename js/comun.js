@@ -309,6 +309,14 @@ const MISIONES = {
     nombre: 'La inspección', sprite: 'obj-llave', umbrales: [500, 1100, 1800],
     texto: 'El casero recorre Unaké. Cuando NO mire, mantén pulsado lo que no debe ver hasta esconderlo. Si se gira y te pilla, sospecha. La llave tintinea antes de girarse.',
   },
+  Aires: {
+    nombre: 'Por los aires', sprite: 'lasslow-pedo', umbrales: [700, 1000, 1300],
+    texto: 'Lasslow sube hasta la Pompa a base de pedo. MANTÉN para soltar gas (sube), suelta para caer, ← → para moverte. La comida recarga el gas; las lámparas te tiran.',
+  },
+  Palo: {
+    nombre: 'El palo', sprite: 'cotine-plop', umbrales: [1000, 1350, 1700],
+    texto: 'Perico tiene el palo de Cotine. Muévete, MANTÉN para disparar virutas de azúcar y esquiva sus pipas. Tres fases, como un jefe de verdad.',
+  },
   Reparto: {
     nombre: 'Encargos de la tienda', sprite: 'vuper-reparto', umbrales: [2, 4, 7],
     texto: 'Lleva monchis por el barrio antes de que se enfríen. Cada entrega seguida multiplica lo que cobras.',

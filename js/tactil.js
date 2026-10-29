@@ -26,6 +26,8 @@ const MANDOS = {
   Blancazo: { joy: 'libre', botones: [['Caramelo', ' ', { mantener: true, color: '#ffd23f', grande: true }], ['Nube', 'Shift', { color: '#fff6e8' }], ['Resucitador', 'x', { color: '#b68cff' }]] },
   Liar: { joy: 'h', botones: [['Acción', ' ', { mantener: true, color: '#ffd23f', grande: true }]] },
   Fumar: { botones: [['Calada', ' ', { mantener: true, color: '#ffd23f', grande: true }]] },
+  Aires: { joy: 'h', botones: [['Pedo', ' ', { mantener: true, color: '#c8a83c', grande: true }]] },
+  Palo: { joy: 'libre', botones: [['Disparar', ' ', { mantener: true, color: '#ff8fc0', grande: true }]] },
 };
 
 const Tactil = {
