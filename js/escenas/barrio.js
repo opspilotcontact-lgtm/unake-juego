@@ -904,7 +904,11 @@ class Barrio extends Phaser.Scene {
       this.charla(c, '¿Contraseña? …Ah, el rider. Pasa, pasa.');
       return this.time.delayedCall(700, () => this.cambiarSala('dentro', 'puerta'));
     }
-    if (ESTADO.situaciones[c.id] && !(esPuerta && this.mundo === 'normal')) return this.situacion(c);
+    // Los problemas se atienden de noche. De día no bloquean nada (la barra, la tienda…): si no,
+    // sin la bolsita de Palicaso no se puede fumar y no se llega nunca a la noche.
+    if (ESTADO.situaciones[c.id] && this.mundo === 'humo') return this.situacion(c);
+    if (ESTADO.situaciones[c.id] && this.mundo === 'normal' && (c.tipo === 'charla' || c.tipo === 'mision')) return this.situacion(c);
+    if (ESTADO.situaciones[c.id] && this.mundo === 'normal') golpeTexto(this, Phaser.Math.Clamp(c.x, 220, ANCHO - 220), Math.max(160, c.y - c.alto - 60), `${QUIEN[c.id] ? QUIEN[c.id].nombre : ''}: de noche te cuento mi problema`, COLOR.rosa, 22);
     const charlar = { etiqueta: 'Charlar', accion: () => { this.cerrarModal(); this.encuentro(c); }, color: HEX.azul };
     switch (c.tipo) {
       case 'charla': return this.encuentro(c);
