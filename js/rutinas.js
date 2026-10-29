@@ -35,6 +35,9 @@ const VISITAS = {
     { id: 'palicaso', dice: ['Cotine, ¿queda algo? …Ya veo que no.'] },
     { id: 'blancaso', dice: ['Vengo a ver cuánto gastamos en azúcar. Mejor no.'] },
   ],
+  dentro: [
+    { id: 'puky', dice: ['¡Me han invitado! ¿Lo sabíais? Me han invitado.', '¿Me llamabais? …Ah, no. Estoy invitado, no hace falta.'], requiere: () => ESTADO.pukyInvitado },
+  ],
   cuarto: [
     { id: 'palicaso', dice: ['¡Escucha! Tu cuarto huele a héroe. Y a otra cosa.'] },
     { id: 'cotine', dice: ['¿Tienes algo de comer aquí? …¿Debajo de la cama?'] },
@@ -186,6 +189,7 @@ function rutinasNpc(s, dt) {
 function visitasDeSala(s, nombre, humo) {
   const lista = (VISITAS[nombre] || []).filter(v => {
     if (ESTADO.situaciones[v.id]) return false;
+    if (v.requiere && !v.requiere()) return false;
     if (s.cosas.some(c => c.id === v.id && !c.oculta)) return false;
     if (v.id === 'blancaso' && ESTADO.blancazo) return false;
     return s.textures.exists(humo ? QUIEN[v.id].sprite : `n-${v.id}`);

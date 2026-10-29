@@ -48,8 +48,8 @@ class Final extends Phaser.Scene {
       this.tweens.chain({ targets: t, tweens: [{ alpha: 1, y: 330, duration: 400 }, { alpha: 0, duration: 400, delay: 900 }] });
     }));
     this.time.delayedCall(5600 + creditos.length * 1600, () => {
-      boton(this, ANCHO / 2, 680, 'Seguir jugando (E)', () => irA(this, 'Barrio', { aviso: 'Modo libre: a por los récords' }), { ancho: 360 }).setDepth(40);
-      this.input.keyboard.once('keydown-E', () => irA(this, 'Barrio', { aviso: 'Modo libre: a por los récords' }));
+      boton(this, ANCHO / 2, 680, 'Después de los créditos… (E)', () => irA(this, 'Poscreditos'), { ancho: 460 }).setDepth(40);
+      this.input.keyboard.once('keydown-E', () => irA(this, 'Poscreditos'));
     });
     entrar(this, datos);
   }

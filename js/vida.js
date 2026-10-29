@@ -36,6 +36,8 @@ const LOGROS = [
   { id: 'farol', nombre: 'Cara de póquer', texto: 'Gánale a Palicaso a El farol', hecho: () => stat('gana_Farol') >= 1, premio: 50 },
   { id: 'periquito', nombre: 'Pin pin', texto: 'Calla a Perico en ¡Periquito!', hecho: () => stat('gana_Periquito') >= 1, premio: 50 },
   { id: 'secreto', nombre: 'Un secreto con pipas', texto: 'Confíale tu secreto a Perico', hecho: () => stat('secretoPerico') >= 1, premio: 80 },
+  { id: 'inspeccion', nombre: 'Aquí no hay nada', texto: 'Pasa la inspección del casero', hecho: () => stat('gana_Inspeccion') >= 1, premio: 60 },
+  { id: 'invitado', nombre: '¿Me llamabais?', texto: 'Por fin invitan a Puky', hecho: () => stat('pukyInvitado') >= 1, premio: 150 },
   { id: 'sit5', nombre: 'El que lo arregla todo', texto: 'Resuelve 5 problemas', hecho: () => stat('situaciones') >= 5, premio: 100 },
   { id: 'sit20', nombre: 'Psicólogo del barrio', texto: 'Resuelve 20 problemas', hecho: () => stat('situaciones') >= 20, premio: 400 },
   { id: 'blancazo3', nombre: 'Ángel de Blancaso', texto: 'Salva a Blancaso 3 veces', hecho: () => stat('blancazos') >= 3, premio: 150 },

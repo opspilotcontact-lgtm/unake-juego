@@ -305,6 +305,10 @@ const MISIONES = {
     nombre: '¡Periquito!', sprite: 'perico-cotilleando', umbrales: [800, 1700, 2800],
     texto: 'Perico quiere gritar que Vuper es Monchiman. Grítale «¡periquito!» justo cuando empiece con «Mon…». Ojo con las fintas.',
   },
+  Inspeccion: {
+    nombre: 'La inspección', sprite: 'obj-llave', umbrales: [500, 1100, 1800],
+    texto: 'El casero recorre Unaké. Cuando NO mire, mantén pulsado lo que no debe ver hasta esconderlo. Si se gira y te pilla, sospecha. La llave tintinea antes de girarse.',
+  },
   Reparto: {
     nombre: 'Encargos de la tienda', sprite: 'vuper-reparto', umbrales: [2, 4, 7],
     texto: 'Lleva monchis por el barrio antes de que se enfríen. Cada entrega seguida multiplica lo que cobras.',

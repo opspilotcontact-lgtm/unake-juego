@@ -196,6 +196,7 @@ const CAPITULOS = [
     ],
     situaciones: [['pompa', 'pinchar']],
     objetivos: [
+      { texto: 'Pasa la inspección del casero (está en Unaké)', hecho: () => stat('gana_Inspeccion') >= 1 },
       { texto: 'La Pompa pincha la noche de la inspección', hecho: () => stat('sit_pinchar') >= 1 },
       { texto: 'Al casero le ha dado un amarillo: rescate de Monchiman', hecho: () => desdeCap('gana_Rescate') >= 1 },
       { texto: 'Unaké tiene que aguantar una inspección: «Bareto» (nivel 5)', hecho: () => cuentasNegocio().total >= 5, progreso: () => `${cuentasNegocio().total}/5` },

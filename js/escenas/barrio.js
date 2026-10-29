@@ -324,6 +324,9 @@ class Barrio extends Phaser.Scene {
     this.textoCaja = null;
     this.cosas = s.cosas.map(cosa => this.montarCosa(humo ? cosa : { ...cosa, ...(cosa.n || {}) }));
     this.cosas.push(...visitasDeSala(this, nombre, humo));
+    if (nombre === 'dentro' && humo && (ESTADO.capitulo || 0) === 6 && this.textures.exists('obj-llave')) {
+      this.cosas.push(this.montarCosa({ id: 'casero', tipo: 'mision', mision: 'Inspeccion', sprite: 'obj-llave', x: 1000, y: 660, escala: 230 / this.textures.get('obj-llave').getSourceImage().height, nombre: 'El casero' }));
+    }
     if (humo) this.montarClientela(nombre);
     this.montarDeco(nombre);
     this.montarBoquilla();
