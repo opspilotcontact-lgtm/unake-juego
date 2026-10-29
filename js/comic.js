@@ -256,7 +256,7 @@ const Comic = {
 // La cortinilla de cada minijuego: la firma de su personaje.
 const CORTINA_DE = {
   Barra: 'estrella', DJ: 'burbuja', Blancazo: 'pringue', Rescate: 'pringue', Contrasena: 'iris',
-  Pipas: 'barrido', Cuentas: 'barrido', Tragaperras: 'estrella', Carrera: 'barrido',
+  Pipas: 'barrido', Cuentas: 'barrido', Tragaperras: 'estrella', Carrera: 'barrido', Farol: 'estrella', Periquito: 'iris',
 };
 
 // Quién reacciona al perder cada minijuego (pantalla de reacción) y con qué color.
@@ -264,4 +264,5 @@ const REACCION_PIERDE = {
   Contrasena: ['perico-graznando', UNAKE.cian], Tarta: ['cotine-plop', UNAKE.rosa], Lasslow: ['lasslow-horror', UNAKE.verde],
   Rescate: ['puky-riendo', UNAKE.amarillo], Blancazo: ['blancaso-derritiendose', UNAKE.verde], Barra: ['palicaso-contando', UNAKE.amarillo],
   Pipas: ['perico-pipas', UNAKE.cian], DJ: ['pompa-horror', UNAKE.cian], Cuentas: ['blancaso-mareado', UNAKE.verde],
+  Farol: ['palicaso-riendo', UNAKE.amarillo], Periquito: ['perico-graznando', UNAKE.rosa],
 };

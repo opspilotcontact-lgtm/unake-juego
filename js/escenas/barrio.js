@@ -873,6 +873,7 @@ class Barrio extends Phaser.Scene {
     // Un recado para esta persona va antes que nada.
     const r = ESTADO.recado;
     if (r && r.a === c.id && (r.tipo === 'mensaje' || r.llevo)) return this.cumplirRecado(c);
+    if (this.escenaHistoria(c)) return;
     // Perico es la puerta: con un encargo se pasa siempre, y de día hace de portero aunque tenga un problema.
     const esPuerta = c.tipo === 'puerta';
     if (esPuerta && this.reparto) {
@@ -891,7 +892,9 @@ class Barrio extends Phaser.Scene {
       case 'barra': return this.barra(c);
       case 'sofa': return this.sofa();
       case 'negocio': return this.abrirNegocio();
-      case 'tragaperras': return irA(this, 'Tragaperras');
+      case 'tragaperras':
+        if (ESTADO.precinto) return this.charla(c, 'Precintada por Blancaso: «Hasta que sepa quién se ha jugado la caja». Hay cinta amarilla hasta en la palanca.');
+        return irA(this, 'Tragaperras');
       case 'carrera': return irA(this, 'Carrera');
       case 'subir':
         if (!salaAbierta('techo')) return this.charla(c, 'La escalera da al techo. Está cerrado hasta que se inaugure (Obras, en el negocio).');
@@ -917,7 +920,10 @@ class Barrio extends Phaser.Scene {
           return this.time.delayedCall(700, () => this.cambiarSala('dentro', 'puerta'));
         }
         if (ESTADO.dentro) {
-          return this.tarjeta('Contrasena', null, null, [{ etiqueta: 'Pasar', accion: () => { this.cerrarModal(); this.cambiarSala('dentro', 'puerta'); } }, charlar]);
+          // Desde «Perico lo sabe», en la puerta se juega a callarle.
+          const otro = this.mundo === 'humo' && (ESTADO.capitulo || 0) >= 5
+            ? { etiqueta: '¡Periquito!', accion: () => this.lanzar('Periquito'), color: HEX.rosa } : charlar;
+          return this.tarjeta('Contrasena', null, null, [{ etiqueta: 'Pasar', accion: () => { this.cerrarModal(); this.cambiarSala('dentro', 'puerta'); } }, otro]);
         }
         return this.tarjeta('Contrasena', null, null, [charlar]);
       default: return null;
@@ -944,6 +950,9 @@ class Barrio extends Phaser.Scene {
     if (ESTADO.introCap !== n) {
       return this.abrirEscena([['titulo', `Capítulo ${n + 1} · ${cap.titulo}`, cap.arte], ...cap.intro, ['objetivos', '']], () => {
         ESTADO.introCap = n;
+        // Foto de los contadores: los objetivos «de este capítulo» cuentan desde aquí.
+        ESTADO.baseCap = { ...(ESTADO.stats || {}) };
+        if (cap.alEmpezar) cap.alEmpezar();
         guardarPartida();
         this.situacionesDeCapitulo(cap);
       });
@@ -967,19 +976,49 @@ class Barrio extends Phaser.Scene {
   }
 
   completarCapitulo(cap, n) {
-    this.pausaHistoria = this.time.now + 3200;
+    this.pausaHistoria = this.time.now + 600000; // hasta que acabe la escena de cierre
     ESTADO.capitulo = n + 1;
     ESTADO.monchis += cap.premio;
     guardarPartida();
     this.refrescarHud();
     sfx(this, 'platillo', { volume: 0.6 });
     sfx(this, 'campanita');
-    if (cap.final) {
-      golpeTexto(this, ANCHO / 2, 300, '¡La hucha está llena!', COLOR.amarillo, 64);
-      return this.time.delayedCall(1500, () => irA(this, 'Final'));
+    const seguir = () => {
+      this.pausaHistoria = this.time.now + 3200;
+      if (cap.final) {
+        golpeTexto(this, ANCHO / 2, 300, '¡Unaké se queda!', COLOR.amarillo, 64);
+        return this.time.delayedCall(1500, () => irA(this, 'Final'));
+      }
+      golpeTexto(this, ANCHO / 2, 280, `Capítulo ${n + 1} completado`, COLOR.amarillo, 56);
+      if (cap.premio) this.time.delayedCall(700, () => golpeTexto(this, ANCHO / 2, 360, `+${cap.premio} monchis`, COLOR.verde, 40));
+    };
+    // El cierre del capítulo: su momento persona, en cómic.
+    if (!cap.cierre) return seguir();
+    this.time.delayedCall(700, () => this.abrirEscena([['titulo', `Capítulo ${n + 1} completado · ${cap.titulo}`], ...cap.cierre], seguir, { cap: n }));
+  }
+
+  // Escenas sueltas de la historia que salen al hablar con alguien (la pista de Perico, su secreto…).
+  escenaHistoria(c) {
+    const cap = ESTADO.capitulo || 0;
+    if (c.id === 'perico' && cap === 4 && stat('pistaCaja') < 1) {
+      this.abrirEscena([
+        ['perico', 'Pin pin. ¿Quién va a la tienda a las cuatro? Una estrella. Una estrella que habla sola.'],
+        ['perico', 'Le da a la palanca de la máquina y dice: «Escucha, escucha, esta sale». Nunca sale.'],
+        ['narrador', 'Solo hay una estrella en el barrio que habla sola. Y está en la barra.'],
+      ], () => { sumarStat('pistaCaja'); this.toast('Pista: Palicaso', 'Rétale a El farol en la barra de Unaké'); }, { cap: 4 });
+      return true;
     }
-    golpeTexto(this, ANCHO / 2, 280, `Capítulo ${n + 1} completado`, COLOR.amarillo, 56);
-    if (cap.premio) this.time.delayedCall(700, () => golpeTexto(this, ANCHO / 2, 360, `+${cap.premio} monchis`, COLOR.verde, 40));
+    if (c.id === 'perico' && cap === 5 && this.mundo === 'normal' && stat('gana_Periquito') >= 1 && stat('sit_apuesta') >= 1 && stat('secretoPerico') < 1) {
+      this.abrirEscena([
+        ['vuper', 'Periquito… Perico. Tienes razón. Soy yo.'],
+        ['perico', '…'],
+        ['vuper', 'Pero si se sabe, se acaba. Nadie llamaría a Monchiman: llamarían al rider.'],
+        ['perico', 'Pin pin. …Me lo guardo. Me lo guardo aquí, con las pipas.'],
+        ['narrador', 'Por primera vez, alguien ha tomado en serio a Perico.'],
+      ], () => sumarStat('secretoPerico'), { cap: 0 });
+      return true;
+    }
+    return false;
   }
 
   // Objetivos del capítulo, arriba a la derecha (solo se repinta si algo cambia).
@@ -1034,9 +1073,9 @@ class Barrio extends Phaser.Scene {
   }
 
   // Escena de diálogo: retrato del que habla y el texto escribiéndose. E (o tocar) para seguir.
-  abrirEscena(lineas, alAcabar) {
+  abrirEscena(lineas, alAcabar, opciones) {
     // Las escenas de capítulo se cuentan como cómic (escena_comic.js); esta caja queda de respaldo.
-    if (typeof Comic !== 'undefined' && Comic.escena) return Comic.escena(this, lineas, alAcabar);
+    if (typeof Comic !== 'undefined' && Comic.escena) return Comic.escena(this, lineas, alAcabar, opciones);
     this.objetivo = null;
     this.aviso.setVisible(false);
     const velo = this.add.rectangle(ANCHO / 2, ALTO / 2, ANCHO, ALTO, HEX.tinta, 0.7).setDepth(950).setInteractive();
@@ -2129,8 +2168,16 @@ te ha mandado esto`, 24, COLOR.amarillo));
         fontFamily: FUENTE, fontSize: '22px', color: COLOR.crema, align: 'center', wordWrap: { width: 500 },
       }).setOrigin(0.5));
       m.add(texto(this, 100, 20, `Llevas ${ESTADO.inv.bolsita} bolsita${ESTADO.inv.bolsita === 1 ? '' : 's'} · ${ESTADO.monchis} monchis`, 20, COLOR.azul));
-      m.add(boton(this, -60, 150, `La bolsita · ${PRECIO_BOLSITA} monchis (E)`, pedir, { ancho: 380, tam: 22 }));
-      m.add(boton(this, 260, 150, 'Ahora no (Esc)', () => this.cerrarModal(), { ancho: 220, tam: 22, color: HEX.crema }));
+      // Desde la pista de Perico (cap. 5), Palicaso acepta el reto de los dados.
+      const farol = humo && ((ESTADO.capitulo || 0) > 4 || stat('pistaCaja') >= 1);
+      if (farol) {
+        m.add(boton(this, -200, 150, `Bolsita · ${PRECIO_BOLSITA} (E)`, pedir, { ancho: 290, tam: 21 }));
+        m.add(boton(this, 105, 150, 'El farol (dados)', () => this.tarjeta('Farol'), { ancho: 270, tam: 21, color: HEX.rosa }));
+        m.add(boton(this, 330, 150, 'Esc', () => this.cerrarModal(), { ancho: 140, tam: 21, color: HEX.crema }));
+      } else {
+        m.add(boton(this, -60, 150, `La bolsita · ${PRECIO_BOLSITA} monchis (E)`, pedir, { ancho: 380, tam: 22 }));
+        m.add(boton(this, 260, 150, 'Ahora no (Esc)', () => this.cerrarModal(), { ancho: 220, tam: 22, color: HEX.crema }));
+      }
     }, () => this.cerrarModal(), pedir);
   }
 

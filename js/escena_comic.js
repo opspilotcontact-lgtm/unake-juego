@@ -4,16 +4,20 @@
 // cartuchos amarillos para el narrador, pantalla de reacción en los «¿Una qué?» y cierre en iris.
 // Usa las mismas líneas de historia.js (['quien', 'texto']), así que no hay que reescribir nada.
 
-const FONDO_CAPITULO = ['fuera', 'dentro', 'sofa', 'dentro', 'cuarto', 'dentro'];
+const FONDO_CAPITULO = ['fuera', 'dentro', 'sofa', 'dentro', 'dentro', 'dentro', 'dentro', 'sofa'];
 
 const CARTELAS = {
   vuper: ['VUPER', 'el rider', COLOR.crema], palicaso: ['PALICASO', 'el que habla', COLOR.amarillo],
   blancaso: ['BLANCASO', 'el que lleva las cuentas', '#bfe8ff'], perico: ['PERICO', 'el portero', '#d0d4dc'],
   lasslow: ['LASSLOW', 'un señor', '#ffb38a'], cotine: ['COTINE', 'la repostera', '#ff8fc0'], pompa: ['LA POMPA', 'la DJ', '#9fe7ff'],
+  puky: ['PUKY', 'el que nunca está invitado', '#f2d23c'], casero: ['EL CASERO', 'el que tiene la llave', '#d9b77a'],
 };
 
 // Poses por mundo: [de pie, hablando, sorprendido].
 function posesDe(id, humo) {
+  // Puky solo existe en el humo; el casero, hasta tener su dibujo, es su llave («el que tiene la llave»).
+  if (id === 'puky') return ['puky', 'puky-que-rico', 'puky-horror'];
+  if (id === 'casero') return ['obj-llave', 'obj-llave', 'obj-llave'];
   if (humo) {
     return {
       vuper: ['vuper', 'vuper', 'vuper-colocado'], palicaso: ['palicaso', 'palicaso-contando', 'palicaso-riendo'],
@@ -25,9 +29,9 @@ function posesDe(id, humo) {
   return [`n-${id}`, `n-${id}-hablando`, `n-${id}-sorprendido`];
 }
 
-Comic.escena = function (scene, lineas, alAcabar) {
+Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
   const humo = scene.mundo === 'humo';
-  const n = Math.min(ESTADO.capitulo || 0, FONDO_CAPITULO.length - 1);
+  const n = Math.min(opciones.cap ?? (ESTADO.capitulo || 0), FONDO_CAPITULO.length - 1);
   const sala = FONDO_CAPITULO[n];
   const fondoClave = humo ? SALAS[sala].fondo : SALAS[sala].fondoN;
 

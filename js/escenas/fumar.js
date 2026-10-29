@@ -38,8 +38,11 @@ const SITIO = {
 // el fuego sale de ahí, y si la pose no enseña el porro, no sale fuego.
 const PUNTAS = {
   'vuper-fumando': [0.84, 0.46], 'vuper-calada': [0.88, 0.62], 'vuper-tos': [0.98, 0.8],
-  'vn-fumando-calada': [0.2, 0.37], 'vn-fumando-mechero': [0.33, 0.37],
+  // Mundo normal, medido de nuevo con rejilla ampliada (29-oct): la punta encendida del porro.
+  'vn-fumando-calada': [0.45, 0.365], 'vn-fumando-mechero': [0.632, 0.386],
 };
+// Dónde está la boca del mechero en las poses de encender: la llama sale de ahí y se tuerce hasta la punta.
+const MECHEROS = { 'vn-fumando-mechero': [0.54, 0.45] };
 const ASIENTO = 600;
 const SENTADO = 0.66; // parte del cuerpo normal que asoma por encima del cojín
 
@@ -153,9 +156,9 @@ class Fumar extends Phaser.Scene {
       : { x: img.x + img.displayWidth * 0.12, y: arriba + visible * 0.6 };
   }
 
-  puntaPorro(id = 'vuper') {
+  puntaPorro(id = 'vuper', tabla = PUNTAS) {
     const img = this.actores[id].img;
-    const f = PUNTAS[img.texture.key];
+    const f = tabla[img.texture.key];
     if (!f) return null;
     return {
       x: img.x + (f[0] - img.originX) * img.displayWidth * (img.flipX ? -1 : 1),
@@ -236,15 +239,29 @@ class Fumar extends Phaser.Scene {
 
   encender() {
     this.pose('vuper', 'mechero');
-    const b = this.puntaPorro() || this.boca('vuper');
+    let b = this.puntaPorro() || this.boca('vuper');
     const llama = this.add.container(b.x, b.y - 8).setDepth(30).setVisible(false);
     const fuera = this.add.ellipse(0, 0, 18, 34, 0xffb43a);
     const dentro = this.add.ellipse(0, 4, 8, 18, 0xfff3a0);
     llama.add([fuera, dentro]);
-    this.tweens.add({ targets: llama, scaleY: 1.2, scaleX: 0.85, duration: 90, yoyo: true, repeat: -1 });
+    // Se coloca cuando la pose ya está quieta (el cambio de pose rebota y descuadraría la medida).
+    const colocar = () => {
+      b = this.puntaPorro() || this.boca('vuper');
+      const m = this.puntaPorro('vuper', MECHEROS);
+      if (!m) { llama.setPosition(b.x, b.y - 8).setAngle(0); return; }
+      // La llama nace en el mechero y se tuerce hasta tocar la punta (se la chupa al encender).
+      const largo = Math.max(24, Phaser.Math.Distance.Between(m.x, m.y, b.x, b.y));
+      fuera.setSize(12, largo).setOrigin(0.5, 1).setPosition(0, 0);
+      dentro.setSize(5, largo * 0.55).setOrigin(0.5, 1).setPosition(0, 2);
+      fuera.geom.setSize(12, largo); dentro.geom.setSize(5, largo * 0.55);
+      fuera.updateDisplayOrigin(); dentro.updateDisplayOrigin();
+      llama.setPosition(m.x, m.y).setAngle(Phaser.Math.RadToDeg(Math.atan2(b.y - m.y, b.x - m.x)) + 90);
+    };
+    this.tweens.add({ targets: llama, scaleY: 1.12, scaleX: 0.85, duration: 90, yoyo: true, repeat: -1 });
     const t1 = texto(this, ANCHO / 2, 250, 'Enciende…', 40, COLOR.crema).setDepth(60);
-    this.time.delayedCall(500, () => { sfx(this, 'mechero-falla'); this.chispa(b.x, b.y); });
+    this.time.delayedCall(500, () => { colocar(); sfx(this, 'mechero-falla'); this.chispa(b.x, b.y); });
     this.time.delayedCall(1200, () => {
+      colocar();
       sfx(this, 'mechero');
       llama.setVisible(true);
       this.chispa(b.x, b.y);

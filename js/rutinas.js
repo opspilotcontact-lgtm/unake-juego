@@ -131,6 +131,12 @@ function efectoActividad(s, c, fx) {
 // Una cosa suya: pose, efecto, frase corta y (si toca) que los demás reaccionen.
 function hacerLoSuyo(s, c) {
   const humo = s.mundo === 'humo';
+  // Cap. 6: Perico grita el secreto por el bar y los demás se ríen (nadie le cree).
+  if (c.id === 'perico' && (ESTADO.capitulo || 0) === 5 && stat('secretoPerico') < 1 && humo && Math.random() < 0.6) {
+    s.burbujaAmbiente(c, Phaser.Utils.Array.GetRandom(['¡VUPER ES MONCHIMAN!', '¡Que Vuper es Monchiman, os lo juro!', 'Pin pin… ¡MONCHIMAN! ¡VUPER!']));
+    s.time.delayedCall(900, () => s.cosas.filter(o => o !== c && o.img && o.img.active).forEach(o => poseUnRato(s, o, { lasslow: 'lasslow-risa-floja', palicaso: 'palicaso-riendo' }[o.id] || o.sprite, 1500)));
+    return;
+  }
   const a = ACTIVIDADES[c.id] || {};
   let ok;
   if (humo) ok = a.humo && poseUnRato(s, c, a.humo, 2600);

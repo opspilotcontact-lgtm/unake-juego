@@ -297,6 +297,14 @@ const MISIONES = {
     nombre: 'La caja no cuadra', sprite: 'blancaso', umbrales: [300, 700, 1200],
     texto: 'Clasifica lo que cae: monedas ←, billetes →, facturas ↓. Tres fallos y a Blancaso le da el bajón.',
   },
+  Farol: {
+    nombre: 'El farol', sprite: 'palicaso-contando', umbrales: [600, 1300, 2200],
+    texto: 'Dados con Palicaso. Él canta lo que ha sacado: ¿te lo crees o es un farol? Cuando miente, se enrolla (y a veces suda).',
+  },
+  Periquito: {
+    nombre: '¡Periquito!', sprite: 'perico-cotilleando', umbrales: [800, 1700, 2800],
+    texto: 'Perico quiere gritar que Vuper es Monchiman. Grítale «¡periquito!» justo cuando empiece con «Mon…». Ojo con las fintas.',
+  },
   Reparto: {
     nombre: 'Encargos de la tienda', sprite: 'vuper-reparto', umbrales: [2, 4, 7],
     texto: 'Lleva monchis por el barrio antes de que se enfríen. Cada entrega seguida multiplica lo que cobras.',
@@ -350,7 +358,7 @@ function apuntar(clave, puntos, monchis, gana = true) {
   sumarStat('partidas');
   sumarStat(`jugada_${clave}`);
   sumarStat('monchisGanados', monchis);
-  if (gana) sumarStat('victorias');
+  if (gana) { sumarStat('victorias'); sumarStat(`gana_${clave}`); }
   // Subir de nivel (uno por partida, aunque los puntos den para más: que haya siempre un siguiente).
   const nivel = nivelDe(clave);
   const meta = metaNivel(clave, nivel);
