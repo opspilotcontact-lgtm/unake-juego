@@ -20,6 +20,15 @@ const CAPITULOS = [
     intro: [
       ['narrador', 'Anoche probaste el mundo humo. Hoy es de día y todo es normal. Demasiado normal.'],
       ['vuper', 'Quiero volver. Dicen que en Unaké, la aso del barrio, saben cómo. Solo entra quien se sabe la contraseña.'],
+      // El bucle de la contraseña, tal cual el E00 (guion-v1-canon.md).
+      ['perico', '¿Contraseña? ¿Contraseña?'],
+      ['vuper', 'Unaké.'],
+      ['perico', '¿Una qué?'],
+      ['vuper', 'Una aso.'],
+      ['perico', '¿De quién?'],
+      ['vuper', 'De los hermanos Aso, Palicaso y Blancaso, que tienen Unaké.'],
+      ['perico', '¿Una qué?'],
+      ['narrador', 'Vuper abre la boca… y la cierra. Está en un bucle.'],
       ['narrador', 'Para liarte hace falta papel, boquilla, la bolsita de la aso y mechero. Y para todo eso, monchis.'],
     ],
     objetivos: [

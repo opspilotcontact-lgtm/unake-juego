@@ -1035,6 +1035,8 @@ class Barrio extends Phaser.Scene {
 
   // Escena de diálogo: retrato del que habla y el texto escribiéndose. E (o tocar) para seguir.
   abrirEscena(lineas, alAcabar) {
+    // Las escenas de capítulo se cuentan como cómic (escena_comic.js); esta caja queda de respaldo.
+    if (typeof Comic !== 'undefined' && Comic.escena) return Comic.escena(this, lineas, alAcabar);
     this.objetivo = null;
     this.aviso.setVisible(false);
     const velo = this.add.rectangle(ANCHO / 2, ALTO / 2, ANCHO, ALTO, HEX.tinta, 0.7).setDepth(950).setInteractive();
@@ -1929,7 +1931,7 @@ te ha mandado esto`, 24, COLOR.amarillo));
     g.lineStyle(8, HEX.tinta, 1).strokeRoundedRect(-420, -250, 840, 500, 34);
     c.add(g);
     construir(c);
-    this.tweens.add({ targets: c, scale: 1, duration: 280, ease: 'Back.out' });
+    this.tweens.add({ targets: c, scale: ESCALA_UI, duration: 280, ease: 'Back.out' });
     this.modal = { velo, c };
     this.modalCerrar = alCerrar;
     this.modalAccion = accion || alCerrar;

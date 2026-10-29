@@ -248,7 +248,7 @@ const Comic = {
     c.setScale(0).setAngle(-6);
     scene.tweens.add({ targets: c, scale: 1, angle: -2, duration: 380, ease: 'Back.out' });
     scene.tweens.add({ targets: c, angle: 2, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut', delay: 380 });
-    scene.time.delayedCall(ms, () => scene.tweens.add({ targets: c, scale: 0, duration: 200, ease: 'Back.in', onComplete: () => c.destroy() }));
+    scene.time.delayedCall(ms, () => { if (c.scene) scene.tweens.add({ targets: c, scale: 0, duration: 200, ease: 'Back.in', onComplete: () => c.destroy() }); });
     return c;
   },
 };

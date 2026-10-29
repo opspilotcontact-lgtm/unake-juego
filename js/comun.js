@@ -33,7 +33,13 @@ const ROTULOS = [
   'Un joint y medio después…',
 ];
 
+// En el móvil el juego se dibuja a la mitad: la letra pequeña sube un 30 %, y ventanas y paneles un 15 %.
+const MOVIL = (() => { try { return window.matchMedia('(pointer: coarse)').matches; } catch (e) { return false; } })();
+const ESCALA_UI = MOVIL ? 1.15 : 1;
+function tamMovil(tam) { return MOVIL && tam <= 30 ? Math.round(tam * 1.3) : tam; }
+
 function texto(scene, x, y, str, tam = 48, color = COLOR.amarillo, ancho = null) {
+  tam = tamMovil(tam);
   const t = scene.add.text(x, y, str, {
     fontFamily: FUENTE,
     fontSize: `${tam}px`,
@@ -69,7 +75,7 @@ function boton(scene, x, y, etiqueta, alPulsar, { ancho = 320, alto = 76, tam = 
   g.fillStyle(color, 1).fillRoundedRect(-ancho / 2, -alto / 2, ancho, alto, 22);
   g.lineStyle(6, HEX.tinta, 1).strokeRoundedRect(-ancho / 2, -alto / 2, ancho, alto, 22);
   const t = scene.add.text(0, 0, etiqueta, {
-    fontFamily: FUENTE, fontSize: `${tam}px`, color: COLOR.tinta, align: 'center',
+    fontFamily: FUENTE, fontSize: `${MOVIL ? Math.round(tam * 1.12) : tam}px`, color: COLOR.tinta, align: 'center',
     wordWrap: { width: ancho - 24 },
   }).setOrigin(0.5);
   c.add([g, t]);
@@ -86,6 +92,7 @@ function boton(scene, x, y, etiqueta, alPulsar, { ancho = 320, alto = 76, tam = 
 
 // Bocadillo de cómic. cola: 'izq' | 'der' | 'abajo' (hacia dónde apunta el pico).
 function bocadillo(scene, x, y, str, { ancho = 380, tam = 28, cola = 'abajo' } = {}) {
+  if (MOVIL) { tam = Math.round(tam * 1.25); ancho = Math.round(ancho * 1.2); }
   const t = scene.add.text(0, 0, str, {
     fontFamily: FUENTE, fontSize: `${tam}px`, color: COLOR.tinta, align: 'center',
     wordWrap: { width: ancho - 40 },
@@ -404,20 +411,20 @@ function mostrarPanelFinal(scene, { titulo, linea, puntos, clave, gana = true, e
   const siguiente = umbrales.find(u => puntos < u);
   const pista = r.nuevoRecord && puntos > 0 ? '¡Nuevo récord!'
     : siguiente ? `Récord: ${leerRecord(clave)}  ·  Siguiente estrella: ${siguiente}` : `Récord: ${leerRecord(clave)}  ·  ¡Las tres estrellas!`;
-  c.add(texto(scene, 0, 76, pista, 22, r.nuevoRecord ? COLOR.amarillo : COLOR.crema, 720));
+  if (!(MOVIL && r.subido)) c.add(texto(scene, 0, 76, pista, 22, r.nuevoRecord ? COLOR.amarillo : COLOR.crema, 720));
   const lineaNivel = r.subido
-    ? `¡NIVEL ${r.nivel} SUPERADO! +${r.subido} monchis · Nivel ${r.nivel + 1}: ${metaNivel(clave, r.nivel + 1)}`
+    ? `¡NIVEL ${r.nivel} SUPERADO! +${r.subido} · siguiente: ${metaNivel(clave, r.nivel + 1)}`
     : `Nivel ${r.nivel}: llega a ${r.meta} (ganando) para subir`;
   c.add(texto(scene, 0, 110, lineaNivel, r.subido ? 26 : 21, r.subido ? COLOR.amarillo : COLOR.azul, 740));
   if (r.subido) {
     scene.tweens.add({ targets: c.list[c.list.length - 1], scale: 1.08, duration: 300, yoyo: true, repeat: 3, delay: 600 });
-    if (typeof Comic !== 'undefined') scene.time.delayedCall(650, () => { Comic.impacto(scene, ANCHO / 2 - 300, ALTO / 2 + 110, { profundidad: 610 }); Comic.confeti(scene, { profundidad: 620 }); sfx(scene, 'platillo', { volume: 0.5 }); });
+    if (typeof Comic !== 'undefined') scene.time.delayedCall(650, () => { Comic.impacto(scene, ANCHO / 2 - 300, ALTO / 2 + 110, { profundidad: 610 }); Comic.confeti(scene, { profundidad: 600 }); sfx(scene, 'platillo', { volume: 0.5 }); });
   }
   if (lineaSituacion) c.add(texto(scene, 0, 144, lineaSituacion, 20, COLOR.verde, 740));
   else if (r.estrellasNuevas > 0) c.add(texto(scene, 0, 144, `+${r.estrellasNuevas} estrella${r.estrellasNuevas > 1 ? 's' : ''} · llevas ${totalEstrellas()}`, 22, COLOR.verde));
   c.add(boton(scene, -185, 205, 'Otra vez (Enter)', () => irA(scene, scene.scene.key), { ancho: 330, tam: 26 }));
   c.add(boton(scene, 185, 205, 'Al barrio (Esc)', () => irA(scene, 'Barrio'), { ancho: 330, color: HEX.azul, tam: 26 }));
-  scene.tweens.add({ targets: c, scale: 1, duration: 420, ease: 'Back.out', delay: 200 });
+  scene.tweens.add({ targets: c, scale: ESCALA_UI, duration: 420, ease: 'Back.out', delay: 200 });
   scene.input.keyboard.once('keydown-ENTER', () => irA(scene, scene.scene.key));
   scene.input.keyboard.once('keydown-ESC', () => irA(scene, 'Barrio'));
   if (r.ganadas === 3) sfx(scene, 'platillo', { volume: 0.5 });
