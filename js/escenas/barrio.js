@@ -21,7 +21,7 @@ const SALAS = {
     cosas: [{
       id: 'blancaso', tipo: 'blancaso', sprite: 'blancaso', x: 900, y: 565, escala: 0.4, nombre: 'Blancaso',
       n: { sprite: 'n-blancaso', x: 820, y: 640, escala: 0.62 },
-    }],
+    }, { id: 'carrera', tipo: 'carrera', sprite: 'pizarra-carrera', x: 420, y: 600, escala: 0.6, nombre: 'Carreras de humo (apuestas)' }],
   },
   fuera: {
     nombre: 'La puerta de Unaké', fondo: 'bg-fuera', escala: 1.25, fondoY: 515, fondoN: 'bgn-fuera', izq: 'plaza', der: 'tienda', suelo: [560, 680],
@@ -35,6 +35,7 @@ const SALAS = {
     cosas: [
       { id: 'mostrador', tipo: 'tienda', x: 640, y: 520, nombre: 'Mostrador', n: { x: 560 } },
       { id: 'encargos', tipo: 'reparto', x: 190, y: 600, nombre: 'Encargos' },
+      { id: 'tragaperras', tipo: 'tragaperras', sprite: 'tragaperras', x: 1060, y: 650, escala: 0.62, nombre: 'Tragaperras de Palicaso' },
     ],
   },
   dentro: {
@@ -343,10 +344,10 @@ class Barrio extends Phaser.Scene {
     this.objSala.push(zona);
 
     const clave = this.misionDe(m);
-    const marcaTexto = m.tipo === 'tienda' ? '$' : m.tipo === 'sofa' ? '~' : m.tipo === 'barra' ? '¡' : m.tipo === 'negocio' ? 'N' : m.tipo === 'subir' ? '^' : clave ? '!' : null;
+    const marcaTexto = m.tipo === 'tienda' ? '$' : m.tipo === 'sofa' ? '~' : m.tipo === 'barra' ? '¡' : m.tipo === 'negocio' ? 'N' : m.tipo === 'subir' ? '^' : m.tipo === 'tragaperras' || m.tipo === 'carrera' ? '€' : clave ? '!' : null;
     if (marcaTexto) {
       const yMarca = m.y - m.alto - 40;
-      const etiqueta = { tienda: 'Tienda', sofa: 'Fumar', barra: 'Barra', negocio: 'Negocio', subir: 'Techo' }[m.tipo] || '!';
+      const etiqueta = { tienda: 'Tienda', sofa: 'Fumar', barra: 'Barra', negocio: 'Negocio', subir: 'Techo', tragaperras: 'Apostar', carrera: 'Apostar' }[m.tipo] || '!';
       const deNoche = this.mundo === 'normal' && (m.tipo === 'mision' || m.tipo === 'senal');
       const marca = texto(this, m.x, yMarca, deNoche ? 'De noche' : etiqueta, clave && !deNoche ? 54 : 22, deNoche ? COLOR.azul : COLOR.amarillo).setDepth(800);
       m.marca = marca;
@@ -480,7 +481,10 @@ class Barrio extends Phaser.Scene {
     if (cerca) {
       const sobre = cerca.marca ? (this.misionDe(cerca) ? 105 : 84) : 40;
       const hablando = this.burbuja && this.burbuja.active;
-      this.aviso.setText(this.tactil ? cerca.nombre : `E · ${cerca.nombre}`).setPosition(Phaser.Math.Clamp(cerca.x, 150, ANCHO - 150), Math.max(150, cerca.y - cerca.alto - sobre)).setVisible(!hablando);
+      // Si Vuper está encima de la cosa, el aviso sube por encima de su cabeza (no le tapa la cara).
+      let yAviso = cerca.y - cerca.alto - sobre;
+      if (Math.abs(cerca.x - this.px) < 140) yAviso = Math.min(yAviso, this.py - this.jugador.displayHeight - 30);
+      this.aviso.setText(this.tactil ? cerca.nombre : `E · ${cerca.nombre}`).setPosition(Phaser.Math.Clamp(cerca.x, 150, ANCHO - 150), Math.max(150, yAviso)).setVisible(!hablando);
       if (pulsado(k.E) || pulsado(k.ENTER) || pulsado(k.SPACE) || this.pendiente === cerca) {
         this.pendiente = null;
         this.objetivo = null;
@@ -792,6 +796,8 @@ class Barrio extends Phaser.Scene {
       case 'barra': return this.barra(c);
       case 'sofa': return this.sofa();
       case 'negocio': return this.abrirNegocio();
+      case 'tragaperras': return irA(this, 'Tragaperras');
+      case 'carrera': return irA(this, 'Carrera');
       case 'subir':
         if (!salaAbierta('techo')) return this.charla(c, 'La escalera da al techo. Está cerrado hasta que se inaugure (Obras, en el negocio).');
         if (this.mundo === 'normal') return this.charla(c, 'De día no se sube al techo: ahí solo se llega flotando.');

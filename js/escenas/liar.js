@@ -175,7 +175,7 @@ class Liar extends Phaser.Scene {
       this.cursor = this.add.rectangle(ANCHO / 2 - 250, y, 10, 46, 0xffffff).setStrokeStyle(3, HEX.tinta);
       this.medidor.add(this.cursor);
       this.objetivoX = ANCHO / 2;
-      this.tweens.add({ targets: this.cursor, x: ANCHO / 2 + 250, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      this.tweens.add({ targets: this.cursor, x: ANCHO / 2 + 250, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     }
     if (id === 'encender') {
       this.intentos = 0;

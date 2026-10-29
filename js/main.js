@@ -9,7 +9,7 @@ function arrancar() {
     backgroundColor: COLOR.tinta,
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, fullscreenTarget: 'juego' },
     input: { activePointers: 3 },
-    scene: [Arranque, Portada, Intro, Barrio, Contrasena, Tarta, Lasslow, Rescate, Liar, Fumar, Blancazo, Final, Barra, Pipas, DJ, Cuentas],
+    scene: [Arranque, Portada, Intro, Barrio, Contrasena, Tarta, Lasslow, Rescate, Liar, Fumar, Blancazo, Final, Barra, Pipas, DJ, Cuentas, Tragaperras, Carrera],
   });
 }
 

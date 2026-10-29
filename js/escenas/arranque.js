@@ -68,6 +68,7 @@ class Arranque extends Phaser.Scene {
 
   create() {
     this.texturas();
+    texturasApuestas(this);
     this.scene.start('Portada');
   }
 
