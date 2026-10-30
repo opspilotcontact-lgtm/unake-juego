@@ -403,6 +403,7 @@ const PAGO_ESTRELLAS = [15, 35, 60, 90];
 // Panel de final de misión, común a todas.
 // Antes del panel, el remate de cómic: perder es una pantalla de reacción; las tres estrellas, viñetas del bar.
 function panelFinal(scene, opciones) {
+  if (!scene.sys || !scene.sys.isActive()) return; // la escena ya se ha cerrado
   scene.panelAbierto = true; // los mandos táctiles se apartan para no tapar los botones
   const { clave, puntos, gana = true } = opciones;
   let remate = Promise.resolve();

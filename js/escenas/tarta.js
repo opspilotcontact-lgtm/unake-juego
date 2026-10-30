@@ -18,6 +18,8 @@ class Tarta extends Phaser.Scene {
   constructor() { super('Tarta'); }
 
   create(datos) {
+    this.nivelT = nivelDe('Tarta');
+    this.viento = 0;
     this.puntos = 0;
     this.vidas = 3;
     this.hambre = 10;
@@ -114,7 +116,7 @@ class Tarta extends Phaser.Scene {
     // Se complica con cada tarta y también con el tiempo: todo cae más rápido y hay más colillas.
     const nivel = this.servidas + this.tiempo / 15;
     const r = Math.random();
-    const pColilla = Math.min(0.12 + nivel * 0.035, 0.32);
+    const pColilla = Math.min(0.12 + nivel * 0.035, 0.32) + (this.nivelT >= 5 ? 0.06 : 0);
     let tipo;
     let clave;
     if (r < 0.42) { tipo = 'piso'; clave = necesario.clave; }
@@ -127,6 +129,8 @@ class Tarta extends Phaser.Scene {
     o.clave = clave;
     o.vy = 200 + nivel * 30 + Phaser.Math.Between(0, 80);
     o.giro = Phaser.Math.FloatBetween(-90, 90);
+    // Nivel 3+: hay viento en la cocina (la ventana abierta) que desvía lo que cae.
+    o.vx = this.nivelT >= 3 ? this.viento : 0;
     this.cayendo.push(o);
   }
 
@@ -145,6 +149,15 @@ class Tarta extends Phaser.Scene {
     this.pila.x = this.cotine.x;
     this.pila.setAngle(-dir * 3);
 
+    // El viento cambia de vez en cuando (nivel 3+).
+    if (this.nivelT >= 3) {
+      this.tViento = (this.tViento ?? 0) - dt;
+      if (this.tViento <= 0) {
+        this.tViento = Phaser.Math.Between(5, 9);
+        this.viento = Phaser.Math.Between(-90, 90);
+        golpeTexto(this, ANCHO / 2, 160, this.viento < 0 ? '← Viento' : 'Viento →', COLOR.azul, 30);
+      }
+    }
     // El hambre sube sola; arriba del todo, Cotine se come el piso de arriba.
     this.hambre += dt * (5 + this.servidas * 1.2);
     if (this.hambre >= 100) this.bocado();
@@ -161,6 +174,7 @@ class Tarta extends Phaser.Scene {
     this.cayendo = this.cayendo.filter(o => {
       const antes = o.y;
       o.y += o.vy * dt;
+      o.x = Phaser.Math.Clamp(o.x + (o.vx || 0) * dt, 40, ANCHO - 40);
       o.angle += o.giro * dt;
       if (antes < linea && o.y >= linea && Math.abs(o.x - this.cotine.x) < this.anchoCaptura) {
         this.atrapar(o);
@@ -228,6 +242,8 @@ class Tarta extends Phaser.Scene {
   }
 
   servir() {
+    Comic.confeti(this, { n: 16, profundidad: 40 });
+    Comic.impacto(this, this.cotine.x, this.cotine.y - 200, { tam: 90, profundidad: 41 });
     const pisos = this.pasos.length;
     const bonus = this.sinBocados ? 150 : 0;
     this.sumar(100 * pisos + bonus);

@@ -16,6 +16,8 @@ class Pipas extends Phaser.Scene {
     this.aciertos = 0;
     this.fase = 'espera';
     this.origen = { x: 300, y: 430 };
+    // Nivel 3+: viento desde la primera y papelera que se mueve antes; nivel 5+: Perico sopla (más viento).
+    this.nivel = nivelDe('Pipas');
 
     fondo(this, enMundoHumo() ? 'bg-plaza' : 'bgn-plaza');
     this.perico = this.add.image(250, 610, 'perico-pipas').setOrigin(0.5, 1).setDepth(5);
@@ -50,8 +52,8 @@ class Pipas extends Phaser.Scene {
     this.tweens.killTweensOf(this.papelera);
     const x = Phaser.Math.Between(620, 1150);
     this.tweens.add({ targets: this.papelera, x, duration: 300, ease: 'Sine.out' });
-    if (this.tirada >= 6) this.tweens.add({ targets: this.papelera, x: Phaser.Math.Clamp(x + Phaser.Math.Between(-160, 160), 600, 1170), duration: 1600 - this.tirada * 60, yoyo: true, repeat: -1, ease: 'Sine.inOut', delay: 300 });
-    this.viento = this.tirada <= 2 ? 0 : Phaser.Math.FloatBetween(-1, 1) * Math.min(1, this.tirada / 6);
+    if (this.tirada >= (this.nivel >= 3 ? 3 : 6)) this.tweens.add({ targets: this.papelera, x: Phaser.Math.Clamp(x + Phaser.Math.Between(-160, 160), 600, 1170), duration: 1600 - this.tirada * 60, yoyo: true, repeat: -1, ease: 'Sine.inOut', delay: 300 });
+    this.viento = this.tirada <= (this.nivel >= 3 ? 0 : 2) ? 0 : Phaser.Math.FloatBetween(-1, 1) * Math.min(1, this.tirada / 6) * (this.nivel >= 5 ? 1.5 : 1);
     const fuerza = Math.round(Math.abs(this.viento) * 3);
     this.textoViento.setText(fuerza ? `Viento ${this.viento < 0 ? '←'.repeat(fuerza) : '→'.repeat(fuerza)}` : 'Sin viento');
     this.fase = 'angulo';
@@ -149,6 +151,8 @@ class Pipas extends Phaser.Scene {
     sfx(this, 'campanita', { volume: 0.5 });
     this.tweens.add({ targets: this.papelera, scaleY: 0.9, duration: 80, yoyo: true });
     golpeTexto(this, this.papelera.x, this.papelera.y - 200, limpio ? `¡Limpia! +${pts}` : `¡Dentro! +${pts}`, COLOR.verde, 40);
+    Comic.impacto(this, this.papelera.x, this.papelera.y - 120, { tam: limpio ? 100 : 70, profundidad: 30 });
+    if (this.racha === 3 || this.racha === 5 || this.racha === 8) Comic.racha(this, this.racha);
     this.perico.setTexture('perico-horror');
     if (this.racha >= 3) this.time.delayedCall(400, () => bocadillo(this, 420, 300, Phaser.Utils.Array.GetRandom(['¡Trampa! ¡Pin pin!', 'Eso ha sido suerte.', 'Pues yo meto más. Algún día.']), { tam: 22, cola: 'izq' }));
     this.time.delayedCall(1300, () => { this.children.list.filter(o => o.type === 'Container' && o.depth === 50 && o !== this).forEach(o => o.destroy()); this.nuevaTirada(); });

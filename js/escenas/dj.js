@@ -25,6 +25,8 @@ class DJ extends Phaser.Scene {
     this.vuelta = 0;
     this.activo = false;
     this.ultimoGolpe = -1;
+    // Nivel 3+: acordes desde la primera vuelta; nivel 5+: también las notas a contratiempo.
+    this.nivel = nivelDe('DJ');
     this.notas = this.componer();
 
     fondo(this, enMundoHumo() ? 'bg-techo' : 'bgn-dentro');
@@ -83,8 +85,8 @@ class DJ extends Phaser.Scene {
         const base = vuelta * DURACION_TEMA + t;
         const carril = Math.floor(azar() * 3);
         notas.push({ t: base, carril });
-        if (vuelta === 1 && k % 4 === 3) notas.push({ t: base, carril: (carril + 1 + Math.floor(azar() * 2)) % 3 });
-        if (vuelta === 1 && k % 2 === 1 && t + BPM_PERIODO / 2 < DURACION_TEMA - 0.5) notas.push({ t: base + BPM_PERIODO / 2, carril: Math.floor(azar() * 3) });
+        if ((vuelta === 1 || this.nivel >= 3) && k % 4 === 3) notas.push({ t: base, carril: (carril + 1 + Math.floor(azar() * 2)) % 3 });
+        if ((vuelta === 1 || this.nivel >= 5) && k % 2 === 1 && t + BPM_PERIODO / 2 < DURACION_TEMA - 0.5) notas.push({ t: base + BPM_PERIODO / 2, carril: Math.floor(azar() * 3) });
       }
     }
     return notas.sort((a, b) => a.t - b.t);
@@ -131,6 +133,7 @@ class DJ extends Phaser.Scene {
     this.puntos += pts;
     this.textoPuntos.setText(`${this.puntos} puntos`);
     this.textoCombo.setText(this.combo >= 5 ? `${this.combo} seguidas` : '');
+    if (this.combo % 10 === 0) Comic.racha(this, this.combo, { y: 170 });
     this.juicio(perfecto ? '¡Perfecto!' : 'Bien', perfecto ? COLOR.amarillo : COLOR.verde);
   }
 

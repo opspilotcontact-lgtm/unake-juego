@@ -27,6 +27,8 @@ class Cuentas extends Phaser.Scene {
     this.activo = false;
     this.cola = [];
     this.proximo = 0.4;
+    // Nivel 3+: a veces cae una hucha (vale el triple y suma a la de la aso); nivel 5+: la cinta va más rápido.
+    this.nivel = nivelDe('Cuentas');
 
     fondo(this, enMundoHumo() ? 'bg-dentro' : 'bgn-dentro');
     this.add.rectangle(ANCHO / 2, ALTO / 2, ANCHO, ALTO, HEX.tinta, 0.5);
@@ -69,7 +71,8 @@ class Cuentas extends Phaser.Scene {
   }
 
   nuevo() {
-    const tipo = Phaser.Utils.Array.GetRandom(TIPOS_CAJA);
+    const hucha = this.nivel >= 3 && this.textures.exists('obj-hucha') && Math.random() < 0.12;
+    const tipo = hucha ? { clave: 'obj-hucha', nombre: 'hucha', destino: 0, hucha: true } : Phaser.Utils.Array.GetRandom(TIPOS_CAJA);
     const img = this.add.image(640, 240, tipo.clave).setDepth(6).setAngle(Phaser.Math.Between(-15, 15));
     img.setScale(70 / Math.max(img.width, img.height));
     this.cola.push({ img, tipo });
@@ -85,7 +88,9 @@ class Cuentas extends Phaser.Scene {
     if (o.tipo.destino === destino) {
       this.combo++;
       const valor = o.tipo.destino === 2 ? 15 : 10;
-      const pts = Math.round(valor * 5 * (1 + Math.floor(this.combo / 5) * 0.5));
+      const pts = Math.round(valor * 5 * (1 + Math.floor(this.combo / 5) * 0.5)) * (o.tipo.hucha ? 3 : 1);
+      if (o.tipo.hucha) { this.salvado += 10; Comic.impacto(this, b.x, b.y - 40, { tam: 90, profundidad: 30 }); golpeTexto(this, b.x, b.y - 90, '¡Una hucha! +10', COLOR.amarillo, 30); }
+      if (this.combo % 5 === 0) Comic.racha(this, this.combo);
       this.puntos += pts;
       if (o.tipo.destino !== 2) this.salvado += valor === 10 ? (o.tipo.destino === 1 ? 3 : 1) : 0;
       this.textoPuntos.setText(`${this.puntos} puntos`);
@@ -103,6 +108,7 @@ class Cuentas extends Phaser.Scene {
     sfx(this, 'bonk', { volume: 0.6 });
     this.cameras.main.shake(200, 0.008);
     golpeTexto(this, 640, 330, t, COLOR.rosa, 30);
+    Comic.emote(this, this.blancaso.x + 70, this.blancaso.y - 60, 'gota', { tam: 50, profundidad: 30 });
     // A Blancaso le va dando el bajón: se hunde y se derrite.
     this.blancaso.setTexture(this.bajon >= 3 ? 'blancaso-derritiendose' : 'blancaso-mareado');
     this.blancaso.setScale(150 / this.blancaso.height);
@@ -116,7 +122,7 @@ class Cuentas extends Phaser.Scene {
     this.restante -= dt;
     this.textoTiempo.setText(`${Math.ceil(Math.max(0, this.restante))} s`);
     const nivel = (DURACION_CAJA - this.restante) / DURACION_CAJA;
-    const vel = 90 + nivel * 170;
+    const vel = (90 + nivel * 170) * (this.nivel >= 5 ? 1.15 : 1);
     // Rayas de la cinta que bajan.
     this.rayas.clear().fillStyle(0x4a3d63, 1);
     for (let y = 0; y < 344; y += 40) this.rayas.fillRect(572, 258 + ((y + this.time.now * vel / 1000) % 344), 136, 6);

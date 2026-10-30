@@ -31,7 +31,8 @@ class Lasslow extends Phaser.Scene {
     this.dignidad = 3;
     this.puntos = 0;
     this.combo = 0;
-    this.ritmo = 1;
+    // Nivel 3+: la cena empieza más animada (todo va más rápido).
+    this.ritmo = 1 + Math.min(0.5, Math.max(0, nivelDe('Lasslow') - 2) * 0.12);
     this.rondas = 0;
     this.prueba = null;
     this.ultima = null;
@@ -203,6 +204,7 @@ class Lasslow extends Phaser.Scene {
     this.poseL('lasslow-digno');
     this.tweens.add({ targets: this.lasslow, scaleY: this.escLasslow * 1.06, duration: 120, yoyo: true });
     golpeTexto(this, 640, 250, `${texto_} +${Math.round(pts)}`, COLOR.verde, 42);
+    if (this.combo % 3 === 0) Comic.racha(this, this.combo, { y: 170 });
     // El casero asiente con el monóculo.
     this.tweens.add({ targets: this.casero, angle: 3, duration: 150, yoyo: true });
     if (this.burbuja) this.burbuja.destroy();

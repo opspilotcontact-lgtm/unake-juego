@@ -25,6 +25,9 @@ class Barra extends Phaser.Scene {
     this.proximo = 1;
     this.activo = false;
     this.sitios = SITIOS_BARRA.map(x => ({ x, cliente: null }));
+    // Los niveles cambian la noche: desde el 3, Lasslow suelta nubes que tapan pedidos; desde el 5, hay más prisa.
+    this.nivel = nivelDe('Barra');
+    this.tNube = 6;
 
     fondo(this, enMundoHumo() ? 'bg-dentro' : 'bgn-dentro');
     this.palicaso = this.add.image(640, 458, 'palicaso').setOrigin(0.5, 1).setDepth(2);
@@ -80,7 +83,7 @@ class Barra extends Phaser.Scene {
     img.setScale(esc);
     this.tweens.add({ targets: img, y: 610, duration: 380, ease: 'Back.out' });
     const pedido = puky ? -1 : Phaser.Math.Between(0, PRODUCTOS.length - 1);
-    const paciencia = puky ? 3.2 : Math.max(4, 9 - (DURACION_BARRA - this.restante) / 12);
+    const paciencia = (puky ? 3.2 : Math.max(4, 9 - (DURACION_BARRA - this.restante) / 12)) * (this.nivel >= 5 ? 0.85 : 1);
     // Bocadillo con el pedido (o «¿Me llamabais?» si es Puky).
     const b = this.add.container(sitio.x, 330).setDepth(20).setScale(0);
     b.add(this.add.graphics().fillStyle(0xffffff, 1).lineStyle(5, HEX.tinta, 1).fillRoundedRect(-52, -46, 104, 92, 22).strokeRoundedRect(-52, -46, 104, 92, 22).fillTriangle(-12, 44, 12, 44, 0, 66));
@@ -117,6 +120,7 @@ class Barra extends Phaser.Scene {
     this.palicaso.setTexture('palicaso-riendo');
     this.time.delayedCall(300, () => this.palicaso.setTexture('palicaso'));
     this.combo++;
+    if (this.combo % 4 === 0) Comic.racha(this, this.combo);
     const propina = Math.round(40 + 60 * (c.t / c.paciencia));
     const pts = Math.round(propina * (1 + Math.floor(this.combo / 4) * 0.5));
     this.sumar(pts);
@@ -139,6 +143,7 @@ class Barra extends Phaser.Scene {
     }
     sfx(this, 'zas');
     golpeTexto(this, s.x, 240, '¡FUERA!', COLOR.amarillo, 44);
+    Comic.impacto(this, s.x, 470, { tam: 90, profundidad: 30 });
     this.sumar(60);
     const img = s.cliente.img;
     this.tweens.add({ targets: img, x: img.x + 500, angle: 200, y: img.y - 200, duration: 450, ease: 'Sine.in', onComplete: () => img.destroy() });
@@ -168,6 +173,7 @@ class Barra extends Phaser.Scene {
     sfx(this, 'abucheo', { volume: 0.5 });
     this.cameras.main.shake(250, 0.01);
     golpeTexto(this, s.x, 240, texto_, COLOR.rosa, 34);
+    Comic.emote(this, s.x + 40, 400, 'rayo', { tam: 60, profundidad: 30 });
     this.irse(s, false);
     if (this.vidas <= 0) this.final();
   }
@@ -182,6 +188,20 @@ class Barra extends Phaser.Scene {
     const dt = Math.min(dms / 1000, 0.05);
     this.restante -= dt;
     this.textoTiempo.setText(`${Math.ceil(Math.max(0, this.restante))} s`);
+    // Nivel 3+: una nube de Lasslow tapa el pedido de alguien un rato.
+    if (this.nivel >= 3) {
+      this.tNube -= dt;
+      const ocupados = this.sitios.filter(s => s.cliente && !s.cliente.puky && !s.cliente.servido);
+      if (this.tNube <= 0 && ocupados.length) {
+        this.tNube = Phaser.Math.Between(7, 11);
+        const s = Phaser.Utils.Array.GetRandom(ocupados);
+        const n = this.add.image(s.x, 330, this.textures.exists('fx-nube-pedo') ? 'fx-nube-pedo' : 'humo').setDepth(26).setAlpha(0);
+        n.setScale(150 / n.height);
+        sfx(this, 'pedo-silencioso', { volume: 0.5 });
+        this.tweens.chain({ targets: n, tweens: [{ alpha: 0.95, duration: 250 }, { alpha: 0.95, duration: 2000 }, { alpha: 0, duration: 400 }], onComplete: () => n.destroy() });
+        if (!this.avisoNube) { this.avisoNube = true; golpeTexto(this, 640, 200, 'Lasslow se ha tirado uno: ¡no se ve el pedido!', COLOR.rosa, 28); }
+      }
+    }
     this.proximo -= dt;
     if (this.proximo <= 0) {
       this.nuevoCliente();

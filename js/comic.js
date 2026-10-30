@@ -143,7 +143,7 @@ const Comic = {
   // Pantalla de reacción: el personaje llena el cuadro sobre color plano, medio segundo.
   reaccion(scene, sprite, { color = UNAKE.amarillo, ms = 650, sonido = 'golpe' } = {}) {
     return new Promise(res => {
-      if (!scene.textures.exists(sprite)) return res();
+      if (!scene.sys || !scene.sys.isActive() || !scene.textures.exists(sprite)) return res();
       Comic.texturasLineas(scene);
       const c = scene.add.container(0, 0).setDepth(970);
       c.add(scene.add.rectangle(ANCHO / 2, ALTO / 2, ANCHO, ALTO, color));
@@ -172,6 +172,7 @@ const Comic = {
   // Viñetas: primeros planos que entran de golpe, torcidos, uno cada 0,18 s.
   vinetas(scene, sprites, { ms = 1300, colores = [UNAKE.amarillo, UNAKE.rosa, UNAKE.cian, UNAKE.verde] } = {}) {
     return new Promise(res => {
+      if (!scene.sys || !scene.sys.isActive()) return res();
       const lista = sprites.filter(k => scene.textures.exists(k)).slice(0, 4);
       if (!lista.length) return res();
       const capa = scene.add.container(0, 0).setDepth(970);
@@ -209,6 +210,17 @@ const Comic = {
     const b = scene.add.star(x, y, 8, tam * 0.4, tam, 0xffffff).setStrokeStyle(6, HEX.tinta).setDepth(profundidad + 1).setScale(0);
     const a = scene.add.star(x, y, 8, tam * 0.3, tam * 0.75, UNAKE.amarillo).setDepth(profundidad + 2).setScale(0);
     scene.tweens.add({ targets: [b, a], scale: 1.2, duration: 110, yoyo: true, hold: 60, onComplete: () => { a.destroy(); b.destroy(); } });
+  },
+
+  // «¡RACHA x5!»: rótulo torcido que entra de golpe con líneas de velocidad (no para el juego).
+  racha(scene, n, { x = ANCHO / 2, y = 210 } = {}) {
+    Comic.texturasLineas(scene);
+    const l = scene.add.image(ANCHO / 2, ALTO / 2, 'lineas-0').setDepth(64).setAlpha(0.35).setTint(0xffd23f);
+    scene.tweens.add({ targets: l, alpha: 0, duration: 650, onComplete: () => l.destroy() });
+    const t = texto(scene, x, y, `¡RACHA x${n}!`, 58, COLOR.amarillo).setDepth(65).setAngle(-7).setScale(1.8);
+    scene.tweens.chain({ targets: t, tweens: [{ scale: 1, duration: 180, ease: 'Back.out' }, { angle: -3, duration: 500 }, { alpha: 0, y: y - 30, duration: 250 }], onComplete: () => t.destroy() });
+    Comic.impacto(scene, x - 230, y, { tam: 60, profundidad: 63 });
+    sfx(scene, 'tiroriro', { volume: 0.45 });
   },
 
   // Confeti de Gemini (o rectángulos de colores) que cae desde arriba.

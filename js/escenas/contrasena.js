@@ -21,12 +21,14 @@ class Contrasena extends Phaser.Scene {
   constructor() { super('Contrasena'); }
 
   create(datos) {
+    // Nivel 3+: Perico pregunta más rápido; nivel 5+, aún más.
+    this.nivel = nivelDe('Contrasena');
     this.paso = 0;          // índice en BUCLE
     this.aciertos = 0;
     this.vueltas = 0;
     this.puntos = 0;
     this.vidas = tiene('silbato') ? 4 : 3;
-    this.tiempoMax = 4.5;
+    this.tiempoMax = 4.5 * (this.nivel >= 5 ? 0.75 : this.nivel >= 3 ? 0.85 : 1);
     this.racha = 0;
     this.abierto = false;
     this.tiempo = 0;
@@ -109,6 +111,7 @@ class Contrasena extends Phaser.Scene {
     sfx(this, 'pop', { volume: 0.6 });
     this.aciertos++;
     this.racha++;
+    if (this.racha % 5 === 0) Comic.racha(this, this.racha, { y: 160 });
     this.puntos += 10 * (this.vueltas + 1);
     this.marcador.setText(`${this.puntos} puntos`);
     this.paso++;
