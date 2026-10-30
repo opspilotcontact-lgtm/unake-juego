@@ -319,7 +319,7 @@ class Portada extends Phaser.Scene {
     const lineas = [
       'UNAKÉ · una serie de VOPPË',
       'Vuper, Palicaso, Blancaso, Perico, Cotine, la Pompa, Lasslow y Puky',
-      'Música: «Whistling through the quiet night»',
+      'Música: «Whistling through the quiet night» y temas de Kevin MacLeod (incompetech.com), CC BY 4.0',
       'Juego hecho con Phaser · prueba para los amigos',
       '«¿Vamos a Unaké?» «¿A una qué?» «A una aso.»',
     ];

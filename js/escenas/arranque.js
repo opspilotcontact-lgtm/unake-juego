@@ -67,7 +67,7 @@ class Arranque extends Phaser.Scene {
     IMAGENES.forEach(k => this.load.image(k, `assets/img/${k}.jpg`));
     SPRITES.forEach(k => this.load.image(k, `assets/img/${k}.png`));
     SONIDOS.forEach(k => this.load.audio(k, `assets/snd/${k}.mp3`));
-    MUSICAS.forEach(h => this.load.audio(`m-${h}`, `assets/musica/${h}.mp3`));
+    // La música no se carga aquí: cada tema se pide la primera vez que suena (musica.js).
   }
 
   create() {

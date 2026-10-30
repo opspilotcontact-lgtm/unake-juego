@@ -39,6 +39,7 @@ class Final extends Phaser.Scene {
     const creditos = [
       'UNAKÉ · la noche',
       'Una prueba de juego de la serie de VOPPË',
+      'Música: Kevin MacLeod (incompetech.com) · CC BY 4.0',
       '«¿Vamos a Unaké?» «¿A una qué?» «A una aso.»',
       'Gracias por jugar. El barrio sigue abierto: récords, estrellas e inventos.',
     ];
