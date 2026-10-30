@@ -18,7 +18,10 @@ const CARTELAS = {
 function posesDe(id, humo) {
   // Puky solo existe en el humo; el casero, hasta tener su dibujo, es su llave («el que tiene la llave»).
   if (id === 'puky') return ['puky', 'puky-que-rico', 'puky-horror'];
-  if (id === 'casero') return ['obj-llave', 'obj-llave', 'obj-llave'];
+  if (id === 'casero') {
+    return humo ? [arteO('casero', 'obj-llave'), arteO('casero-mira', arteO('casero', 'obj-llave')), arteO('casero-mareado', arteO('casero', 'obj-llave'))]
+      : [arteO('n-casero', 'obj-llave'), arteO('n-casero-hablando', arteO('n-casero', 'obj-llave')), arteO('n-casero-sorprendido', arteO('n-casero', 'obj-llave'))];
+  }
   if (humo) {
     return {
       vuper: ['vuper', 'vuper', 'vuper-colocado'], palicaso: ['palicaso', 'palicaso-contando', 'palicaso-riendo'],

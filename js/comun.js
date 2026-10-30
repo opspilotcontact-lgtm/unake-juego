@@ -250,6 +250,7 @@ const MIRA = { 'vuper-reparto': -1, 'monchiman-picado': -1, 'puky-eructo': 1, 'p
 // Los dibujos de caminar del mundo normal (cuerpo de persona) miran a la izquierda, como el de Vuper:
 // comprobado en el juego el 30/10 (Lasslow andaba de espaldas al pasear).
 ['palicaso', 'blancaso', 'cotine', 'lasslow', 'pompa', 'perico'].forEach(id => { MIRA[`n-${id}-caminando`] = -1; });
+MIRA['n-casero-caminando'] = 1; // pedido a Gemini mirando a la derecha
 let ESTADO = cargarPartida();
 
 function cargarPartida() {

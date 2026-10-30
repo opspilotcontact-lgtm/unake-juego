@@ -47,6 +47,15 @@ class Lasslow extends Phaser.Scene {
     this.ojo = this.add.circle(22, -86, 14).setStrokeStyle(4, 0xd8d0ff);
     this.ojo2 = this.add.circle(-20, -86, 5, 0xd8d0ff);
     this.casero.add([s, this.ojo, this.ojo2]);
+    const clave = enMundoHumo() ? 'casero' : 'n-casero';
+    if (this.textures.exists(clave)) {
+      s.setVisible(false);
+      const img = this.add.image(0, 160, clave).setOrigin(0.5, 1);
+      img.setScale(330 / img.height);
+      this.casero.addAt(img, 0);
+      this.ojo.setVisible(false);
+      this.ojo2.setVisible(false);
+    }
     this.add.text(230, 300, 'el casero', { fontFamily: FUENTE, fontSize: '18px', color: '#b9a8e6' }).setOrigin(0.5);
     // La mesa con mantel y velas.
     const m = this.add.graphics().setDepth(5);

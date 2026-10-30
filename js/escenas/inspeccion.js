@@ -36,6 +36,9 @@ class Inspeccion extends Phaser.Scene {
     [-24, 24].forEach(dx => { this.ojos.add(this.add.circle(dx, 0, 18, 0xffffff).setStrokeStyle(4, HEX.tinta)); this.ojos.add(this.add.circle(dx - 4, 2, 8, HEX.tinta)); });
     this.casero.add([llave, this.ojos]);
     this.llave = llave;
+    // Con el dibujo del casero (Gemini), sus poses en vez de la llave con ojos pintados.
+    this.conCasero = this.textures.exists('casero');
+    if (this.conCasero) { llave.setTexture('casero'); llave.setScale(300 / llave.height); this.ojos.setVisible(false); }
     this.cartelCasero = texto(this, 1120, 160, '', 26, COLOR.crema).setDepth(30);
 
     this.textoPuntos = texto(this, 150, 40, '0 puntos', 30, COLOR.amarillo).setDepth(50);
@@ -69,6 +72,7 @@ class Inspeccion extends Phaser.Scene {
     if (!this.activo) return;
     this.mira = false;
     this.ojos.setVisible(false);
+    if (this.conCasero) this.llave.setTexture('casero').setFlipX(true);
     this.llave.setTint(0x6a5a80);
     this.cartelCasero.setText('(de espaldas)').setColor(COLOR.verde);
     const prisa = 1 - (this.restante / DURACION_INSPECCION);
@@ -88,7 +92,8 @@ class Inspeccion extends Phaser.Scene {
   mirar() {
     if (!this.activo) return;
     this.mira = true;
-    this.ojos.setVisible(true);
+    this.ojos.setVisible(!this.conCasero);
+    if (this.conCasero) this.llave.setTexture(this.textures.exists('casero-mira') ? 'casero-mira' : 'casero').setFlipX(false);
     this.llave.clearTint();
     this.cartelCasero.setText('MIRA').setColor(COLOR.rosa);
     sfx(this, 'whoosh', { volume: 0.4 });
@@ -172,11 +177,12 @@ class Inspeccion extends Phaser.Scene {
     if (this._acabado) return;
     this._acabado = true;
     this.activo = false;
+    if (this.conCasero) this.llave.setFlipX(false);
     // Lo que se queda a la vista resta.
     const vistas = this.pruebas.length;
     this.puntos = Math.max(0, this.puntos - vistas * 50);
     const gana = aguanto && this.puntos >= MISIONES.Inspeccion.umbrales[0];
-    this.ojos.setVisible(true);
+    this.ojos.setVisible(!this.conCasero);
     this.llave.clearTint();
     this.time.delayedCall(800, () => panelFinal(this, {
       titulo: gana ? 'Inspección superada' : 'El casero ha visto demasiado',

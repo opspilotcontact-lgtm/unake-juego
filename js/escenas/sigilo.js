@@ -59,9 +59,9 @@ class Sigilo extends Phaser.Scene {
     this.conos = this.add.graphics().setDepth(3);
     // Vigilantes: el casero (su llave, de momento) y el gato tuerto.
     this.vigilantes = [
-      this.vigilante(arteO('obj-llave', 'colilla'), 90, [[520, 470], [740, 470], [740, 640], [520, 640]], 70, 240, 70),
+      this.vigilante(arteO('n-casero', arteO('obj-llave', 'colilla')), 110, [[520, 470], [740, 470], [740, 640], [520, 640]], 70, 240, 70),
       this.vigilante(arteO('obj-gato', 'colilla'), 70, [[880, 190], [1170, 190], [1170, 260], [880, 260]], 55, 170, 60),
-      this.vigilante(arteO('obj-llave', 'colilla'), 90, [[140, 160], [340, 160], [340, 280], [140, 280]], 60, 200, 65),
+      this.vigilante(arteO('n-casero', arteO('obj-llave', 'colilla')), 110, [[140, 160], [340, 160], [340, 280], [140, 280]], 60, 200, 65),
     ];
     this.vigilantes[2].img.setTint(0xffd0a0); // la casera, que también tiene llave
 
