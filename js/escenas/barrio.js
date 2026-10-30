@@ -330,8 +330,8 @@ class Barrio extends Phaser.Scene {
     this.textoMundo.setText(humo ? 'Mundo humo · las misiones pagan x1,5' : 'Mundo normal · de día').setColor(humo ? COLOR.rosa : COLOR.azul);
 
     this.textoCaja = null;
-    this.cosas = s.cosas.map(cosa => this.montarCosa(humo ? cosa : { ...cosa, ...(cosa.n || {}) }));
-    this.cosas.push(...visitasDeSala(this, nombre, humo));
+    this.cosas = s.cosas.filter(cosa => !QUIEN[cosa.id] || estaEn(cosa.id, nombre)).map(cosa => this.montarCosa(humo ? cosa : { ...cosa, ...(cosa.n || {}) }));
+    this.cosas.push(...visitasDeSala(this, nombre));
     if (nombre === 'dentro' && humo && (ESTADO.capitulo || 0) === 6 && this.textures.exists('obj-llave')) {
       const sc = arteO('casero', 'obj-llave');
       this.cosas.push(this.montarCosa({ id: 'casero', tipo: 'mision', mision: 'Inspeccion', sprite: sc, x: 1000, y: 660, escala: 230 / this.textures.get(sc).getSourceImage().height, nombre: 'El casero' }));
@@ -774,6 +774,8 @@ class Barrio extends Phaser.Scene {
     if (this.tAmbiente <= 0) { this.tAmbiente = Phaser.Math.Between(7, 11); this.charlaAmbiente(); }
     this.turnoVoz();
     rutinasNpc(this, dt);
+    this.tAgenda = (this.tAgenda || 0) - dt;
+    if (this.tAgenda <= 0) { this.tAgenda = 1; agendaVisitas(this); }
     if (ESTADO.blancazoEn > 0 && enMundoHumo()) {
       ESTADO.blancazoEn -= dt;
       if (ESTADO.blancazoEn <= 0) this.empezarBlancazo();
@@ -830,6 +832,8 @@ class Barrio extends Phaser.Scene {
   empezarBlancazo() {
     ESTADO.blancazoEn = 0;
     ESTADO.blancazo = { restante: 120 };
+    // Al blancazo se le encuentra en la plaza: si estaba de visita, vuelve.
+    if (ESTADO.paradero) delete ESTADO.paradero.blancaso;
     guardarPartida();
     sfx(this, 'temblor');
     sfx(this, 'zumbido-m');
@@ -1927,6 +1931,9 @@ class Barrio extends Phaser.Scene {
   // ---------- Recados ----------
 
   salaDe(id) {
+    // Donde está ahora (si ha salido de visita, ahí); si no, su sitio de siempre.
+    const ahora = typeof dondeEsta === 'function' && dondeEsta(id);
+    if (ahora && SALAS[ahora]) return ahora;
     const d = DESTINOS.find(x => x.id === id);
     return d ? d.sala : 'fuera';
   }

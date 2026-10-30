@@ -119,6 +119,7 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
     limpiar();
     if (i >= lineas.length) return terminar();
     const [quien, txt, arte] = lineas[i];
+    if (musicaPendiente && quien !== 'titulo') { musicaPendiente = false; Musica.poner(scene, huecoEscena); }
 
     if (quien === 'titulo') {
       // Portada del capítulo: la ilustración si existe; si no, tarjeta morada con rayos que giran.
@@ -236,7 +237,12 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
     }
   };
 
-  if (typeof Musica !== 'undefined') Musica.poner(scene, opciones.momento ? 'momento' : 'escena');
+  // La portada del capítulo suena sola (la cortinilla de la serie); la canción entra después.
+  const huecoEscena = opciones.momento ? 'momento' : 'escena';
+  let musicaPendiente = false;
+  if (typeof Musica !== 'undefined') {
+    if (lineas[0] && lineas[0][0] === 'titulo') { Musica.silencio(); musicaPendiente = true; } else Musica.poner(scene, huecoEscena);
+  }
   const saltar = boton(scene, ANCHO - 110, ALTO - 50, 'Saltar ▸', () => terminar(), { ancho: 170, alto: 50, tam: 20, color: HEX.crema });
   saltar.etiqueta.setText('Saltar »');
   raiz.add(saltar);

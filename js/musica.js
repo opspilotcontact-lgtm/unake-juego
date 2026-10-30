@@ -91,6 +91,9 @@ const Musica = {
     this.fundido(snd, snd.volume, 0, 500, () => { try { snd.stop(); snd.destroy(); } catch (e) { /* ya parado */ } });
   },
 
+  // Silencio pedido (la portada de un capítulo): también cancela lo que se estuviera descargando.
+  silencio() { this.deseado = null; this.parar(); },
+
   // Cuando cambian las opciones, se ajusta lo que suena.
   ajustar() {
     const a = this.actual;

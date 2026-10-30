@@ -186,46 +186,151 @@ function rutinasNpc(s, dt) {
   } else hacerLoSuyo(s, c);
 }
 
-// Al entrar en una sala, a veces hay visita. Devuelve las cosas nuevas (ya montadas).
-function visitasDeSala(s, nombre, humo) {
-  if (typeof guiaActiva === 'function' && guiaActiva()) return []; // en el prólogo, sin visitas que distraigan
-  const lista = (VISITAS[nombre] || []).filter(v => {
-    if (ESTADO.situaciones[v.id]) return false;
-    if (v.requiere && !v.requiere()) return false;
-    if (s.cosas.some(c => c.id === v.id && !c.oculta)) return false;
-    if (v.id === 'blancaso' && ESTADO.blancazo) return false;
-    return s.textures.exists(humo ? QUIEN[v.id].sprite : `n-${v.id}`);
-  });
-  if (!lista.length || Math.random() > 0.45) return [];
-  const v = Phaser.Utils.Array.GetRandom(lista);
-  const suelo = SALAS[nombre].suelo;
-  const ocupados = s.cosas.map(c => c.x).concat([s.px]);
-  const huecos = [260, 420, 580, 740, 900, 1040].filter(x => ocupados.every(o => Math.abs(o - x) > 170));
-  if (!huecos.length) return [];
-  const x = Phaser.Utils.Array.GetRandom(huecos);
-  const sprite = humo ? QUIEN[v.id].sprite : `n-${v.id}`;
-  const alto = s.textures.get(sprite).getSourceImage().height;
-  const c = s.montarCosa({
-    id: v.id, tipo: 'charla', sprite, x, y: suelo[1] - 12, escala: (humo ? 170 : 290) / alto,
-    nombre: `${QUIEN[v.id].nombre} (de visita)`, visita: true,
-  });
-  // Llega andando desde el lado que no es el de Vuper.
-  const desde = s.px < ANCHO / 2 ? ANCHO + 80 : -80;
-  [c.img, c.zona].filter(Boolean).forEach(o => { o.x = desde; });
-  c.x = desde;
+// ---------- El paradero: cada uno está en un solo sitio ----------
+// Quien sale de visita deja de estar en su casa: se le ve irse andando hacia la salida que toca,
+// el viaje tarda, llega andando por el borde por el que viene, se queda un rato y vuelve igual.
+// ESTADO.paradero[id] = { sala, llega, hasta, desde } (hasta = 0: vuelve a casa y ahí se borra).
+// No salen Palicaso ni Perico (la barra y la puerta siempre atendidas), ni quien tenga un problema,
+// un encargo o un recado pendiente.
+
+const VISITANTES = ['cotine', 'lasslow', 'blancaso', 'puky'];
+const VIAJE_MS = 9000;
+
+function casaDe(id) {
+  for (const [n, s] of Object.entries(SALAS)) if (s.cosas.some(c => c.id === id)) return n;
+  return null;
+}
+// Dónde está alguien ahora mismo (si va de camino, todavía no ha llegado a ningún sitio visible).
+function dondeEsta(id) {
+  const p = ESTADO.paradero && ESTADO.paradero[id];
+  return p ? p.sala : casaDe(id);
+}
+// ¿Está a la vista en esta sala? (en casa y sin viaje, o de visita ya llegado)
+function estaEn(id, sala) {
+  const p = ESTADO.paradero && ESTADO.paradero[id];
+  if (!p) return casaDe(id) === sala;
+  return p.sala === sala && Date.now() >= p.llega;
+}
+
+// Por dónde se sale (o se entra) de esta sala hacia otra: x del borde o de la puerta.
+function bordeHacia(s, sala) {
+  const r = s.ruta(sala);
+  if (r.startsWith('Ve a: «')) return -90;
+  if (r.endsWith('»')) return ANCHO + 90;
+  if (r.includes('Puerta')) return s.sala === 'fuera' ? 860 : 130;
+  return Math.random() < 0.5 ? -90 : ANCHO + 90;
+}
+
+function quitarCosa(s, c) {
+  [c.img, c.zona, c.marca, c.est].forEach(o => { if (o && o.active) o.destroy(); });
+  c.oculta = true;
+}
+
+function salirAndando(s, c, haciaSala) {
+  if (!c || !c.img || !c.img.active) return;
+  const x = bordeHacia(s, haciaSala);
+  const porPuerta = x > 0 && x < ANCHO;
   moverNpc(s, c, x, () => {
-    s.voz(() => { if (c.img && c.img.active) s.burbujaAmbiente(c, Phaser.Utils.Array.GetRandom(v.dice)); }, { prioridad: 2, dura: 2400, encolar: true });
+    if (porPuerta) s.tweens.add({ targets: c.img, alpha: 0, duration: 300, onComplete: () => quitarCosa(s, c) });
+    else quitarCosa(s, c);
   });
-  // Al rato se va (si sigues en la sala).
-  s.time.delayedCall(Phaser.Math.Between(40000, 70000), () => {
-    if (!c.img || !c.img.active || s.sala !== nombre) return;
-    const salida = c.x < ANCHO / 2 ? -100 : ANCHO + 100;
-    if (Math.abs(salida - s.px) < 300) return;
-    moverNpc(s, c, salida, () => {
-      c.img.destroy();
-      if (c.zona) c.zona.destroy();
-      c.oculta = true;
+}
+
+// Monta a alguien de visita (sentado, o llegando andando desde `desdeSala`).
+function montarVisita(s, id, desdeSala) {
+  const humo = s.mundo === 'humo';
+  const sprite = humo ? QUIEN[id].sprite : `n-${id}`;
+  if (!s.textures.exists(sprite)) return null;
+  const suelo = SALAS[s.sala].suelo;
+  const ocupados = s.cosas.filter(c => !c.oculta).map(c => c.x).concat([s.px]);
+  const huecos = [260, 420, 580, 740, 900, 1040].filter(x => ocupados.every(o => Math.abs(o - x) > 170));
+  const x = huecos.length ? Phaser.Utils.Array.GetRandom(huecos) : 640;
+  const alto = s.textures.get(sprite).getSourceImage().height;
+  const c = s.montarCosa({ id, tipo: 'charla', sprite, x, y: suelo[1] - 12, escala: (humo ? 170 : 290) / alto, nombre: `${QUIEN[id].nombre} (de visita)`, visita: true });
+  s.cosas.push(c);
+  if (desdeSala) {
+    const desde = bordeHacia(s, desdeSala);
+    [c.img, c.zona, c.marca, c.est].filter(Boolean).forEach(o => { o.x = desde; });
+    c.x = desde;
+    moverNpc(s, c, x, () => {
+      const v = (VISITAS[s.sala] || []).find(k => k.id === id);
+      if (v) s.voz(() => { if (c.img && c.img.active) s.burbujaAmbiente(c, Phaser.Utils.Array.GetRandom(v.dice)); }, { prioridad: 2, dura: 2400, encolar: true });
     });
+  }
+  return c;
+}
+
+// Vuelve a montar a alguien en su casa, entrando andando desde `desdeSala`.
+function llegarACasa(s, id, desdeSala) {
+  const def = SALAS[s.sala].cosas.find(c => c.id === id);
+  if (!def || s.cosas.some(c => c.id === id && !c.oculta)) return;
+  const humo = s.mundo === 'humo';
+  if (def.soloHumo && !humo) return;
+  const c = s.montarCosa(humo ? def : { ...def, ...(def.n || {}) });
+  s.cosas.push(c);
+  const destino = c.x;
+  const desde = bordeHacia(s, desdeSala);
+  [c.img, c.zona, c.marca, c.est].filter(Boolean).forEach(o => { o.x = desde; });
+  c.x = desde;
+  moverNpc(s, c, destino);
+}
+
+// Lo que hay a la vista al entrar en una sala: las visitas que ya han llegado.
+function visitasDeSala(s, nombre) {
+  if (!ESTADO.paradero) return [];
+  const out = [];
+  Object.entries(ESTADO.paradero).forEach(([id, p]) => {
+    if (p.sala === nombre && nombre !== casaDe(id) && Date.now() >= p.llega) {
+      const c = montarVisita(s, id, null);
+      if (c) { s.cosas.pop(); out.push(c); }
+    }
   });
-  return [c];
+  return out;
+}
+
+// Cada segundo: salidas, llegadas y vueltas.
+function agendaVisitas(s) {
+  if (typeof guiaActiva === 'function' && guiaActiva()) return;
+  if (s.modal || s.cambiando) return;
+  ESTADO.paradero = ESTADO.paradero || {};
+  const ahora = Date.now();
+  for (const [id, p] of Object.entries(ESTADO.paradero)) {
+    const casa = casaDe(id);
+    // Llega a donde iba.
+    if (!p.llegado && ahora >= p.llega) {
+      p.llegado = true;
+      if (p.sala === casa) {
+        delete ESTADO.paradero[id];
+        if (s.sala === casa) llegarACasa(s, id, p.desde);
+      } else if (s.sala === p.sala && !s.cosas.some(c => c.id === id && !c.oculta)) montarVisita(s, id, p.desde || casa);
+      guardarPartida();
+      continue;
+    }
+    // Se acaba la visita: vuelve a casa.
+    if (p.hasta && ahora >= p.hasta) {
+      const visita = s.sala === p.sala && s.cosas.find(c => c.id === id && !c.oculta);
+      ESTADO.paradero[id] = { sala: casa, llega: ahora + VIAJE_MS, hasta: 0, desde: p.sala };
+      if (visita) salirAndando(s, visita, casa);
+      guardarPartida();
+    }
+  }
+  // ¿Sale alguien?
+  if (ahora < (ESTADO.proximaVisita || 0)) return;
+  ESTADO.proximaVisita = ahora + Phaser.Math.Between(45, 85) * 1000;
+  const humo = s.mundo === 'humo';
+  const r = ESTADO.recado;
+  const cand = VISITANTES.filter(id => !ESTADO.paradero[id] && !ESTADO.situaciones[id]
+    && !(id === 'blancaso' && (ESTADO.blancazo || ESTADO.blancazoEn > 0)) && !(id === 'puky' && !(ESTADO.pukyInvitado && humo))
+    && !(s.reparto && s.reparto.destino.id === id) && !(r && (r.a === id || r.de === id))
+    && s.textures.exists(humo ? QUIEN[id].sprite : `n-${id}`));
+  if (!cand.length) return;
+  const id = Phaser.Utils.Array.GetRandom(cand);
+  const casa = casaDe(id);
+  const destinos = Object.entries(VISITAS).filter(([n, l]) => n !== casa && SALAS[n] && l.some(v => v.id === id)).map(([n]) => n);
+  if (!destinos.length) return;
+  const dest = Phaser.Utils.Array.GetRandom(destinos);
+  ESTADO.paradero[id] = { sala: dest, llega: ahora + VIAJE_MS, hasta: ahora + Phaser.Math.Between(70, 140) * 1000, desde: casa };
+  guardarPartida();
+  // Si estás en su casa, le ves irse hacia la salida que toca.
+  if (s.sala === casa) salirAndando(s, s.cosas.find(c => c.id === id && !c.oculta), dest);
 }
