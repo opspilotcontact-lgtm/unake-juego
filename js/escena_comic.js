@@ -108,9 +108,10 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
     bloqueado = 'fin';
     if (escribiendo) escribiendo.fin();
     limpiar();
+    const miModal = scene.modal;
     Comic.cubrir.iris(scene, () => {
-      scene.cerrarModal();
-      Comic.destapar.iris(scene, { x: scene.px, y: scene.py - 110 });
+      scene.cerrarModal(miModal); // solo la suya: si ya se abrió otra ventana, no se toca
+      if (!scene.modal || scene.modal === miModal) Comic.destapar.iris(scene, { x: scene.px, y: scene.py - 110 });
       acabar();
     }, { x: ANCHO / 2, y: ALTO / 2 - 60 });
   };
