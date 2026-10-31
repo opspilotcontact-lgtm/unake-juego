@@ -1137,7 +1137,16 @@ class Barrio extends Phaser.Scene {
       ], () => { sumarStat('pistaCaja'); this.toast('Pista: Palicaso', 'De noche, rétale a El farol en la barra de Unaké'); }, { cap: 4 });
       return true;
     }
-    if (c.id === 'perico' && cap === 5 && this.mundo === 'normal' && stat('gana_Periquito') >= 1 && stat('sit_apuesta') >= 1 && stat('secretoPerico') < 1) {
+    // «Perico lo sabe»: el secreto llega cuando ya le has callado y le has ganado las pipas.
+    const listoSecreto = cap === 5 && stat('secretoPerico') < 1 && CAPITULOS[5].objetivos[0].hecho() && CAPITULOS[5].objetivos[1].hecho();
+    if (c.id === 'perico' && cap === 5 && stat('secretoPerico') < 1 && !(listoSecreto && this.mundo === 'normal')) {
+      // Pista sin cortar el paso: qué le falta para hablar con él a solas.
+      const falta = listoSecreto ? 'De día, cuando no haya nadie, te escucho. Pin pin.'
+        : !CAPITULOS[5].objetivos[0].hecho() ? 'Pin pin. Gáname a ¡Periquito! de noche, aquí en la puerta.'
+        : 'Pin pin. Y ahora, pipas: gáname a las pipas (de noche).';
+      golpeTexto(this, Phaser.Math.Clamp(c.x, 260, ANCHO - 260), Math.max(160, c.y - c.alto - 90), `Perico: ${falta}`, COLOR.amarillo, 22);
+    }
+    if (c.id === 'perico' && listoSecreto && this.mundo === 'normal') {
       this.abrirEscena([
         ['vuper', 'Periquito… Perico. Tienes razón. Soy yo.'],
         ['perico', '…'],
@@ -1759,6 +1768,13 @@ class Barrio extends Phaser.Scene {
       this.modal.numeros = puedePasar ? [aceptar, pasar] : [aceptar];
       return;
     }
+    // Desde «Perico lo sabe», en la puerta siempre se puede jugar a ¡Periquito!, tenga o no un problema.
+    const periquito = c.tipo === 'puerta' && ESTADO.dentro && (ESTADO.capitulo || 0) >= 5
+      ? { etiqueta: '¡Periquito!', accion: () => this.lanzar('Periquito'), color: HEX.rosa } : null;
+    if (paso && paso.recoger && periquito) {
+      const salas = [...new Set(ESTADO.recogibles.filter(r => r.sit === c.id).map(r => SALAS[r.sala].nombre))].join(', ');
+      return this.tarjeta('Periquito', null, `Aún le faltan ${paso.n - paso.hechos} (${salas})`, [{ etiqueta: 'Pasar', accion: pasar, color: HEX.azul }]);
+    }
     if (paso && paso.recoger) {
       this.poseNpc(c, 'hablando');
       const salas = [...new Set(ESTADO.recogibles.filter(r => r.sit === c.id).map(r => SALAS[r.sala].nombre))].join(', ');
@@ -1768,7 +1784,7 @@ class Barrio extends Phaser.Scene {
     }
     if (paso && paso.mision) {
       const jugar = () => { ESTADO.situacionEnJuego = c.id; this.lanzar(paso.mision); };
-      return this.tarjeta(paso.mision, jugar, `Para ${QUIEN[c.id].nombre}: ${s.titulo}`, puedePasar ? [{ etiqueta: 'Pasar', accion: pasar, color: HEX.azul }] : []);
+      return this.tarjeta(paso.mision, jugar, `Para ${QUIEN[c.id].nombre}: ${s.titulo}`, [...(puedePasar ? [{ etiqueta: 'Pasar', accion: pasar, color: HEX.azul }] : []), ...(periquito ? [periquito] : [])]);
     }
   }
 

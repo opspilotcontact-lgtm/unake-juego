@@ -180,7 +180,7 @@ const CAPITULOS = [
     situaciones: [['perico', 'apuesta']],
     objetivos: [
       { texto: 'Calla a Perico: gánale a ¡Periquito! (en la puerta, de noche)', hecho: () => stat('gana_Periquito') >= 1 },
-      { texto: 'Gánale la apuesta de pipas a Perico', hecho: () => stat('sit_apuesta') >= 1 },
+      { texto: 'Gánale la apuesta de pipas a Perico', hecho: () => stat('sit_apuesta') >= 1 || desdeCap('gana_Pipas') >= 1 },
       { texto: 'De día, habla con Perico a solas', hecho: () => stat('secretoPerico') >= 1 },
       { texto: 'Hucha de la aso: 550 monchis', hecho: () => ESTADO.hucha >= 550, progreso: () => `${ESTADO.hucha}/550` },
     ],

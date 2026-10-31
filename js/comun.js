@@ -433,6 +433,11 @@ function mostrarPanelFinal(scene, { titulo, linea, puntos, clave, gana = true, e
     if (gana && ESTADO.situaciones[id]) lineaSituacion = `Problema de ${QUIEN[id].nombre} resuelto: ${completarSituacion(id)}`;
     else if (ESTADO.situaciones[id]) lineaSituacion = `${QUIEN[id].nombre} sigue con su problema: inténtalo otra vez`;
     guardarPartida();
+  } else if (gana && ESTADO.situaciones) {
+    // Ganado por otro camino (no desde la tarjeta del problema): si alguien esperaba justo este
+    // minijuego como último paso, cuenta igual.
+    const id = Object.keys(ESTADO.situaciones).find(k => { const s = ESTADO.situaciones[k]; return s.paso === s.pasos.length - 1 && s.pasos[s.paso].mision === clave; });
+    if (id) { lineaSituacion = `Problema de ${QUIEN[id].nombre} resuelto: ${completarSituacion(id)}`; guardarPartida(); }
   }
   const velo = scene.add.rectangle(ANCHO / 2, ALTO / 2, ANCHO, ALTO, HEX.tinta, 0).setDepth(600);
   scene.tweens.add({ targets: velo, fillAlpha: 0.6, duration: 400 });
