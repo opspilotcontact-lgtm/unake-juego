@@ -421,7 +421,7 @@ function mostrarPanelFinal(scene, { titulo, linea, puntos, clave, gana = true, e
   const divisor = MISIONES[clave].divisor || 20;
   // Se cobra por estrellas: jugar bien se nota; perdiendo, solo unas migajas.
   const base = gana ? PAGO_ESTRELLAS[estrellasDe(clave, puntos)] : Math.min(10, Math.round(puntos / divisor));
-  const monchis = Math.round(base * extraMonchis * humo * (1 + bonoDeco('pago')));
+  const monchis = Math.round(base * extraMonchis * humo * (1 + bonoDeco('pago') + (typeof bonoArmario === 'function' ? bonoArmario('pago') : 0)));
   const r = apuntar(clave, puntos, monchis, gana);
   let lineaSituacion = '';
   if (ESTADO.situacionEnJuego) {

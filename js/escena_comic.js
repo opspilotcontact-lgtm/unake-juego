@@ -42,9 +42,13 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
 
   scene.objetivo = null;
   scene.aviso.setVisible(false);
+  if (scene.modal) scene.cerrarModal(); // nunca dos ventanas a la vez
   const velo = scene.add.rectangle(ANCHO / 2, ALTO / 2, ANCHO, ALTO, HEX.tinta, 1).setDepth(950).setInteractive();
   const raiz = scene.add.container(0, 0).setDepth(951);
-  scene.modal = { velo, c: raiz };
+  // Si algo la cierra antes de tiempo, su final (la historia) se ejecuta igual, una sola vez.
+  let acabada = false;
+  const acabar = () => { if (acabada) return; acabada = true; if (typeof Musica !== 'undefined') Musica.alEntrar(scene); if (alAcabar) alAcabar(); };
+  scene.modal = { velo, c: raiz, alQuitar: () => scene.time.delayedCall(10, acabar) };
 
   // El escenario: fondo + personajes, dentro de un contenedor que hace de cámara.
   const escenario = scene.add.container(0, 0);
@@ -106,9 +110,8 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
     limpiar();
     Comic.cubrir.iris(scene, () => {
       scene.cerrarModal();
-      if (typeof Musica !== 'undefined') Musica.alEntrar(scene);
       Comic.destapar.iris(scene, { x: scene.px, y: scene.py - 110 });
-      if (alAcabar) alAcabar();
+      acabar();
     }, { x: ANCHO / 2, y: ALTO / 2 - 60 });
   };
 

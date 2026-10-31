@@ -14,6 +14,7 @@ const SALAS = {
     cosas: [
       { id: 'm', tipo: 'senal', x: 640, y: 330, nombre: 'La M' },
       { id: 'taller', tipo: 'taller', x: 1010, y: 520, nombre: 'Taller de inventos' },
+      { id: 'armario', tipo: 'armario', x: 270, y: 560, nombre: 'El armario (ropa y pieles)' },
     ],
   },
   plaza: {
@@ -392,10 +393,10 @@ class Barrio extends Phaser.Scene {
     m.zona = zona;
 
     const clave = this.misionDe(m);
-    const marcaTexto = m.tipo === 'tienda' ? '$' : m.tipo === 'sofa' ? '~' : m.tipo === 'barra' ? '¡' : m.tipo === 'negocio' ? 'N' : m.tipo === 'subir' ? '^' : m.tipo === 'tragaperras' || m.tipo === 'carrera' ? '€' : clave ? '!' : null;
+    const marcaTexto = m.tipo === 'tienda' ? '$' : m.tipo === 'sofa' ? '~' : m.tipo === 'barra' ? '¡' : m.tipo === 'negocio' ? 'N' : m.tipo === 'subir' ? '^' : m.tipo === 'tragaperras' || m.tipo === 'carrera' ? '€' : m.tipo === 'armario' ? 'A' : clave ? '!' : null;
     if (marcaTexto) {
       const yMarca = m.y - m.alto - 40;
-      const etiqueta = { tienda: 'Tienda', sofa: 'Fumar', barra: 'Barra', negocio: 'Negocio', subir: 'Techo', tragaperras: 'Apostar', carrera: 'Apostar' }[m.tipo] || '!';
+      const etiqueta = { tienda: 'Tienda', sofa: 'Fumar', barra: 'Barra', negocio: 'Negocio', subir: 'Techo', tragaperras: 'Apostar', carrera: 'Apostar', armario: 'Armario' }[m.tipo] || '!';
       const deNoche = this.mundo === 'normal' && (m.tipo === 'mision' || m.tipo === 'senal');
       const marca = texto(this, m.x, yMarca, deNoche ? 'De noche' : etiqueta, clave && !deNoche ? 54 : 22, deNoche ? COLOR.azul : COLOR.amarillo).setDepth(800);
       m.marca = marca;
@@ -484,6 +485,8 @@ class Barrio extends Phaser.Scene {
     this.barrasNecesidades();
     this.palpitar(dms);
 
+    this.tVigilarM = (this.tVigilarM || 0) - dms / 1000;
+    if (this.tVigilarM <= 0) { this.tVigilarM = 1; this.vigilar(); }
     if (this.modal) {
       const num = this.modal.numeros ? [k.ONE, k.TWO, k.THREE, k.FOUR, k.FIVE, k.SIX, k.SEVEN, k.EIGHT, k.NINE].findIndex(t => pulsado(t)) : -1;
       if (num >= 0 && this.modal.numeros[num]) return this.modal.numeros[num]();
@@ -613,6 +616,7 @@ class Barrio extends Phaser.Scene {
     this.jugador.setAngle(Phaser.Math.Linear(this.jugador.angle, angulo, 0.2));
     this.jugador.setPosition(this.px, this.py + yOff).setDepth(this.py);
     this.sombra.setPosition(this.px, this.py + 4).setDepth(this.py - 1).setScale(humo ? 0.9 + yOff / 120 : 0.8, 1);
+    vestirVuper(this); // prendas y piel del armario
 
     this.tRastro -= dt;
     if (moviendo && this.tRastro <= 0) {
@@ -717,8 +721,8 @@ class Barrio extends Phaser.Scene {
   tiempos(dt) {
     const eraHumo = enMundoHumo();
     const liado = Object.values(ESTADO.situaciones || {}).some(x => x.aceptada) ? 0.6 : 1;
-    ESTADO.colocon = Math.max(0, ESTADO.colocon - dt / 7 * liado * (1 + bonoDeco('colocon')));
-    ESTADO.hambre = Math.min(100, ESTADO.hambre + dt * (0.15 + ESTADO.colocon * 0.006) * (1 + bonoDeco('hambre')));
+    ESTADO.colocon = Math.max(0, ESTADO.colocon - dt / 7 * liado * (1 + bonoDeco('colocon') + bonoArmario('colocon')));
+    ESTADO.hambre = Math.min(100, ESTADO.hambre + dt * (0.15 + ESTADO.colocon * 0.006) * (1 + bonoDeco('hambre') + bonoArmario('hambre')));
     if (ESTADO.hambre >= 85) ESTADO.vida -= dt * 1.8;
     else if (ESTADO.hambre < 50) ESTADO.vida = Math.min(100, ESTADO.vida + dt * 0.4);
     if (eraHumo !== enMundoHumo()) this.cambioDeMundo();
@@ -762,6 +766,8 @@ class Barrio extends Phaser.Scene {
       this.tSuceso -= dt;
       if (this.tSuceso <= 0) this.tSuceso = this.voz(() => sucesoBarrio(this), { prioridad: 2, dura: 4500 }) ? Phaser.Math.Between(45, 80) : 4;
     }
+    this.tVigilar = (this.tVigilar || 0) - dt;
+    if (this.tVigilar <= 0) { this.tVigilar = 1; this.vigilar(); }
     this.tLogros -= dt;
     if (this.tLogros <= 0) { this.tLogros = 1; if (!guiaActiva()) this.revisarLogros(); }
     Guia.actualizar(this);
@@ -922,6 +928,7 @@ class Barrio extends Phaser.Scene {
         // Las noches de cada uno abren minijuegos nuevos en su tarjeta (Por los aires, El palo).
         return this.tarjeta(c.mision, null, null, [charlar, ...minijuegosAbiertos(c.id).map(k => ({ etiqueta: MISIONES[k].nombre, accion: () => this.tarjeta(k), color: HEX.rosa }))]);
       case 'taller': return this.taller();
+      case 'armario': return this.armario();
       case 'tienda': return this.tienda();
       case 'barra': return this.barra(c);
       case 'sofa': return this.sofa();
@@ -1034,7 +1041,8 @@ class Barrio extends Phaser.Scene {
     };
     // El cierre del capítulo: su momento persona, en cómic.
     if (!cap.cierre) return seguir();
-    this.time.delayedCall(700, () => this.abrirEscena([['titulo', `Capítulo ${n + 1} completado · ${cap.titulo}`], ...cap.cierre], seguir, { cap: n, momento: true }));
+    this.seguirPendiente = seguir;
+    this.time.delayedCall(700, () => this.cuandoLibre(() => this.abrirEscena([['titulo', `Capítulo ${n + 1} completado · ${cap.titulo}`], ...cap.cierre], () => { this.seguirPendiente = null; seguir(); }, { cap: n, momento: true })));
   }
 
   abrirNoche([id, i, paso]) {
@@ -1058,6 +1066,64 @@ class Barrio extends Phaser.Scene {
     this.panelObjetivos.setVisible(!ESTADO.ocultarObjetivos);
     if (this.botonObjetivos) this.botonObjetivos.etiqueta.setText(ESTADO.ocultarObjetivos ? 'Objetivos +' : 'Objetivos −');
     guardarPartida();
+  }
+
+  // El armario de Vuper: cuadrícula de prendas y pieles; tocar = comprar, o ponérsela / quitársela.
+  armario() {
+    const a = armario();
+    const lista = ARMARIO.filter(p => prendaDisponible(p, this));
+    const elegir = p => {
+      if (!a.tiene[p.id]) {
+        if (!this.pagar(p.precio)) return;
+        a.tiene[p.id] = true;
+        a.puesto[p.hueco] = p.id;
+        sfx(this, 'tiroriro');
+        sumarStat('prendas');
+        golpeTexto(this, ANCHO / 2, 640, `¡${p.nombre}!`, COLOR.amarillo, 40).setDepth(1001);
+      } else {
+        a.puesto[p.hueco] = a.puesto[p.hueco] === p.id ? null : p.id;
+        sfx(this, 'pop');
+      }
+      guardarPartida();
+      this.refrescarHud();
+      this.armario();
+    };
+    this.abrirModal(c => {
+      c.add(texto(this, 0, -214, 'El armario de Vuper', 38, COLOR.amarillo));
+      c.add(texto(this, 0, -176, `Tienes ${ESTADO.monchis} monchis · toca para comprar, ponértelo o quitártelo`, 18, COLOR.crema));
+      lista.forEach((p, i) => {
+        const col = i % 4;
+        const fila = Math.floor(i / 4);
+        const x = -300 + col * 200;
+        const y = -100 + fila * 112;
+        const puesto = a.puesto[p.hueco] === p.id;
+        const tiene = !!a.tiene[p.id];
+        const puede = tiene || ESTADO.monchis >= p.precio;
+        const k = this.add.container(x, y);
+        const g = this.add.graphics();
+        g.fillStyle(puesto ? 0x2f6b3f : 0x2a1a3a, 1).fillRoundedRect(-92, -50, 184, 104, 16);
+        g.lineStyle(4, puesto ? HEX.verde : tiene ? HEX.azul : (puede ? HEX.amarillo : 0x6a5a80), 1).strokeRoundedRect(-92, -50, 184, 104, 16);
+        k.add(g);
+        if (p.hueco === 'piel') {
+          const muestra = this.add.image(-54, -6, 'vuper');
+          muestra.setScale(56 / muestra.height);
+          const t = p.tinte === 'neon' ? 0x7ff3ff : p.tinte === 'arcoiris' ? 0xff9ad5 : p.tinte;
+          muestra.setTint(t);
+          k.add(muestra);
+        } else {
+          const ic = this.add.image(-54, -6, p.sprite);
+          ic.setScale(Math.min(60 / ic.width, 60 / ic.height));
+          k.add(ic);
+        }
+        k.add(this.add.text(-18, -42, p.nombre, { fontFamily: FUENTE, fontSize: '15px', color: COLOR.crema, wordWrap: { width: 104 } }));
+        k.add(this.add.text(-18, 2, p.efecto, { fontFamily: FUENTE, fontSize: '11px', color: COLOR.azul, wordWrap: { width: 104 } }));
+        k.add(texto(this, 0, 40, puesto ? 'Puesto' : tiene ? 'Ponértelo' : `${p.precio} monchis`, 16, puesto ? COLOR.verde : tiene ? COLOR.azul : (puede ? COLOR.amarillo : '#8a7fa0')));
+        k.setSize(184, 104).setInteractive({ useHandCursor: true }).on('pointerdown', () => elegir(p));
+        c.add(k);
+      });
+      c.add(boton(this, 0, 222, 'Cerrar (Esc)', () => this.cerrarModal(), { ancho: 220, alto: 44, tam: 20, color: HEX.crema }));
+    }, () => this.cerrarModal());
+    this.modal.numeros = lista.slice(0, 9).map(p => () => elegir(p));
   }
 
   // Escenas sueltas de la historia que salen al hablar con alguien (la pista de Perico, su secreto…).
@@ -1817,7 +1883,7 @@ class Barrio extends Phaser.Scene {
     this.poseNpc(c, 'riendo');
     this.charla(c, al(['¡Mira esto, mira!', '¿Has visto esto? JAJA', 'Te lo enseño, que es buenísimo', 'Ojo a esto…', 'Esto lo tienes que ver']));
     this.bloqueado = true;
-    this.time.delayedCall(800, () => { this.bloqueado = false; this.abrirMovil(c, contenido); });
+    this.time.delayedCall(800, () => { this.bloqueado = false; if (!this.modal && !this.cambiando) this.abrirMovil(c, contenido); });
   }
 
   // Pose de reacción del personaje (hablando, riendo, sorprendido) y vuelta a su pose.
@@ -2085,7 +2151,7 @@ te ha mandado esto`, 24, COLOR.amarillo));
     const cerrar = () => {
       m.parar();
       this.tweens.add({ targets: m.c, y: ALTO + 420, duration: 260, ease: 'Sine.in' });
-      this.time.delayedCall(260, () => this.cerrarModal());
+      this.time.delayedCall(260, () => this.cerrarModal(miModal));
     };
     const reir = () => {
       sfx(this, 'risas', { volume: 0.4 });
@@ -2097,7 +2163,8 @@ te ha mandado esto`, 24, COLOR.amarillo));
     };
     cont.add(boton(this, 1030, 420, 'JAJAJA (E)', reir, { ancho: 260, tam: 26, color: HEX.amarillo }));
     cont.add(boton(this, 1030, 510, 'Pasar (Esc)', cerrar, { ancho: 260, tam: 22, color: HEX.crema }));
-    this.modal = { velo, c: cont };
+    if (this.modal) this.cerrarModal();
+    const miModal = this.modal = { velo, c: cont };
     this.modalCerrar = cerrar;
     this.modalAccion = reir;
   }
@@ -2143,11 +2210,59 @@ te ha mandado esto`, 24, COLOR.amarillo));
     this.modalAccion = accion || alCerrar;
   }
 
-  cerrarModal() {
+  cerrarModal(cual) {
     if (!this.modal) return;
-    this.modal.velo.destroy();
-    this.modal.c.destroy();
+    if (cual && this.modal !== cual) return; // ya se abrió otra: no cerrar la nueva
+    const m = this.modal;
     this.modal = null;
+    if (m.velo && m.velo.scene) m.velo.destroy();
+    if (m.c && m.c.scene) m.c.destroy();
+    if (m.alQuitar) m.alQuitar(); // p. ej., una escena interrumpida: que su historia siga
+  }
+
+  // ---------- El vigilante: que nada se quede trabado ----------
+  // Una vez por segundo comprueba los estados que, si se quedan a medias, bloquean el juego hasta
+  // salir y entrar: ventanas huérfanas (su velo tapa los toques), transiciones colgadas, controles
+  // desactivados, la historia en pausa sin nada abierto. Si encuentra algo, lo destraba.
+  vigilar() {
+    const ahora = this.time.now;
+    // Ventana que ya no existe pero sigue apuntada.
+    if (this.modal && (!this.modal.c || !this.modal.c.scene || !this.modal.velo || !this.modal.velo.scene)) this.cerrarModal();
+    // Velos y ventanas huérfanas (profundidad 950/951 que no son la ventana actual).
+    this.children.list.slice().forEach(o => {
+      if ((o.depth === 950 || o.depth === 951) && (!this.modal || (o !== this.modal.velo && o !== this.modal.c))) o.destroy();
+    });
+    // Cambio de sala o de mundo colgado.
+    if (this.cambiando) {
+      this.cambiandoDesde = this.cambiandoDesde || ahora;
+      if (ahora - this.cambiandoDesde > 4000) { this.cambiando = false; this.cameras.main.resetFX(); this.cameras.main.setAlpha(1); }
+    } else this.cambiandoDesde = 0;
+    // Controles desactivados sin estar saliendo de la escena.
+    if (!this.input.enabled && !this._saliendo) this.input.enabled = true;
+    if (this._saliendo) {
+      this.saliendoDesde = this.saliendoDesde || ahora;
+      if (ahora - this.saliendoDesde > 6000) { this._saliendo = false; this.input.enabled = true; }
+    } else this.saliendoDesde = 0;
+    // Bloqueos cortos que se quedaron puestos.
+    if (this.bloqueado) {
+      this.bloqueadoDesde = this.bloqueadoDesde || ahora;
+      if (ahora - this.bloqueadoDesde > 3000) this.bloqueado = false;
+    } else this.bloqueadoDesde = 0;
+    // La historia en pausa larga sin ninguna escena abierta (un cierre que no llegó a mostrarse).
+    this.libreDesde = this.modal ? 0 : (this.libreDesde || ahora);
+    if (!this.modal && ahora - this.libreDesde > 3000 && this.pausaHistoria && this.pausaHistoria - ahora > 20000) {
+      const seguir = this.seguirPendiente;
+      this.seguirPendiente = null;
+      this.pausaHistoria = ahora + 1000;
+      if (seguir) seguir();
+    }
+  }
+
+  // Abre algo automático (escenas de cierre, noches…) solo cuando no hay otra ventana delante.
+  cuandoLibre(fn, intentos = 40) {
+    if (!this.modal && !this.cambiando && !this._saliendo) return fn();
+    if (intentos <= 0) return fn();
+    this.time.delayedCall(400, () => this.cuandoLibre(fn, intentos - 1));
   }
 
   // extras: botones de más, como { etiqueta, accion, color } (Pasar, Charlar…).

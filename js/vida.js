@@ -43,6 +43,8 @@ const LOGROS = [
   { id: 'aires', nombre: 'Combustible de señor', texto: 'Lleva a Lasslow hasta la Pompa', hecho: () => stat('gana_Aires') >= 1, premio: 60 },
   { id: 'palo', nombre: 'Devuélveme el palo', texto: 'Gánale a Perico en El palo', hecho: () => stat('gana_Palo') >= 1, premio: 60 },
   { id: 'sigilo', nombre: 'Como un fantasma', texto: 'Recupera los discos sin que te vean ni una vez', hecho: () => stat('sigiloLimpio') >= 1, premio: 120 },
+  { id: 'armario1', nombre: 'Con estilo', texto: 'Cómprate algo en el armario', hecho: () => stat('prendas') >= 1, premio: 30 },
+  { id: 'armario5', nombre: 'Icono del barrio', texto: 'Ten 5 cosas del armario', hecho: () => stat('prendas') >= 5, premio: 200 },
   { id: 'sit5', nombre: 'El que lo arregla todo', texto: 'Resuelve 5 problemas', hecho: () => stat('situaciones') >= 5, premio: 100 },
   { id: 'sit20', nombre: 'Psicólogo del barrio', texto: 'Resuelve 20 problemas', hecho: () => stat('situaciones') >= 20, premio: 400 },
   { id: 'blancazo3', nombre: 'Ángel de Blancaso', texto: 'Salva a Blancaso 3 veces', hecho: () => stat('blancazos') >= 3, premio: 150 },
