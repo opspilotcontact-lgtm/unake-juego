@@ -17,7 +17,7 @@
 const CAPITULO_FURGO = {
   num: 10.5,
   titulo: 'La furgo',
-  desde: 10.5,
+  desde: 'furgo',
   giroTras: 2,
 
   fijos: ['vuper', 'cotine'],
@@ -590,11 +590,11 @@ const DON_EUSEBIO = {
 // =========================================================================================================
 // ENCARGOS_FURGO · encargos secundarios repetibles con la furgo, después del capítulo (modo libre incluido).
 // carga: normal | fragil | pasajero. distancia 1-3. probControl 0..0.6 = probabilidad de que salga un control en el trayecto.
-// desde: capítulo a partir del cual existe el encargo (el cliente ya ha salido en la historia).
+// desde: id del capítulo a partir del cual existe el encargo (el cliente ya ha salido en la historia).
 // =========================================================================================================
 const ENCARGOS_FURGO = [
   {
-    id: 'tarta_niebla', titulo: 'La tarta de cumpleaños', cliente: 'cotine', desde: 12, carga: 'fragil',
+    id: 'tarta_niebla', titulo: 'La tarta de cumpleaños', cliente: 'cotine', desde: 'senal', carga: 'fragil',
     destino: 'La casa de Niebla', distancia: 2, probControl: 0.3, premio: { monchis: 70 },
     pedir: [
       ['cotine', 'Es el cumpleaños de Niebla. Ella no lo sabe, así que es sorpresa. Para ella y para mí.'],
@@ -618,7 +618,7 @@ const ENCARGOS_FURGO = [
     },
   },
   {
-    id: 'cita_lasslow', titulo: 'Un señor a su cita', cliente: 'lasslow', desde: 15, carga: 'pasajero',
+    id: 'cita_lasslow', titulo: 'Un señor a su cita', cliente: 'lasslow', desde: 'mechero', carga: 'pasajero',
     destino: 'La azotea del descampado', distancia: 2, probControl: 0.35, premio: { monchis: 90 },
     pedir: [
       ['lasslow', 'Caballero, esta noche cenamos la señorita y yo. Un señor no llega en autobús.'],
@@ -641,7 +641,7 @@ const ENCARGOS_FURGO = [
     },
   },
   {
-    id: 'blancaso_casa', titulo: 'Llévame a casa', cliente: 'blancaso', desde: 11, carga: 'pasajero',
+    id: 'blancaso_casa', titulo: 'Llévame a casa', cliente: 'blancaso', desde: 'feria', carga: 'pasajero',
     destino: 'La casa de Blancaso', distancia: 1, probControl: 0.2, premio: { monchis: 40 },
     pedir: [
       ['blancaso', 'Me voy a casa. Esta vez es verdad. Llévame, por favor.'],
@@ -665,7 +665,7 @@ const ENCARGOS_FURGO = [
     },
   },
   {
-    id: 'discos_pompa', titulo: 'Los discos de la Pompa', cliente: 'pompa', desde: 17, carga: 'fragil',
+    id: 'discos_pompa', titulo: 'Los discos de la Pompa', cliente: 'pompa', desde: 'pesado', carga: 'fragil',
     destino: 'Unaké, por la puerta de atrás', distancia: 2, probControl: 0.3, premio: { monchis: 80 },
     pedir: [
       ['pompa', 'Necesito esas cajas arriba. Arriba del todo.'],
@@ -689,7 +689,7 @@ const ENCARGOS_FURGO = [
     },
   },
   {
-    id: 'cajas_blancaso', titulo: 'Cajas para el negocio', cliente: 'blancaso', desde: 11, carga: 'normal',
+    id: 'cajas_blancaso', titulo: 'Cajas para el negocio', cliente: 'blancaso', desde: 'feria', carga: 'normal',
     destino: 'El almacén de la circunvalación', distancia: 3, probControl: 0.5, premio: { monchis: 120 },
     pedir: [
       ['blancaso', 'Veinte cajas. Con factura. Y con la agenda abierta, por si algo sale mal.'],
@@ -712,7 +712,7 @@ const ENCARGOS_FURGO = [
     },
   },
   {
-    id: 'mar_perico', titulo: 'Quiero ver el mar', cliente: 'perico', desde: 11, carga: 'pasajero',
+    id: 'mar_perico', titulo: 'Quiero ver el mar', cliente: 'perico', desde: 'feria', carga: 'pasajero',
     destino: 'El mar (no hay mar)', distancia: 3, probControl: 0.25, premio: { monchis: 60 },
     pedir: [
       ['perico', 'Pin pin. Quiero ver el mar. El mar. Una vez antes de morir.'],
@@ -737,7 +737,7 @@ const ENCARGOS_FURGO = [
     },
   },
   {
-    id: 'invitacion_puky', titulo: 'Un sitio donde me inviten', cliente: 'puky', desde: 11, carga: 'pasajero',
+    id: 'invitacion_puky', titulo: 'Un sitio donde me inviten', cliente: 'puky', desde: 'feria', carga: 'pasajero',
     destino: 'Donde le inviten', distancia: 2, probControl: 0.2, premio: { monchis: 50 },
     pedir: [
       ['puky', '¿Me llevas a un sitio? A uno donde me inviten. Si existe.'],
@@ -762,7 +762,7 @@ const ENCARGOS_FURGO = [
     },
   },
   {
-    id: 'niebla_destino', titulo: 'No sé adónde iba', cliente: 'niebla', desde: 11, carga: 'pasajero',
+    id: 'niebla_destino', titulo: 'No sé adónde iba', cliente: 'niebla', desde: 'feria', carga: 'pasajero',
     destino: 'Adónde sea que fuese', distancia: 3, probControl: 0.4, premio: { monchis: 100 },
     pedir: [
       ['niebla', 'Hola. Me ha dicho alguien que te pida que me lleves. No sé adónde.'],
@@ -811,12 +811,12 @@ if (typeof module !== 'undefined') {
 }
 
 // ---------- Entrega 1 (31/10/2026): el juego tiene aún los 8 capítulos de siempre ----------
-// Los `desde` del guion usan la numeración nueva (19 capítulos). Mientras no lleguen, se pasan al índice
-// actual de CAPITULOS y se quitan los encargos cuyo cliente o momento aún no existe (Niebla, la cita de
+// Los `desde` del guion son ids de los 19 capítulos previstos. Mientras no lleguen, se pasan al id
+// de capítulo que ya existe y se quitan los encargos cuyo cliente o momento aún no existe (Niebla, la cita de
 // después de la declaración). Cada encargo lleva como `frase` su primera línea al pedirlo.
 (function adaptarEntrega1() {
   if (typeof ENCARGOS_FURGO === 'undefined') return;
-  const desde = { cajas_blancaso: 1, blancaso_casa: 2, invitacion_puky: 3, mar_perico: 5, discos_pompa: 6 };
+  const desde = { cajas_blancaso: 'cuota', blancaso_casa: 'blancazo', invitacion_puky: 'senor', mar_perico: 'perico', discos_pompa: 'inspeccion' };
   for (let i = ENCARGOS_FURGO.length - 1; i >= 0; i--) {
     const e = ENCARGOS_FURGO[i];
     if (!(e.id in desde)) { ENCARGOS_FURGO.splice(i, 1); continue; }

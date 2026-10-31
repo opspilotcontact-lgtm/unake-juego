@@ -5,7 +5,7 @@ class Final extends Phaser.Scene {
   constructor() { super('Final'); }
 
   create(datos) {
-    ESTADO.capitulo = CAPITULOS.length;
+    terminarHistoria();
     guardarPartida();
     fondo(this, 'bg-sofa');
     // Llegan de uno en uno y se apelotonan en el sofá.

@@ -160,7 +160,7 @@ function avisoDorado(scene, titulo, sub) {
 
 const SUCESOS = [
   // Monchiman cruza corriendo y se le caen monchis de la mochila.
-  { id: 'monchiman', humo: true, desde: 2, peso: 3, hacer: s => {
+  { id: 'monchiman', humo: true, desde: 'blancazo', peso: 3, hacer: s => {
     const y = s.py - 40;
     const m = s.add.image(-100, y - 160, 'monchiman').setScale(0.28).setDepth(870);
     sfx(s, 'whoosh');
@@ -212,7 +212,7 @@ const SUCESOS = [
     return 'Llueve humo en el barrio · colocón +8';
   } },
   // Puky asoma y, si lo tocas, te da un resucitador «que ha encontrado».
-  { id: 'puky', humo: true, desde: 2, peso: 1.5, hacer: s => {
+  { id: 'puky', humo: true, desde: 'blancazo', peso: 1.5, hacer: s => {
     const x = Phaser.Math.Between(300, ANCHO - 300);
     const p = s.add.image(x, ALTO + 140, 'puky').setOrigin(0.5, 1).setScale(0.3).setDepth(870);
     sfx(s, 'puky-gracioso', { volume: 0.5 });

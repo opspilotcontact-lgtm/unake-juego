@@ -12,7 +12,7 @@
 // La M de tu cuarto se enciende con 3 estrellas, en el capítulo de la inspección o, para siempre,
 // cuando ya has ganado el rescate una vez (lo que engancha se queda).
 function mEncendida() {
-  return totalEstrellas() >= 3 || (ESTADO.capitulo || 0) === 6 || stat('gana_Rescate') >= 1;
+  return totalEstrellas() >= 3 || enCap('inspeccion') || stat('gana_Rescate') >= 1;
 }
 
 const LUGARES_MINIJUEGO = [
@@ -41,8 +41,14 @@ const LUGARES_MINIJUEGO = [
   { clave: 'Blancazo', sitio: 'm', sala: 'cuarto', mundo: 'humo', abre: () => stat('gana_Blancazo') >= 1 },
   // La furgo de la aso, aparcada fuera (objeto nuevo); solo si el minijuego existe en esta versión
   // Entrega 1: la furgo está aparcada desde «Perico lo sabe» aunque aún no tenga su capítulo.
-  { clave: 'Furgo', sitio: 'furgo', sala: 'fuera', mundo: 'ambos', abre: () => stat('gana_Furgo') >= 1 || (ESTADO.capitulo || 0) >= 5 },
+  { clave: 'Furgo', sitio: 'furgo', sala: 'fuera', mundo: 'ambos', abre: () => stat('gana_Furgo') >= 1 || desdeCapId('perico') },
   { clave: 'Control', sitio: 'furgo', sala: 'fuera', mundo: 'ambos', abre: () => stat('gana_Control') >= 1 },
+  // Minijuegos del acto I-II (31/10/2026). Hasta que lleguen sus capítulos (pompa, mejor-amigo, nuevo,
+  // escucha), se abren en el punto de la historia donde irán; después, su capítulo los abrirá antes.
+  { clave: 'EnSuPunto', sitio: 'pompa', sala: 'dentro', mundo: 'humo', abre: () => !!MISIONES.EnSuPunto && (stat('gana_EnSuPunto') >= 1 || desdeCapId('pompa') || desdeCapId('cuota')) },
+  { clave: 'Rendija', sitio: 'blancaso', sala: 'plaza', mundo: 'humo', abre: () => !!MISIONES.Rendija && (stat('gana_Rendija') >= 1 || desdeCapId('mejor-amigo') || desdeCapId('blancazo')) },
+  { clave: 'Compostura', sitio: 'lasslow', sala: 'dentro', mundo: 'humo', abre: () => !!MISIONES.Compostura && (stat('gana_Compostura') >= 1 || desdeCapId('nuevo') || desdeCapId('senor')) },
+  { clave: 'Escucha', sitio: 'palicaso', sala: 'dentro', mundo: 'humo', abre: () => !!MISIONES.Escucha && (stat('gana_Escucha') >= 1 || desdeCapId('escucha') || desdeCapId('caja')) },
 ];
 
 // ¿La noche de este personaje ya abrió ese minijuego? (noches.js)
@@ -111,7 +117,7 @@ function objetosLugar(scene, sala, mundo) {
   Object.entries(OBJETOS_LUGAR).forEach(([id, o]) => {
     if (o.sala !== sala || !lugaresDe(id, mundo).length) return;
     // En el capítulo de la inspección ya está el casero en persona: la llave espera a que se vaya.
-    if (id === 'llave' && (ESTADO.capitulo || 0) === 6) return;
+    if (id === 'llave' && enCap('inspeccion')) return;
     const sprite = o.textura(scene);
     const altura = scene.textures.get(sprite).getSourceImage().height;
     salida.push({ id, tipo: 'lugar', sprite, x: o.x, y: o.y, escala: o.alto / altura, nombre: o.nombre });
@@ -285,20 +291,20 @@ function aplicarModPartida(clave, gana, puntos, monchis) {
 // Contrato con la escena Furgo: irA(this, 'Furgo', { encargo: { id, titulo, cliente, carga, destino,
 // distancia, probControl, premio: { monchis, hucha?, objeto? } } }). `cliente` es el id del personaje
 // ('cotine'…); `clienteNombre` y `frase` son extra para las tarjetas. `desde` = capítulo (índice de
-// CAPITULOS, 0 = cap. 1) en que el cliente ya está en la historia; el sorteo respeta el capítulo como el resto
+// CAPITULOS, por id: 'cuota', 'perico'…) en que el cliente ya está en la historia; el sorteo respeta el capítulo como el resto
 // del contenido (elegirNuevo, encuentros.js). Si guiones/cap-furgo.js llega a definir ENCARGOS_FURGO, manda esa.
 const ENCARGOS_FURGO_BASE = [
-  { id: 'cajas', cliente: 'palicaso', titulo: 'Cajas para la barra', carga: 'normal', destino: 'Unaké (la barra)', distancia: 1, probControl: 0.3, desde: 0,
+  { id: 'cajas', cliente: 'palicaso', titulo: 'Cajas para la barra', carga: 'normal', destino: 'Unaké (la barra)', distancia: 1, probControl: 0.3, desde: 'una-que',
     premio: { monchis: 40, objeto: 'papel' }, frase: '¡Escucha, escucha! Cajas de la tienda de 24 h para la barra. Pesan poco. Bueno, pesan.' },
-  { id: 'tarta', cliente: 'cotine', titulo: 'La tarta del cumpleaños', carga: 'fragil', destino: 'El cumpleaños de Blancaso', distancia: 2, probControl: 0.2, desde: 1,
+  { id: 'tarta', cliente: 'cotine', titulo: 'La tarta del cumpleaños', carga: 'fragil', destino: 'El cumpleaños de Blancaso', distancia: 2, probControl: 0.2, desde: 'cuota',
     premio: { monchis: 60 }, frase: 'Una tarta entera. No la mires. No la huelas. No… ¿qué? No me la he comido.' },
-  { id: 'mareado', cliente: 'blancaso', titulo: 'Blancaso, a casa', carga: 'pasajero', destino: 'La casa de Blancaso', distancia: 2, probControl: 0.15, desde: 2,
+  { id: 'mareado', cliente: 'blancaso', titulo: 'Blancaso, a casa', carga: 'pasajero', destino: 'La casa de Blancaso', distancia: 2, probControl: 0.15, desde: 'blancazo',
     premio: { monchis: 45 }, frase: 'Llévame a casa. Sin curvas. Sin frenazos. Sin… ay.' },
-  { id: 'reparto', cliente: 'palicaso', titulo: 'Reparto grande de monchis', carga: 'normal', destino: 'Medio barrio', distancia: 3, probControl: 0.5, desde: 2,
+  { id: 'reparto', cliente: 'palicaso', titulo: 'Reparto grande de monchis', carga: 'normal', destino: 'Medio barrio', distancia: 3, probControl: 0.5, desde: 'blancazo',
     premio: { monchis: 110 }, frase: '¡Escucha! Monchis para medio barrio, en una sola vuelta. Y, ojo, que esta noche hay control. Te cuento…' },
-  { id: 'cita', cliente: 'lasslow', titulo: 'Un señor a su cita', carga: 'pasajero', destino: 'El café de la cita', distancia: 2, probControl: 0.1, desde: 3,
+  { id: 'cita', cliente: 'lasslow', titulo: 'Un señor a su cita', carga: 'pasajero', destino: 'El café de la cita', distancia: 2, probControl: 0.1, desde: 'senor',
     premio: { monchis: 50, hucha: 10 }, frase: 'Joven, un señor no llega a su cita a pie. Llega puntual y en furgo. JA… perdón.' },
-  { id: 'discos', cliente: 'pompa', titulo: 'Los discos de la Pompa', carga: 'fragil', destino: 'El techo de la Pompa', distancia: 3, probControl: 0.4, desde: 3,
+  { id: 'discos', cliente: 'pompa', titulo: 'Los discos de la Pompa', carga: 'fragil', destino: 'El techo de la Pompa', distancia: 3, probControl: 0.4, desde: 'senor',
     premio: { monchis: 80, hucha: 15 }, frase: '…Los discos. Hay que ir a por ellos. …Despacio. …Que no se rayen.' },
 ];
 
@@ -355,17 +361,17 @@ function textoPremioEncargo(p) {
 // `...(MISIONES.Furgo && stat('gana_Furgo') >= 1 ? (SITUACIONES_FURGO[id] || []) : [])` a SITUACIONES[id].
 const SITUACIONES_FURGO = {
   palicaso: [{
-    id: 'furgo-cajas', desde: 2, titulo: 'Las cajas de la furgo',
+    id: 'furgo-cajas', desde: 'blancazo', titulo: 'Las cajas de la furgo',
     textos: ['«¡Escucha, escucha! Las cajas del género están en la tienda de 24 h. Con la furgo vamos en una vuelta. ¿Conduces?»'],
     pasos: [{ mision: 'Furgo', encargo: 'cajas' }], premio: { monchis: [30, 50], bolsita: [1, 1] },
   }],
   cotine: [{
-    id: 'furgo-tarta', desde: 2, titulo: 'Una tarta a domicilio',
+    id: 'furgo-tarta', desde: 'blancazo', titulo: 'Una tarta a domicilio',
     textos: ['«Hay una tarta entera para el cumpleaños. Si la llevas en la furgo, te dejo un trozo. Uno. Chico.»'],
     pasos: [{ mision: 'Furgo', encargo: 'tarta' }], premio: { monchis: [30, 55], papel: [1, 1] },
   }],
   lasslow: [{
-    id: 'furgo-cita', desde: 3, titulo: 'Un señor y su cita',
+    id: 'furgo-cita', desde: 'senor', titulo: 'Un señor y su cita',
     textos: ['«Joven, tengo una cita. Un señor no llega a una cita sudado. Furgo, por favor. Con ventanillas.»'],
     pasos: [{ mision: 'Furgo', encargo: 'cita' }], premio: { monchis: [35, 55], hucha: [10, 20] },
   }],

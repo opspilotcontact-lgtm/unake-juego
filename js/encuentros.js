@@ -21,21 +21,21 @@ const QUIEN = {
 // que sale). Las piezas sin campo salen siempre. Como TONTERIAS o MENSAJES son cadenas y los chats
 // son listas, lo que ya existía se marca por fragmento de texto en DESDE_POR_TEXTO (así también vale
 // para lo que añaden otros archivos, como rutinas.js). Una pieza nueva puede llevar su `desde` propio,
-// que manda sobre la tabla. Capítulos (ESTADO.capitulo): 0 ¿Una qué?, 1 La cuota, 2 El blancazo,
-// 3 El casero, 4 La caja, 5 Perico lo sabe, 6 La inspección, 7 La noche épica.
+// que manda sobre la tabla. `desde` y `hasta` son ids de capítulo (historia.js): una-que, cuota, blancazo,
+// senor, caja, perico, inspeccion, epica… Un número (índice viejo) aún vale, pero avisa en desarrollo.
 const DESDE_POR_TEXTO = [
-  // El casero y el alquiler llegan con la carta del capítulo 2 (índice 1).
-  ['alquiler', 1], ['casero', 1], ['la hucha', 1], ['cuota', 1],
-  // La noche de Blancaso (índice 2): su deseo y lo que se le tuerce.
-  ['Hoy sí que disfruto', 2], ['hoy no me da', 2], ['sin bajón', 2], ['Si me pongo amarillo', 2],
-  // Monchiman aparece al salvar a Blancaso (índice 2). Que sea Vuper no se sabe hasta «Perico lo sabe» (5).
-  ['Monchiman', 2], ['visto la M', 2], ['la M del cuarto', 2],
-  // La cena con el casero (índice 3): pajarita, facturas, Puky en el grupo.
-  ['cena del casero', 3], ['en la cena', 3], ['esmoquin', 3], ['sin pajarita', 3], ['nadie me pide facturas', 3], ['añadido al grupo', 3],
-  // La caja de Palicaso (índice 4): la tragaperras y el dinero que falta.
-  ['tragaperras', 4],
-  // El secreto de Perico (índice 5).
-  ['Se parecía a ti', 5], ['es Vuper', 5], ['Perico lo sabe todo', 5], ['Avistan a Monchiman', 5],
+  // El casero y el alquiler llegan con la carta del capítulo 2 ('cuota').
+  ['alquiler', 'cuota'], ['casero', 'cuota'], ['la hucha', 'cuota'], ['cuota', 'cuota'],
+  // La noche de Blancaso ('blancazo'): su deseo y lo que se le tuerce.
+  ['Hoy sí que disfruto', 'blancazo'], ['hoy no me da', 'blancazo'], ['sin bajón', 'blancazo'], ['Si me pongo amarillo', 'blancazo'],
+  // Monchiman aparece al salvar a Blancaso ('blancazo'). Que sea Vuper no se sabe hasta «Perico lo sabe» ('perico').
+  ['Monchiman', 'blancazo'], ['visto la M', 'blancazo'], ['la M del cuarto', 'blancazo'],
+  // La cena con el casero ('senor'): pajarita, facturas, Puky en el grupo.
+  ['cena del casero', 'senor'], ['en la cena', 'senor'], ['esmoquin', 'senor'], ['sin pajarita', 'senor'], ['nadie me pide facturas', 'senor'], ['añadido al grupo', 'senor'],
+  // La caja de Palicaso ('caja'): la tragaperras y el dinero que falta.
+  ['tragaperras', 'caja'],
+  // El secreto de Perico ('perico').
+  ['Se parecía a ti', 'perico'], ['es Vuper', 'perico'], ['Perico lo sabe todo', 'perico'], ['Avistan a Monchiman', 'perico'],
 ];
 
 const _desdeCache = new Map();
@@ -46,15 +46,15 @@ function textoDe(item) {
   return [item.arriba, item.abajo, item.pie, item.titular, item.p].filter(Boolean).join(' | ');
 }
 function desdeDe(item) {
-  if (item && item.desde !== undefined) return item.desde;
+  if (item && item.desde !== undefined) return capIdxDe(item.desde);
   const t = textoDe(item);
-  if (!_desdeCache.has(t)) _desdeCache.set(t, DESDE_POR_TEXTO.reduce((a, [f, n]) => (t.includes(f) ? Math.max(a, n) : a), 0));
+  if (!_desdeCache.has(t)) _desdeCache.set(t, DESDE_POR_TEXTO.reduce((a, [f, n]) => (t.includes(f) ? Math.max(a, capIdxDe(n)) : a), 0));
   return _desdeCache.get(t);
 }
 // ¿Sale en el capítulo en que vamos?
 function disponible(item) {
   const cap = ESTADO.capitulo || 0;
-  return cap >= desdeDe(item) && cap <= (item && item.hasta !== undefined ? item.hasta : Infinity);
+  return cap >= desdeDe(item) && cap <= (item && item.hasta !== undefined ? capIdxDe(item.hasta) : Infinity);
 }
 
 // Elige de `lista` lo que toca en este capítulo y no ha salido aún; la memoria (ESTADO.vistos[tipo])
@@ -474,7 +474,7 @@ if (typeof CONTENIDO_CAPITULOS !== 'undefined') {
 function chatDinamico() {
   const al = l => Phaser.Utils.Array.GetRandom(l);
   const opciones = [];
-  if (typeof META_HUCHA !== 'undefined' && (ESTADO.capitulo || 0) >= 1) {
+  if (typeof META_HUCHA !== 'undefined' && desdeCapId('cuota')) {
     const falta = Math.max(0, META_HUCHA - (ESTADO.hucha || 0));
     opciones.push([['blancaso', `La hucha va por ${ESTADO.hucha || 0}`], ['blancaso', `Faltan ${falta} para el casero`], ['palicaso', '¡Eso está hecho!'], ['blancaso', 'Eso dices siempre']]);
   }

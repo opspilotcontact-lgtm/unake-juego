@@ -34,14 +34,14 @@ const PASOS_GUIA = [
   },
 ];
 
-function guiaActiva() { return (ESTADO.capitulo || 0) === 0 && !ESTADO.guiaHecha; }
+function guiaActiva() { return enCap('una-que') && !ESTADO.guiaHecha; }
 
 // Consejos que salen una sola vez, justo cuando hacen falta (después del prólogo).
 const CONSEJOS = [
   { id: 'hambre', cuando: () => ESTADO.hambre > 60, titulo: 'Tienes hambre', texto: 'Come en la tienda de 24 h. Con mucha hambre pierdes vida, y sin vida te da un amarillo.' },
   { id: 'pasado', cuando: s => s.mundo === 'normal' && stat('fumadas') >= 1, titulo: 'Se te ha pasado', texto: 'Has vuelto al mundo normal (de día). Para volver al humo, lía y fuma otra vez en el sofá.' },
-  { id: 'objetivos', cuando: () => (ESTADO.capitulo || 0) >= 1, titulo: 'Tus objetivos', texto: 'Arriba a la derecha, los del capítulo. Puedes plegarlos con el botón (o la tecla O).' },
-  { id: 'misiones', cuando: s => s.mundo === 'humo' && (ESTADO.capitulo || 0) >= 1, titulo: 'Las misiones', texto: 'Los «!» sobre la gente son minijuegos: estrellas, monchis y niveles. De noche pagan más.' },
+  { id: 'objetivos', cuando: () => desdeCapId('cuota'), titulo: 'Tus objetivos', texto: 'Arriba a la derecha, los del capítulo. Puedes plegarlos con el botón (o la tecla O).' },
+  { id: 'misiones', cuando: s => s.mundo === 'humo' && desdeCapId('cuota'), titulo: 'Las misiones', texto: 'Los «!» sobre la gente son minijuegos: estrellas, monchis y niveles. De noche pagan más.' },
   { id: 'vida', cuando: () => ESTADO.vida < 50, titulo: 'Ojo con la vida', texto: 'El resucitador de la tienda te da vida de golpe. Comer también ayuda.' },
 ];
 

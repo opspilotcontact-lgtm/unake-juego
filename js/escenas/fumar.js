@@ -491,7 +491,7 @@ class Fumar extends Phaser.Scene {
     this.pases++;
     this.porro -= 10;
     // En la historia del blancazo, el primer pase es para Blancaso (es lo que pide el objetivo).
-    const primeroBlancaso = (ESTADO.capitulo || 0) >= 2 && stat('blancasoFumo') < 1;
+    const primeroBlancaso = desdeCapId('blancazo') && stat('blancasoFumo') < 1;
     const id = (this.pases % 2 === 1) !== primeroBlancaso ? 'lasslow' : 'blancaso';
     const otro = id === 'lasslow' ? 'blancaso' : 'lasslow';
     const desde = this.puntaPorro() || this.boca('vuper');
@@ -688,7 +688,7 @@ class Fumar extends Phaser.Scene {
     this.botones.forEach(b => b.destroy());
     ESTADO.colocon = Math.min(100, ESTADO.colocon + this.subido);
     ESTADO.hambre = Math.min(100, ESTADO.hambre + 15);
-    const historiaBlancazo = (ESTADO.capitulo || 0) >= 2;
+    const historiaBlancazo = desdeCapId('blancazo');
     if (this.blancasoFumo && !ESTADO.blancazo && historiaBlancazo) ESTADO.blancazoEn = 12;
     if (this.subido > 0) sumarStat('fumadas');
     if (this.blancasoFumo && historiaBlancazo) sumarStat('blancasoFumo');

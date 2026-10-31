@@ -267,6 +267,7 @@ function cargarPartida() {
 }
 
 function guardarPartida() {
+  if (typeof sincronizarCapId === 'function') sincronizarCapId(); // los ids de capítulo viajan con la partida (historia.js)
   try { localStorage.setItem('unake-partida', JSON.stringify(ESTADO)); } catch { /* sin almacenamiento */ }
 }
 

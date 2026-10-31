@@ -337,7 +337,7 @@ class Barrio extends Phaser.Scene {
     this.cosas.push(...visitasDeSala(this, nombre));
     // Lo que engancha se queda: los objetos que alojan minijuegos ya abiertos (la llave del casero, la furgo).
     this.cosas.push(...objetosLugar(this, nombre, this.mundo).map(o => this.montarCosa(o)));
-    if (nombre === 'dentro' && humo && (ESTADO.capitulo || 0) === 6 && this.textures.exists('obj-llave')) {
+    if (nombre === 'dentro' && humo && enCap('inspeccion') && this.textures.exists('obj-llave')) {
       const sc = arteO('casero', 'obj-llave');
       this.cosas.push(this.montarCosa({ id: 'casero', tipo: 'mision', mision: 'Inspeccion', sprite: sc, x: 1000, y: 660, escala: 230 / this.textures.get(sc).getSourceImage().height, nombre: 'El casero' }));
     }
@@ -909,9 +909,10 @@ class Barrio extends Phaser.Scene {
     // Un recado para esta persona va antes que nada.
     const r = ESTADO.recado;
     if (r && r.a === c.id && (r.tipo === 'mensaje' || r.llevo)) return this.cumplirRecado(c);
+    if (this.tareaInteractuar(c)) return;
     if (this.escenaHistoria(c)) return;
     // Desde la inspección (cap. 7), la Pompa te pide sus discos: misión de sigilo (de día o de noche).
-    if (c.id === 'pompa' && (ESTADO.capitulo || 0) >= 6) {
+    if (c.id === 'pompa' && desdeCapId('inspeccion')) {
       return this.tarjeta('Sigilo', null, stat('gana_Sigilo') ? null : '«…Mis discos. Los tiene el casero. En su casa.»', [{ etiqueta: 'Charlar', accion: () => { this.cerrarModal(); this.encuentro(c); }, color: HEX.azul }]);
     }
     // Perico es la puerta: con un encargo se pasa siempre, y de día hace de portero aunque tenga un problema.
@@ -963,7 +964,7 @@ class Barrio extends Phaser.Scene {
       case 'mirador': return this.charla(c, Phaser.Utils.Array.GetRandom(['Desde aquí se ve todo el barrio. Y el barrio, desde aquí, parece pequeño.', 'Las chimeneas echan humo. Las nubes también. Aquí arriba todo es lo mismo.', 'Allí está la tienda de 24 h. Siempre encendida. Como tú.']));
       case 'blancaso':
         if (ESTADO.blancazo) return this.tarjeta('Blancazo', null, '¡Ahora! Puky ya viene de camino.');
-        if ((ESTADO.capitulo || 0) >= 1) return this.hucha(c);
+        if (desdeCapId('cuota')) return this.hucha(c);
         if (this.misionDe(c)) return this.tarjeta('Blancazo', null, 'Revivir el blancazo.', [charlar]);
         return this.encuentro(c);
       case 'reparto':
@@ -980,7 +981,7 @@ class Barrio extends Phaser.Scene {
         }
         if (ESTADO.dentro) {
           // Desde «Perico lo sabe», en la puerta se juega a callarle.
-          const otro = this.mundo === 'humo' && (ESTADO.capitulo || 0) >= 5
+          const otro = this.mundo === 'humo' && desdeCapId('perico')
             ? { etiqueta: '¡Periquito!', clave: 'Periquito', accion: () => this.lanzar('Periquito'), color: HEX.rosa } : charlar;
           return this.tarjeta('Contrasena', null, null, [{ etiqueta: 'Pasar', accion: () => { this.cerrarModal(); this.cambiarSala('dentro', 'puerta'); } }, otro]);
         }
@@ -1003,7 +1004,7 @@ class Barrio extends Phaser.Scene {
     this.pintarObjetivos();
     // Las noches de cada personaje: cuando su minijuego llega al nivel, su escena (fuera de las de capítulo).
     if (!this.modal && !this.cambiando && !this.reparto && this.time.now >= (this.pausaHistoria || 0)
-      && (historiaAcabada() || ESTADO.introCap === (ESTADO.capitulo || 0))) {
+      && (historiaAcabada() || introVistaDeCap())) {
       const np = nochePendiente();
       if (np) return this.abrirNoche(np);
     }
@@ -1012,9 +1013,9 @@ class Barrio extends Phaser.Scene {
     if (this.time.now < (this.pausaHistoria || 0)) return;
     const n = ESTADO.capitulo || 0;
     const cap = capituloActual();
-    if (ESTADO.introCap !== n) {
-      return this.abrirEscena([['titulo', `Capítulo ${n + 1} · ${cap.titulo}`, cap.arte], ...cap.intro, ...(n === 0 ? [] : [['objetivos', '']])], () => {
-        ESTADO.introCap = n;
+    if (!introVistaDeCap()) {
+      return this.abrirEscena([['titulo', `Capítulo ${n + 1} · ${cap.titulo}`, cap.arte], ...cap.intro, ...(enCap('una-que') ? [] : [['objetivos', '']])], () => {
+        marcarIntroVista();
         // Foto de los contadores: los objetivos «de este capítulo» cuentan desde aquí.
         ESTADO.baseCap = { ...(ESTADO.stats || {}) };
         if (cap.alEmpezar) cap.alEmpezar();
@@ -1022,6 +1023,7 @@ class Barrio extends Phaser.Scene {
         this.situacionesDeCapitulo(cap);
       });
     }
+    if (esDeTareas(cap)) return this.tareaTick(cap, n);
     if ((cap.situaciones || []).some(([id, pl]) => stat(`sit_${pl}`) < 1 && !(ESTADO.situaciones[id] && (ESTADO.situaciones[id].pl === pl || ESTADO.situaciones[id].aceptada)))) this.situacionesDeCapitulo(cap);
     if (cap.objetivos.every(o => o.hecho())) this.completarCapitulo(cap, n);
   }
@@ -1043,8 +1045,9 @@ class Barrio extends Phaser.Scene {
 
   completarCapitulo(cap, n) {
     this.pausaHistoria = this.time.now + 600000; // hasta que acabe la escena de cierre
-    ESTADO.capitulo = n + 1;
-    ESTADO.monchis += cap.premio;
+    avanzarCap();
+    ESTADO.tarea = null;
+    ESTADO.monchis += cap.premio || 0;
     guardarPartida();
     this.refrescarHud();
     sfx(this, 'platillo', { volume: 0.6 });
@@ -1061,7 +1064,167 @@ class Barrio extends Phaser.Scene {
     // El cierre del capítulo: su momento persona, en cómic.
     if (!cap.cierre) return seguir();
     this.seguirPendiente = seguir;
-    this.time.delayedCall(700, () => this.cuandoLibre(() => this.abrirEscena([['titulo', `Capítulo ${n + 1} completado · ${cap.titulo}`], ...cap.cierre], () => { this.seguirPendiente = null; seguir(); }, { cap: n, momento: true })));
+    this.time.delayedCall(700, () => this.cuandoLibre(() => this.abrirEscena([['titulo', `Capítulo ${n + 1} completado · ${cap.titulo}`], ...cap.cierre], () => { this.seguirPendiente = null; seguir(); }, { cap: cap.id, momento: true })));
+  }
+
+  // ---------- Motor de tareas (los capítulos nuevos; ver historia.js) ----------
+
+  // Cuenta varias escenas seguidas (cada una cuando la ventana anterior se ha cerrado).
+  abrirEscenas(lista, alAcabar, opciones) {
+    const ls = lista.filter(l => l && l.length);
+    const paso = i => {
+      if (i >= ls.length) return alAcabar && alAcabar();
+      this.cuandoLibre(() => this.abrirEscena(ls[i], () => this.time.delayedCall(60, () => paso(i + 1)), opciones));
+    };
+    paso(0);
+  }
+
+  // Un tic de la historia en un capítulo de tareas: activa la tarea, cuenta su `antes`, espera a que se cumpla,
+  // cuenta su `despues` (y el `giro` si toca) y pasa a la siguiente; al acabar todas, el cierre.
+  tareaTick(cap, n) {
+    let T = ESTADO.tarea;
+    if (!T || T.cap !== cap.id) { T = ESTADO.tarea = nuevaTarea(cap); guardarPartida(); }
+    if (T.i >= cap.tareas.length) return this.completarCapitulo(cap, n);
+    const t = cap.tareas[T.i];
+    const opc = { cap: cap.id };
+    const firma = `${T.i}|${T.fase}|${T.hechos}|${(T.hablados || []).length}|${T.objeto}`;
+    if (firma !== this.firmaTarea) { this.firmaTarea = firma; this.tareaDesde = this.time.now; this.marcarSituaciones(); }
+    if (T.fase === 'antes') {
+      this.activarTarea(cap, t, T);
+      const listo = () => { T.fase = 'activa'; this.tareaDesde = this.time.now; guardarPartida(); this.marcarSituaciones(); };
+      return t.antes && t.antes.length ? this.abrirEscena(t.antes, listo, opc) : listo();
+    }
+    if (T.fase === 'activa') {
+      if (!tareaCumplida(t, T)) return this.tareaVigilar(t, T);
+      T.fase = 'despues';
+      guardarPartida();
+    }
+    if (T.fase === 'despues') {
+      const giro = cap.giro && cap.giroTras === T.i + 1 && !T.giroVisto ? cap.giro : null;
+      this.pausaHistoria = this.time.now + 600000; // hasta que acaben las escenas
+      this.abrirEscenas([t.despues, giro], () => {
+        if (giro) T.giroVisto = true;
+        sfx(this, 'campanita');
+        T.i++;
+        T.fase = 'antes';
+        T.base = { ...(ESTADO.stats || {}) };
+        T.hechos = 0; T.total = 0; T.hablados = []; T.objeto = false; T.cumplida = false; T.sembrado = false; T.lanzado = false;
+        this.pausaHistoria = this.time.now + 900;
+        guardarPartida();
+        this.marcarSituaciones();
+      }, opc);
+    }
+  }
+
+  // Lo que hay que preparar al activar una tarea (siembra lo que se recoge; lanza el flashback).
+  activarTarea(cap, t, T) {
+    if (t.tipo === 'recoger' && !T.sembrado) {
+      T.sembrado = true;
+      const lista = recogerDeTarea(t);
+      T.total = lista.length;
+      lista.forEach(r => {
+        const sala = SALAS[r.sala] ? r.sala : 'plaza';
+        const [y0, y1] = SALAS[sala].suelo;
+        // Nada a menos de 150 px de donde estás (que no se coja solo al aparecer).
+        let x = Phaser.Math.Between(160, ANCHO - 160);
+        for (let k = 0; k < 8 && sala === this.sala && Math.abs(x - this.px) < 150; k++) x = Phaser.Math.Between(160, ANCHO - 160);
+        ESTADO.recogibles.push({ sit: '__tarea', tipo: r.tipo, sala, x, y: Phaser.Math.Between(y0, y1) });
+      });
+      this.montarRecogibles();
+      const nombres = [...new Set(lista.map(r => recogibleDe(r.tipo).nombre))].join(', ');
+      this.time.delayedCall(700, () => golpeTexto(this, ANCHO / 2, 280, `Busca: ${nombres}`, COLOR.verde, 40));
+    }
+  }
+
+  // La tarea espera: si llevas un rato sin avanzar, sale la pista. Flashback: se lanza solo.
+  tareaVigilar(t, T) {
+    if (t.tipo === 'flashback' && !T.lanzado) {
+      if (t.minijuego && MISIONES[t.minijuego]) { T.lanzado = true; guardarPartida(); return this.lanzar(t.minijuego); }
+      if (t.escena) { T.lanzado = true; return this.abrirEscena(t.escena, () => { T.cumplida = true; guardarPartida(); }, { cap: ESTADO.tarea.cap }); }
+      T.cumplida = true;
+    }
+    if (this.modal || this.cambiando) { this.tareaDesde = this.time.now; return; }
+    if (this.time.now - (this.tareaDesde || 0) >= TAREA_PISTA_MS) {
+      this.tareaDesde = this.time.now;
+      this.pistaTarea(t, 'niebla');
+    }
+  }
+
+  // La pista de la tarea. Niebla la dice si ya está en el barrio; si no, sale como aviso.
+  pistaTarea(t, quien) {
+    if (!t.pista) return;
+    const limpio = textoPista(t, 95);
+    const de = quienDicePista(t);
+    const nombre = de && QUIEN[de] ? QUIEN[de].nombre : null;
+    const nieblaAqui = quien === 'niebla' && QUIEN.niebla;
+    this.toast(nieblaAqui ? 'Niebla te susurra' : nombre ? `Pista de ${nombre}` : 'Pista', limpio);
+  }
+
+  // Marca dorada sobre con quien hay que hablar o jugar para la tarea en curso.
+  marcarTarea() {
+    const a = tareaActiva();
+    if (!a || a.T.fase !== 'activa' || !['charla', 'dia', 'minijuego'].includes(a.t.tipo)) return;
+    const con = conDeTarea(a.t).filter(id => a.t.tipo === 'minijuego' || !(a.T.hablados || []).includes(id));
+    (this.cosas || []).forEach(c => {
+      if (!con.includes(c.id) || c.oculta) return;
+      const y = c.y - c.alto - 40;
+      const m = texto(this, c.x, y, '!', 66, COLOR.amarillo).setDepth(801);
+      this.tweens.add({ targets: m, y: y - 14, angle: { from: -8, to: 8 }, duration: 450, yoyo: true, repeat: -1 });
+      this.marcasSit.push(m);
+    });
+  }
+
+  // Hablar o jugar con alguien: lo que pide la tarea en curso va antes que el trato de siempre.
+  // Devuelve true si se ha encargado. «Otras cosas» de la tarjeta vuelve al trato normal (nada de la rutina se pierde).
+  tareaInteractuar(c) {
+    if (this._sinTarea) { this._sinTarea = false; return false; }
+    const a = tareaActiva();
+    if (!a || a.T.fase !== 'activa' || this.reparto) return false;
+    const { t, T } = a;
+    const con = conDeTarea(t);
+    const mundo = mundoDeTarea(t);
+    const otras = { etiqueta: 'Otras cosas', color: HEX.azul, accion: () => { this.cerrarModal(); this._sinTarea = true; this.interactuar(c); } };
+    // Pista: la dice quien la da, sin quitarle lo suyo (la barra, la tienda…).
+    const limpia = textoPista(t, 220);
+    if (t.tipo === 'charla' || t.tipo === 'dia') {
+      if (!con.includes(c.id) || (T.hablados || []).includes(c.id)) return this.tareaPistaDe(c, t, limpia);
+      if (mundo && this.mundo !== mundo) {
+        this.poseNpc(c, 'sorprendido');
+        this.charla(c, mundo === 'normal' ? 'De día, rider. Ahora no es el momento.' : 'Esto mejor de noche, rider.');
+        return true;
+      }
+      T.hablados = [...(T.hablados || []), c.id];
+      const ultimo = T.hablados.length >= con.length;
+      if (ultimo) T.cumplida = true;
+      guardarPartida();
+      if (!ultimo) {
+        const suya = (t.despues || []).find(l => l[0] === c.id);
+        this.poseNpc(c, 'hablando');
+        this.charla(c, suya ? suya[1] : '…');
+        this.toast('Tarea', `Van ${T.hablados.length}/${con.length}`);
+      }
+      return true;
+    }
+    if (t.tipo === 'minijuego' && con.includes(c.id)) {
+      if (!MISIONES[t.minijuego]) { this.charla(c, `(El minijuego ${t.minijuego} aún no está en el juego)`); return false; }
+      if (mundo && this.mundo !== mundo) { this.charla(c, mundo === 'normal' ? 'De día, rider. Ahora no.' : 'Esto, de noche.'); return true; }
+      ESTADO.situacionEnJuego = null;
+      this.tarjeta(t.minijuego, () => this.lanzar(t.minijuego), textoPista(t, 48) || t.texto.slice(0, 48), [otras], { sinFila: true });
+      return true;
+    }
+    return this.tareaPistaDe(c, t, limpia);
+  }
+
+  // Quien da la pista, si le hablas: la dice. Si lo suyo abre otra ventana (la barra), sale como aviso y sigue su trato.
+  tareaPistaDe(c, t, limpia) {
+    if (!t.pista || quienDicePista(t) !== c.id) return false;
+    if (c.tipo === 'charla') {
+      this.poseNpc(c, 'hablando');
+      this.charla(c, limpia);
+      return true;
+    }
+    this.pistaTarea(t, c.id);
+    return false;
   }
 
   abrirNoche([id, i, paso]) {
@@ -1147,21 +1310,22 @@ class Barrio extends Phaser.Scene {
 
   // Escenas sueltas de la historia que salen al hablar con alguien (la pista de Perico, su secreto…).
   escenaHistoria(c) {
-    const cap = ESTADO.capitulo || 0;
-    if (c.id === 'perico' && cap === 4 && stat('pistaCaja') < 1) {
+    const cap = capId();
+    if (c.id === 'perico' && cap === 'caja' && stat('pistaCaja') < 1) {
       this.abrirEscena([
         ['perico', 'Pin pin. ¿Quién va a la tienda a las cuatro? Una estrella. Una estrella que habla sola.'],
         ['perico', 'Le da a la palanca de la máquina y dice: «Escucha, escucha, esta sale». Nunca sale.'],
         ['narrador', 'Solo hay una estrella en el barrio que habla sola. Y está en la barra.'],
-      ], () => { sumarStat('pistaCaja'); this.toast('Pista: Palicaso', 'De noche, rétale a El farol en la barra de Unaké'); }, { cap: 4 });
+      ], () => { sumarStat('pistaCaja'); this.toast('Pista: Palicaso', 'De noche, rétale a El farol en la barra de Unaké'); }, { cap: 'caja' });
       return true;
     }
     // «Perico lo sabe»: el secreto llega cuando ya le has callado y le has ganado las pipas.
-    const listoSecreto = cap === 5 && stat('secretoPerico') < 1 && CAPITULOS[5].objetivos[0].hecho() && CAPITULOS[5].objetivos[1].hecho();
-    if (c.id === 'perico' && cap === 5 && stat('secretoPerico') < 1 && !(listoSecreto && this.mundo === 'normal')) {
+    const capPerico = CAPITULOS[capIdx('perico')];
+    const listoSecreto = cap === 'perico' && stat('secretoPerico') < 1 && capPerico.objetivos[0].hecho() && capPerico.objetivos[1].hecho();
+    if (c.id === 'perico' && cap === 'perico' && stat('secretoPerico') < 1 && !(listoSecreto && this.mundo === 'normal')) {
       // Pista sin cortar el paso: qué le falta para hablar con él a solas.
       const falta = listoSecreto ? 'De día, cuando no haya nadie, te escucho. Pin pin.'
-        : !CAPITULOS[5].objetivos[0].hecho() ? 'Pin pin. Gáname a ¡Periquito! de noche, aquí en la puerta.'
+        : !capPerico.objetivos[0].hecho() ? 'Pin pin. Gáname a ¡Periquito! de noche, aquí en la puerta.'
         : 'Pin pin. Y ahora, pipas: gáname a las pipas (de noche).';
       golpeTexto(this, Phaser.Math.Clamp(c.x, 260, ANCHO - 260), Math.max(160, c.y - c.alto - 90), `Perico: ${falta}`, COLOR.amarillo, 22);
     }
@@ -1172,7 +1336,7 @@ class Barrio extends Phaser.Scene {
         ['vuper', 'Pero si se sabe, se acaba. Nadie llamaría a Monchiman: llamarían al rider.'],
         ['perico', 'Pin pin. …Me lo guardo. Me lo guardo aquí, con las pipas.'],
         ['narrador', 'Por primera vez, alguien ha tomado en serio a Perico.'],
-      ], () => sumarStat('secretoPerico'), { cap: 0 });
+      ], () => sumarStat('secretoPerico'), { cap: 'una-que' });
       return true;
     }
     return false;
@@ -1183,7 +1347,7 @@ class Barrio extends Phaser.Scene {
     const acabada = historiaAcabada();
     const cap = capituloActual();
     const n = ESTADO.capitulo || 0;
-    const lineas = acabada ? [] : cap.objetivos.map(o => [o.hecho(), o.texto + (o.progreso && !o.hecho() ? ` (${o.progreso()})` : '')]);
+    const lineas = acabada ? [] : cap.objetivos.map(o => [o.hecho(), o.texto + (o.progreso && !o.hecho() && o.progreso() ? ` (${o.progreso()})` : ''), !!o.actual]);
     // Historia y ampliaciones se listan una a una; las opcionales, en una sola línea resumen tenue.
     const todas = Object.entries(ESTADO.situaciones || {});
     const opcionales = todas.filter(([id, s]) => !this.esSitHistoria(id) && !s.ampliacion);
@@ -1208,15 +1372,15 @@ class Barrio extends Phaser.Scene {
     c.removeAll(true);
     const ancho = 340;
     const filas = acabada ? 1 : lineas.length;
-    const alto = 42 + filas * 30 + (n >= 1 ? 28 : 0) + sits.length * 24 + (nOpc ? 22 : 0) + (sits.length ? 8 : 0);
+    const alto = 42 + filas * 30 + (desdeCapId('cuota') ? 28 : 0) + sits.length * 24 + (nOpc ? 22 : 0) + (sits.length ? 8 : 0);
     this.panelObjetivos.medida = { ancho, alto }; // el fondo es un dibujo: Phaser no le mide el tamaño
     c.add(this.add.graphics().fillStyle(HEX.tinta, 0.78).fillRoundedRect(-ancho, 0, ancho, alto, 16));
     c.add(this.add.text(-ancho + 14, 10, acabada ? 'Modo libre' : `Cap. ${n + 1} · ${cap.titulo}`, { fontFamily: FUENTE, fontSize: '17px', color: COLOR.amarillo }));
     if (acabada) c.add(this.add.text(-ancho + 14, 40, 'Unaké se ha salvado. ¡A por los récords!', { fontFamily: FUENTE, fontSize: '14px', color: COLOR.crema }));
-    lineas.forEach(([hecho, txt], i) => {
+    lineas.forEach(([hecho, txt, actual], i) => {
       const y = 50 + i * 30;
-      const bola = this.add.circle(-ancho + 22, y, 8, hecho ? 0x7ee081 : 0x000000, hecho ? 1 : 0.3).setStrokeStyle(2, HEX.crema);
-      const t = this.add.text(-ancho + 38, y, txt, { fontFamily: FUENTE, fontSize: '14px', color: hecho ? '#9be7a0' : COLOR.crema, wordWrap: { width: ancho - 50 } }).setOrigin(0, 0.5);
+      const bola = this.add.circle(-ancho + 22, y, 8, hecho ? 0x7ee081 : actual ? 0xffd23f : 0x000000, hecho || actual ? 1 : 0.3).setStrokeStyle(2, HEX.crema);
+      const t = this.add.text(-ancho + 38, y, txt, { fontFamily: FUENTE, fontSize: '14px', color: hecho ? '#9be7a0' : actual ? '#ffe08a' : COLOR.crema, wordWrap: { width: ancho - 50 } }).setOrigin(0, 0.5);
       if (hecho) t.setAlpha(0.75);
       c.add([bola, t]);
     });
@@ -1227,7 +1391,7 @@ class Barrio extends Phaser.Scene {
       c.add(this.add.text(-ancho + 38, y, t, { fontFamily: FUENTE, fontSize: '14px', color: h ? '#ffe08a' : '#ffb3d1' }).setOrigin(0, 0.5));
     });
     if (nOpc) c.add(this.add.text(-ancho + 14, 50 + filas * 30 + sits.length * 24, `Encargos opcionales: ${nOpc}`, { fontFamily: FUENTE, fontSize: '13px', color: COLOR.crema }).setOrigin(0, 0.5).setAlpha(0.5));
-    if (n >= 1) {
+    if (desdeCapId('cuota')) {
       const y = alto - 22;
       const f = Math.min(1, ESTADO.hucha / META_HUCHA);
       c.add(this.add.text(-ancho + 14, y, 'Hucha', { fontFamily: FUENTE, fontSize: '14px', color: COLOR.crema }).setOrigin(0, 0.5));
@@ -1571,7 +1735,7 @@ class Barrio extends Phaser.Scene {
     ESTADO.situaciones = ESTADO.situaciones || {};
     if (Object.keys(ESTADO.situaciones).length >= 2) return;
     const candidatos = DESTINOS.filter(d => !ESTADO.situaciones[d.id] && (ESTADO.dentro || (d.sala !== 'dentro' && d.sala !== 'cocina')))
-      .map(d => d.id).filter(id => (SITUACIONES[id] || []).some(p => (ESTADO.capitulo || 0) >= p.desde));
+      .map(d => d.id).filter(id => (SITUACIONES[id] || []).some(p => desdeCapRef(p.desde)));
     if (!candidatos.length) return;
     const id = Phaser.Utils.Array.GetRandom(candidatos);
     const s = nuevaSituacion(id);
@@ -1783,6 +1947,7 @@ class Barrio extends Phaser.Scene {
       this.tweens.add({ targets: m, y: y - (historia ? 14 : 6), angle: { from: -8, to: 8 }, duration: historia ? 450 : 800, yoyo: true, repeat: -1 });
       this.marcasSit.push(m);
     });
+    this.marcarTarea();
     this.marcarFichas();
   }
 
@@ -1854,7 +2019,7 @@ class Barrio extends Phaser.Scene {
       return;
     }
     // Desde «Perico lo sabe», en la puerta siempre se puede jugar a ¡Periquito!, tenga o no un problema.
-    const periquito = c.tipo === 'puerta' && ESTADO.dentro && (ESTADO.capitulo || 0) >= 5
+    const periquito = c.tipo === 'puerta' && ESTADO.dentro && desdeCapId('perico')
       ? { etiqueta: '¡Periquito!', clave: 'Periquito', accion: () => this.lanzar('Periquito'), color: HEX.rosa } : null;
     if (paso && paso.recoger && periquito) {
       const salas = [...new Set(ESTADO.recogibles.filter(r => r.sit === c.id).map(r => SALAS[r.sala].nombre))].join(', ');
@@ -1906,10 +2071,10 @@ class Barrio extends Phaser.Scene {
     (this.recogiblesSala || []).forEach(o => { o.img.destroy(); o.brillo.destroy(); });
     this.recogiblesSala = [];
     (ESTADO.recogibles || []).filter(r => r.sala === this.sala).forEach(r => {
-      const R = RECOGIBLES[r.tipo];
+      const R = recogibleDe(r.tipo);
       const brillo = this.add.star(r.x, r.y - 30, 4, 8, 36, 0xffb3d1, 0.9).setDepth(r.y - 1);
       this.tweens.add({ targets: brillo, angle: 90, scale: 0.6, duration: 650, yoyo: true, repeat: -1 });
-      const img = this.add.image(r.x, r.y - 14, R.sprite).setScale(R.escala).setDepth(r.y);
+      const img = this.add.image(r.x, r.y - 14, this.textures.exists(R.sprite) ? R.sprite : (R.respaldo || R.sprite)).setScale(R.escala).setDepth(r.y);
       this.tweens.add({ targets: img, y: r.y - 24, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       this.recogiblesSala.push({ r, img, brillo });
     });
@@ -1924,6 +2089,15 @@ class Barrio extends Phaser.Scene {
     this.tweens.add({ targets: o.img, y: o.img.y - 80, scale: 0, duration: 380, ease: 'Back.in', onComplete: () => o.img.destroy() });
     const s = ESTADO.situaciones[o.r.sit];
     sfx(this, 'campanita');
+    // Lo que pide una tarea del capítulo (motor de tareas): cuenta en ESTADO.tarea, no en una situación.
+    if (o.r.sit === '__tarea') {
+      const a = tareaActiva();
+      if (a) {
+        a.T.hechos++;
+        golpeTexto(this, this.px, this.py - 220, `${recogibleDe(o.r.tipo).nombre} ${a.T.hechos}/${a.T.total}`, COLOR.verde, 38);
+      }
+      return guardarPartida();
+    }
     if (!s) return guardarPartida();
     const p = s.pasos[s.paso];
     p.hechos++;
@@ -2195,7 +2369,7 @@ class Barrio extends Phaser.Scene {
     const conImg = this.cosas.filter(c => c.img && QUIEN[c.id]);
     const por = id => conImg.find(c => c.id === id);
     // Las conversaciones del capítulo en curso tienen preferencia.
-    const delCap = (DIALOGOS_CAP[ESTADO.capitulo || 0] || []).filter(d => d.every(([id]) => por(id)));
+    const delCap = (DIALOGOS_CAP[capId()] || []).filter(d => d.every(([id]) => por(id)));
     // Las de siempre, solo las que ya pueden salir en este capítulo y sin repetir hasta agotarlas.
     const posibles = delCap.length && Math.random() < 0.6 ? delCap : dialogosDisponibles().filter(d => d.every(([id]) => por(id)));
     if (posibles.length && Math.random() < 0.7) {
@@ -2549,6 +2723,23 @@ te ha mandado esto`, 24, COLOR.amarillo));
         },
       });
     }
+    // Recado de una tarea del capítulo: el objeto sale arriba (se paga y listo, sin más viaje).
+    const ta = tareaActiva();
+    if (ta && ta.T.fase === 'activa' && ta.t.tipo === 'recado' && !ta.T.objeto) {
+      const nombre = objetoDeTarea(ta.t);
+      const ob = OBJETOS_RECADO[nombre] || { nombre: nombre.charAt(0).toUpperCase() + nombre.slice(1), precio: 20, efecto: 'Recado', arte: `obj-${nombre}` };
+      filas.unshift({
+        id: `recado-${nombre}`, nombre: ob.nombre, sprite: arteO(ob.arte, 'lata'), precio: ob.precio, efecto: ob.efecto,
+        accion: () => {
+          if (!this.pagar(ob.precio)) return;
+          ta.T.objeto = true;
+          guardarPartida();
+          sfx(this, 'campanita');
+          this.cerrarModal();
+          golpeTexto(this, ANCHO / 2, 600, `${ob.nombre}: ya lo tienes`, COLOR.verde, 34);
+        },
+      });
+    }
     this.abrirModal(c => {
       c.add(texto(this, 0, -210, 'La tienda de 24 h', 40, COLOR.amarillo));
       c.add(texto(this, 0, -168, `Tienes ${ESTADO.monchis} monchis · Hambre ${Math.round(ESTADO.hambre)} · Vida ${Math.round(ESTADO.vida)}`, 20, COLOR.crema));
@@ -2617,7 +2808,7 @@ te ha mandado esto`, 24, COLOR.amarillo));
       }).setOrigin(0.5));
       m.add(texto(this, 100, 20, `Llevas ${ESTADO.inv.bolsita} bolsita${ESTADO.inv.bolsita === 1 ? '' : 's'} · ${ESTADO.monchis} monchis`, 20, COLOR.azul));
       // Desde la pista de Perico (cap. 5), Palicaso acepta el reto de los dados.
-      const farol = humo && ((ESTADO.capitulo || 0) > 4 || stat('pistaCaja') >= 1);
+      const farol = humo && ((desdeCapId('caja') && !enCap('caja')) || stat('pistaCaja') >= 1);
       if (farol) {
         m.add(boton(this, -200, 150, `Bolsita · ${PRECIO_BOLSITA} (E)`, pedir, { ancho: 290, tam: 21 }));
         m.add(boton(this, 105, 150, 'El farol (dados)', () => this.tarjeta('Farol'), { ancho: 270, tam: 21, color: HEX.rosa }));
