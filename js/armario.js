@@ -5,7 +5,7 @@
 
 const ARMARIO = [
   { id: 'gorra', nombre: 'Gorra del revés', hueco: 'cabeza', sprite: 'obj-acc-gorra', precio: 300, efecto: '+5 % de monchis', bono: { pago: 0.05 } },
-  { id: 'cascos', nombre: 'Cascos de la Pompa', hueco: 'cabeza', sprite: 'obj-acc-cascos', precio: 450, efecto: '+8 % de monchis', bono: { pago: 0.08 } },
+  { id: 'cascos', nombre: 'Cascos de la Pompa (al cuello)', hueco: 'cabeza', sprite: 'obj-acc-cascos', precio: 450, efecto: '+8 % de monchis', bono: { pago: 0.08 } },
   { id: 'chistera', nombre: 'Chistera de señor', hueco: 'cabeza', sprite: 'obj-acc-chistera', precio: 550, efecto: 'Un señor cobra mejor: +10 %', bono: { pago: 0.1 } },
   { id: 'corona', nombre: 'Corona de humo', hueco: 'cabeza', sprite: 'obj-acc-corona', precio: 1200, efecto: 'Rey de la aso: +18 % de monchis', bono: { pago: 0.18 } },
   { id: 'gafas', nombre: 'Gafas de neón', hueco: 'ojos', sprite: 'obj-acc-gafas', precio: 400, efecto: 'El colocón dura más', bono: { colocon: -0.15 } },
@@ -40,11 +40,19 @@ function tintePiel(t) {
   return p.tinte;
 }
 
-// Dónde va cada prenda sobre el dibujo de Vuper (fracciones de su alto; de noche es una nube,
-// de día una persona con la nube por cabeza).
+// Dónde va cada prenda sobre el dibujo de Vuper: [alto desde los pies, ancho, origen vertical], en
+// fracciones de su tamaño (de noche es una nube; de día, una persona con la nube por cabeza). Los
+// sombreros se APOYAN en la cabeza (origen abajo), las cadenas CUELGAN del cuello (origen arriba) y
+// las gafas van centradas en los ojos: así no tapan la cara (medido con fotos el 31/10/2026).
 const ANCLAS_ARMARIO = {
-  humo: { cabeza: [0.94, 0.62], ojos: [0.58, 0.58], cuello: [0.2, 0.5] },
-  normal: { cabeza: [0.99, 0.46], ojos: [0.84, 0.36], cuello: [0.58, 0.34] },
+  humo: { cabeza: [0.8, 0.5, 1], ojos: [0.6, 0.56, 0.5], cuello: [0.13, 0.5, 0.5] },
+  normal: { cabeza: [0.9, 0.36, 1], ojos: [0.8, 0.34, 0.5], cuello: [0.53, 0.32, 0.5] },
+};
+// Prendas con forma propia: la cadena cuelga y los cascos van colgados al cuello, de DJ
+// (el dibujo mira de frente: puestos en la cabeza tapaban la cara).
+const ANCLAS_PRENDA = {
+  cadena: { humo: [0.24, 0.3, 0], normal: [0.6, 0.24, 0] },
+  cascos: { humo: [0.14, 0.66, 0.5], normal: [0.52, 0.44, 0.5] },
 };
 
 // Monta (o actualiza) las prendas encima de Vuper; se llama cada fotograma desde el barrio.
@@ -59,15 +67,14 @@ function vestirVuper(s) {
     if (!p || !s.textures.exists(p.sprite)) { if (img) img.setVisible(false); return; }
     if (!img || !img.active) img = s.prendas[h] = s.add.image(0, 0, p.sprite);
     if (img.texture.key !== p.sprite) img.setTexture(p.sprite);
-    const [alto, ancho] = ANCLAS_ARMARIO[mundo][h];
-    const w = j.displayWidth * ancho;
-    img.setScale(w / img.width).setVisible(j.visible);
+    const [alto, ancho, origen] = (ANCLAS_PRENDA[p.id] && ANCLAS_PRENDA[p.id][mundo]) || ANCLAS_ARMARIO[mundo][h];
+    img.setOrigin(0.5, origen).setScale(j.displayWidth * ancho / img.width).setVisible(j.visible);
     // Gira con Vuper: la x se refleja si va dado la vuelta.
     const lado = j.flipX ? -1 : 1;
     const desvio = mundo === 'humo' ? 0 : lado * j.displayWidth * 0.04;
     const rad = Phaser.Math.DegToRad(j.angle);
     const dy = -j.displayHeight * alto;
-    img.setPosition(j.x + desvio - Math.sin(rad) * dy, j.y + Math.cos(rad) * dy + (h === 'cabeza' ? img.displayHeight * 0.3 : 0));
+    img.setPosition(j.x + desvio - Math.sin(rad) * dy, j.y + Math.cos(rad) * dy);
     img.setAngle(j.angle).setFlipX(j.flipX).setDepth(j.depth + 1).setAlpha(j.alpha);
   });
   const tinte = tintePiel(s.time.now);

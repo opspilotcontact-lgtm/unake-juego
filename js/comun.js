@@ -243,6 +243,8 @@ const ESTADO_INICIAL = {
   recogibles: [],
   situacionEnJuego: null,
   ocultarObjetivos: false,
+  // Rendimiento por repetición: el último minijuego jugado, cuántas veces seguidas y cuándo (ms).
+  repeticion: null,
 };
 const UMBRAL_HUMO = 30;
 function enMundoHumo() { return ESTADO.colocon >= UMBRAL_HUMO; }
@@ -342,11 +344,11 @@ const MISIONES = {
 
 // Los inventos de Monchiman (CANON: los inventa en su cuarto y pueden acabar siendo productos de VOPPË).
 const INVENTOS = [
-  { id: 'mochila', nombre: 'Mochila térmica', precio: 120, sprite: 'mochila', efecto: 'Encargos: +10 s por entrega' },
-  { id: 'silbato', nombre: 'Silbato antiperico', precio: 150, sprite: 'perico-silbando', efecto: 'Contraseña: una vida más' },
-  { id: 'bandeja', nombre: 'Bandeja ancha', precio: 150, sprite: 'tarta', efecto: 'Tarta: atrapas más fácil' },
-  { id: 'pajarita', nombre: 'Pajarita de señor', precio: 200, sprite: 'pajarita', efecto: 'Un señor: el gas sube más despacio' },
-  { id: 'mascara', nombre: 'Máscara con tiro', precio: 250, sprite: 'monchiman', efecto: 'Rescate: vuelas más rápido' },
+  { id: 'mochila', nombre: 'Mochila térmica', precio: 240, sprite: 'mochila', efecto: 'Encargos: +10 s por entrega' },
+  { id: 'silbato', nombre: 'Silbato antiperico', precio: 300, sprite: 'perico-silbando', efecto: 'Contraseña: una vida más' },
+  { id: 'bandeja', nombre: 'Bandeja ancha', precio: 300, sprite: 'tarta', efecto: 'Tarta: atrapas más fácil' },
+  { id: 'pajarita', nombre: 'Pajarita de señor', precio: 400, sprite: 'pajarita', efecto: 'Un señor: el gas sube más despacio' },
+  { id: 'mascara', nombre: 'Máscara con tiro', precio: 500, sprite: 'monchiman', efecto: 'Rescate: vuelas más rápido' },
 ];
 
 function estrellasDe(clave, puntos) {
@@ -373,7 +375,28 @@ function metaNivel(clave, n = nivelDe(clave)) {
   const m = u[2] * (1 + 0.2 * (n - 3));
   return u[2] >= 100 ? Math.round(m / 50) * 50 : Math.ceil(m);
 }
-function premioNivel(n) { return 20 + 15 * n; }
+// Los tres primeros niveles pagan lo de siempre; desde el 4.º el premio se recorta (sumidero).
+function premioNivel(n) { return n <= 3 ? 20 + 15 * n : 40 + 10 * (n - 3); }
+
+// ---- Rendimiento por repetición: el mismo minijuego seguido paga cada vez menos ----
+const PAGO_REPETIDO = [1, 0.75, 0.5, 0.3]; // 1.ª, 2.ª, 3.ª y de la 4.ª en adelante
+const REPETICION_OLVIDO_MS = 6 * 60 * 1000; // sin jugar ese minijuego en 6 min, se reinicia
+
+// Cuántas veces seguidas lleva esta partida de «clave» (sin apuntarla todavía).
+function vecesSeguidas(clave) {
+  const r = ESTADO.repeticion;
+  const vigente = r && r.clave === clave && Date.now() - (r.ultimo || 0) <= REPETICION_OLVIDO_MS;
+  return vigente ? (r.n || 0) + 1 : 1;
+}
+function multiplicadorRepeticion(clave) { return PAGO_REPETIDO[Math.min(vecesSeguidas(clave), PAGO_REPETIDO.length) - 1]; }
+function apuntarRepeticion(clave) { ESTADO.repeticion = { clave, n: vecesSeguidas(clave), ultimo: Date.now() }; }
+
+function lineaRepeticion(n, mult) {
+  const x = `x${String(mult).replace('.', ',')}`;
+  if (n <= 2) return `Esto ya huele a repetido: prueba otra cosa (${x})`;
+  if (n === 3) return `Perico ya se sabe tus trucos: prueba otra cosa (${x})`;
+  return `Hasta el gato tuerto bosteza. Cambia de minijuego (${x})`;
+}
 
 // Apunta el resultado de una misión: récord, estrellas y monchis. Devuelve lo que ha cambiado.
 function apuntar(clave, puntos, monchis, gana = true) {
@@ -424,7 +447,14 @@ function mostrarPanelFinal(scene, { titulo, linea, puntos, clave, gana = true, e
   const divisor = MISIONES[clave].divisor || 20;
   // Se cobra por estrellas: jugar bien se nota; perdiendo, solo unas migajas.
   const base = gana ? PAGO_ESTRELLAS[estrellasDe(clave, puntos)] : Math.min(10, Math.round(puntos / divisor));
-  const monchis = Math.round(base * extraMonchis * humo * (1 + bonoDeco('pago') + (typeof bonoArmario === 'function' ? bonoArmario('pago') : 0)));
+  // El mismo minijuego seguido paga menos (no afecta a situaciones de historia ni a premios de capítulo).
+  const veces = vecesSeguidas(clave);
+  const multRep = multiplicadorRepeticion(clave);
+  apuntarRepeticion(clave);
+  let monchis = Math.round(base * extraMonchis * humo * multRep * (1 + bonoDeco('pago') + (typeof bonoArmario === 'function' ? bonoArmario('pago') : 0)));
+  // La noche especial del sitio (lugares.js), antes de apuntar: el récord se compara con el anterior.
+  const mod = typeof aplicarModPartida === 'function' ? aplicarModPartida(clave, gana, puntos, monchis) : { monchis, linea: '' };
+  monchis = mod.monchis;
   const r = apuntar(clave, puntos, monchis, gana);
   let lineaSituacion = '';
   if (ESTADO.situacionEnJuego) {
@@ -465,8 +495,10 @@ function mostrarPanelFinal(scene, { titulo, linea, puntos, clave, gana = true, e
   }
   if (lineaSituacion) c.add(texto(scene, 0, 144, lineaSituacion, 20, COLOR.verde, 740));
   else if (r.estrellasNuevas > 0) c.add(texto(scene, 0, 144, `+${r.estrellasNuevas} estrella${r.estrellasNuevas > 1 ? 's' : ''} · llevas ${totalEstrellas()}`, 22, COLOR.verde));
-  c.add(boton(scene, -185, 205, 'Otra vez (Enter)', () => irA(scene, scene.scene.key), { ancho: 330, tam: 26 }));
-  c.add(boton(scene, 185, 205, 'Al barrio (Esc)', () => irA(scene, 'Barrio'), { ancho: 330, color: HEX.azul, tam: 26 }));
+  if (multRep < 1 && base > 0) c.add(texto(scene, 0, 174, lineaRepeticion(veces, multRep), 20, COLOR.rosa, 740));
+  if (mod.linea) c.add(texto(scene, 0, multRep < 1 && base > 0 ? 198 : 174, mod.linea, 19, COLOR.verde, 740));
+  c.add(boton(scene, -185, 225, 'Otra vez (Enter)', () => irA(scene, scene.scene.key), { ancho: 330, tam: 26 }));
+  c.add(boton(scene, 185, 225, 'Al barrio (Esc)', () => irA(scene, 'Barrio'), { ancho: 330, color: HEX.azul, tam: 26 }));
   scene.tweens.add({ targets: c, scale: ESCALA_UI, duration: 420, ease: 'Back.out', delay: 200 });
   scene.input.keyboard.once('keydown-ENTER', () => irA(scene, scene.scene.key));
   scene.input.keyboard.once('keydown-ESC', () => irA(scene, 'Barrio'));

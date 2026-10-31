@@ -16,6 +16,104 @@ const QUIEN = {
   puky: { nombre: 'Puky', sprite: 'puky', color: '#f5d23a' },
 };
 
+// ---------- Qué sale y cuándo: capítulo mínimo/máximo y memoria de vistos ----------
+// Cada pieza de contenido puede llevar `desde` (capítulo desde el que sale) y `hasta` (último en el
+// que sale). Las piezas sin campo salen siempre. Como TONTERIAS o MENSAJES son cadenas y los chats
+// son listas, lo que ya existía se marca por fragmento de texto en DESDE_POR_TEXTO (así también vale
+// para lo que añaden otros archivos, como rutinas.js). Una pieza nueva puede llevar su `desde` propio,
+// que manda sobre la tabla. Capítulos (ESTADO.capitulo): 0 ¿Una qué?, 1 La cuota, 2 El blancazo,
+// 3 El casero, 4 La caja, 5 Perico lo sabe, 6 La inspección, 7 La noche épica.
+const DESDE_POR_TEXTO = [
+  // El casero y el alquiler llegan con la carta del capítulo 2 (índice 1).
+  ['alquiler', 1], ['casero', 1], ['la hucha', 1], ['cuota', 1],
+  // La noche de Blancaso (índice 2): su deseo y lo que se le tuerce.
+  ['Hoy sí que disfruto', 2], ['hoy no me da', 2], ['sin bajón', 2], ['Si me pongo amarillo', 2],
+  // Monchiman aparece al salvar a Blancaso (índice 2). Que sea Vuper no se sabe hasta «Perico lo sabe» (5).
+  ['Monchiman', 2], ['visto la M', 2], ['la M del cuarto', 2],
+  // La cena con el casero (índice 3): pajarita, facturas, Puky en el grupo.
+  ['cena del casero', 3], ['en la cena', 3], ['esmoquin', 3], ['sin pajarita', 3], ['nadie me pide facturas', 3], ['añadido al grupo', 3],
+  // La caja de Palicaso (índice 4): la tragaperras y el dinero que falta.
+  ['tragaperras', 4],
+  // El secreto de Perico (índice 5).
+  ['Se parecía a ti', 5], ['es Vuper', 5], ['Perico lo sabe todo', 5], ['Avistan a Monchiman', 5],
+];
+
+const _desdeCache = new Map();
+function textoDe(item) {
+  if (typeof item === 'string') return item;
+  if (Array.isArray(item)) return item.map(l => (Array.isArray(l) ? l[1] : l)).join(' | ');
+  if (!item) return '';
+  return [item.arriba, item.abajo, item.pie, item.titular, item.p].filter(Boolean).join(' | ');
+}
+function desdeDe(item) {
+  if (item && item.desde !== undefined) return item.desde;
+  const t = textoDe(item);
+  if (!_desdeCache.has(t)) _desdeCache.set(t, DESDE_POR_TEXTO.reduce((a, [f, n]) => (t.includes(f) ? Math.max(a, n) : a), 0));
+  return _desdeCache.get(t);
+}
+// ¿Sale en el capítulo en que vamos?
+function disponible(item) {
+  const cap = ESTADO.capitulo || 0;
+  return cap >= desdeDe(item) && cap <= (item && item.hasta !== undefined ? item.hasta : Infinity);
+}
+
+// Elige de `lista` lo que toca en este capítulo y no ha salido aún; la memoria (ESTADO.vistos[tipo])
+// guarda los índices vistos y viaja con la partida. Al agotarse el tramo se vacía y vuelve a empezar
+// (sin repetir de golpe la última). Los índices son estables porque las listas solo crecen por el final.
+function elegirNuevo(tipo, lista) {
+  if (!lista || !lista.length) return undefined;
+  if (!ESTADO.vistos || typeof ESTADO.vistos !== 'object') ESTADO.vistos = {};
+  let vistos = Array.isArray(ESTADO.vistos[tipo]) ? ESTADO.vistos[tipo] : (ESTADO.vistos[tipo] = []);
+  let cand = [];
+  lista.forEach((it, i) => { if (disponible(it)) cand.push(i); });
+  if (!cand.length) cand = lista.map((_, i) => i);
+  let nuevos = cand.filter(i => !vistos.includes(i));
+  if (!nuevos.length) {
+    const ultimo = vistos[vistos.length - 1];
+    vistos = ESTADO.vistos[tipo] = [];
+    nuevos = cand.length > 1 ? cand.filter(i => i !== ultimo) : cand;
+  }
+  const i = Phaser.Utils.Array.GetRandom(nuevos);
+  vistos.push(i);
+  guardarPartida();
+  return lista[i];
+}
+// Igual, para sorteos al vuelo (no se guardan): solo filtra por capítulo.
+function alDisponible(lista) {
+  const d = lista.filter(disponible);
+  return Phaser.Utils.Array.GetRandom(d.length ? d : lista);
+}
+
+function elegirTonteria(id) { return elegirNuevo(`tonterias.${id}`, TONTERIAS[id]); }
+function elegirColocada() { return elegirNuevo('colocadas', COLOCADAS); }
+function elegirMensaje() { return elegirNuevo('mensajes', MENSAJES); }
+function elegirRespuesta() { return elegirNuevo('respuestas', RESPUESTAS); }
+function elegirTrivial() { return elegirNuevo('trivial', TRIVIAL); }
+// Conversaciones de ambiente de entre `posibles` (las que tienen a todos presentes).
+// La memoria va por su sitio en DIALOGOS (la lista de posibles cambia según quién esté en la sala).
+function elegirDialogo(posibles) {
+  const ok = posibles.filter(disponible);
+  if (!ok.length) return undefined;
+  if (!ESTADO.vistos || typeof ESTADO.vistos !== 'object') ESTADO.vistos = {};
+  const vistos = Array.isArray(ESTADO.vistos.dialogos) ? ESTADO.vistos.dialogos : (ESTADO.vistos.dialogos = []);
+  const nuevos = ok.filter(d => !vistos.includes(DIALOGOS.indexOf(d)));
+  if (!nuevos.length) vistos.length = 0;
+  const d = Phaser.Utils.Array.GetRandom(nuevos.length ? nuevos : ok);
+  if (DIALOGOS.indexOf(d) >= 0) vistos.push(DIALOGOS.indexOf(d));
+  return d;
+}
+// Los diálogos que ya pueden salir (para filtrar antes de mirar quién está en la sala).
+function dialogosDisponibles() { return DIALOGOS.filter(disponible); }
+
+// El contenido del móvil de un tipo: 'meme' | 'video' | 'noticia' | 'chat'. Mismo reparto de siempre
+// (memes generados, chats dinámicos), pero lo hecho a mano sale según el capítulo y sin repetirse.
+function elegirContenido(tipo) {
+  if (tipo === 'meme') return { tipo, m: Math.random() < 0.55 ? memeGenerado() : elegirNuevo('memes', MEMES) };
+  if (tipo === 'video') return { tipo, v: elegirNuevo('videos', VIDEOS) };
+  if (tipo === 'noticia') return { tipo, n: elegirNuevo('noticias', NOTICIAS) };
+  return { tipo: 'chat', mensajes: chatAlAzar() };
+}
+
 const TONTERIAS = {
   puky: [
     '¿Me llamabais? …¿No? Bueno, me quedo igual.',
@@ -123,7 +221,7 @@ const CUANDOS = [
 const FONDOS_MEME = [0xffe08a, 0xffc2dc, 0xd8e6ff, 0xc9f3ff, 0xd0ffd0, 0xe0d0ff, 0xfff0b0, 0xffd8b8];
 
 function memeGenerado() {
-  const al = l => Phaser.Utils.Array.GetRandom(l);
+  const al = alDisponible;
   const id = al(Object.keys(MULETILLAS));
   const sprite = al(POSES_MEME[id]);
   const nombre = id === 'pompa' ? 'La Pompa' : QUIEN[id] ? QUIEN[id].nombre : 'Puky';
@@ -355,6 +453,23 @@ MENSAJES.push(
   'que esta noche hay karaoke. Que traiga tapones',
 );
 
+// ---------- Contenido por capítulos (js/contenido/capitulos.js), si existe ----------
+// chats y ambiente llegan como { desde, mensajes: [[id, texto], …] } y aquí se convierten en las
+// listas de siempre (con `desde` colgando de la lista); memes, tal cual. Siempre al final de cada
+// array, para que los índices de la memoria de vistos no cambien.
+if (typeof CONTENIDO_CAPITULOS !== 'undefined') {
+  const aLista = p => {
+    if (Array.isArray(p)) return p;
+    const m = [...p.mensajes];
+    if (p.desde !== undefined) m.desde = p.desde;
+    if (p.hasta !== undefined) m.hasta = p.hasta;
+    return m;
+  };
+  CHATS.push(...(CONTENIDO_CAPITULOS.chats || []).map(aLista));
+  DIALOGOS.push(...(CONTENIDO_CAPITULOS.ambiente || []).map(aLista));
+  MEMES.push(...(CONTENIDO_CAPITULOS.memes || []));
+}
+
 // Chats que hablan de cómo va tu partida: la hucha, el negocio, el hambre…
 function chatDinamico() {
   const al = l => Phaser.Utils.Array.GetRandom(l);
@@ -369,10 +484,10 @@ function chatDinamico() {
   if (ESTADO.monchis > 500) opciones.push([['perico', `Dicen que Vuper tiene ${ESTADO.monchis} monchis`], ['palicaso', '¡Invita él!'], ['vuper', '¿A una qué?'], ['palicaso', '¡A UNA ASO!']]);
   if (ESTADO.monchis < 20) opciones.push([['blancaso', 'Vuper, ¿cómo vas de monchis?'], ['vuper', 'Mal'], ['blancaso', 'Hay encargos en la tienda de 24 h'], ['vuper', 'Vale, vale…']]);
   if (totalEstrellas() > 0) opciones.push([['palicaso', `¡Vuper lleva ${totalEstrellas()} estrellas!`], ['perico', 'Yo tengo pipas'], ['pompa', '…felicidades'], ['lasslow', 'JA… perdón. Bravo.']]);
-  return opciones.length ? al(opciones) : al(CHATS);
+  return opciones.length ? al(opciones) : elegirNuevo('chats', CHATS);
 }
 function chatAlAzar() {
-  return Math.random() < 0.35 ? chatDinamico() : Phaser.Utils.Array.GetRandom(CHATS);
+  return Math.random() < 0.35 ? chatDinamico() : elegirNuevo('chats', CHATS);
 }
 
 // ---------- El móvil ----------

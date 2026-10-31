@@ -73,7 +73,7 @@ class Fumar extends Phaser.Scene {
     this.bg = fondo(this, this.mundo === 'humo' ? 'bg-sofa' : 'bgn-sofa');
     // Ambiente: humo que se va quedando en la sala.
     this.ambiente = [0, 1, 2, 3].map(i => {
-      const h = this.add.image(200 + i * 300, 170 + (i % 2) * 80, 'niebla').setScale(1.8 + i * 0.25).setAlpha(0).setDepth(4);
+      const h = this.add.image(200 + i * 300, 170 + (i % 2) * 80, 'tex-niebla').setScale(1.8 + i * 0.25).setAlpha(0).setDepth(4);
       this.tweens.add({ targets: h, x: h.x + 120, duration: 9000 + i * 1500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       return h;
     });
@@ -353,7 +353,7 @@ class Fumar extends Phaser.Scene {
   humo_corazon(p) {
     this.cartel('Humo con amor');
     const c = this.add.container(p.x + 60, p.y - 30).setDepth(30).setScale(0.3).setAlpha(0.95);
-    const tex = this.mundo === 'normal' ? 'niebla' : 'humo';
+    const tex = this.mundo === 'normal' ? 'tex-niebla' : 'humo';
     [[-22, -10], [22, -10], [0, 18], [-11, 6], [11, 6]].forEach(([x, y]) => c.add(this.add.image(x, y, tex).setScale(this.mundo === 'normal' ? 0.35 : 0.14).setTint(0xffc2dc)));
     this.tweens.add({ targets: c, y: p.y - 260, scale: 1.4, alpha: 0, duration: 2600, ease: 'Sine.out', onComplete: () => c.destroy() });
     this.time.delayedCall(500, () => sfx(this, 'campanita', { volume: 0.3 }));
@@ -379,7 +379,7 @@ class Fumar extends Phaser.Scene {
     this.cartel('Cascada de humo');
     for (let i = 0; i < 10; i++) {
       this.time.delayedCall(i * 80, () => {
-        const tex = this.mundo === 'normal' ? 'niebla' : 'humo';
+        const tex = this.mundo === 'normal' ? 'tex-niebla' : 'humo';
         const h = this.add.image(p.x + 10, p.y + 10, tex).setScale(this.mundo === 'normal' ? 0.2 : 0.08).setTint(0xf2eef8).setAlpha(0.9).setDepth(29);
         this.tweens.add({ targets: h, y: p.y + 160, x: h.x + Phaser.Math.Between(-60, 60), scale: h.scale * 2.5, alpha: 0, duration: 1600, ease: 'Sine.in', onComplete: () => h.destroy() });
       });
@@ -389,7 +389,7 @@ class Fumar extends Phaser.Scene {
   humo_carita(p) {
     this.cartel('El humo te guiña un ojo');
     const c = this.add.container(p.x + 70, p.y - 20).setDepth(30).setScale(0.4);
-    c.add(this.add.image(0, 0, this.mundo === 'normal' ? 'niebla' : 'humo').setScale(this.mundo === 'normal' ? 0.6 : 0.3).setTint(0xf2eef8));
+    c.add(this.add.image(0, 0, this.mundo === 'normal' ? 'tex-niebla' : 'humo').setScale(this.mundo === 'normal' ? 0.6 : 0.3).setTint(0xf2eef8));
     c.add(this.add.circle(-12, -4, 6, HEX.tinta));
     const guino = this.add.rectangle(12, -4, 14, 4, HEX.tinta);
     c.add(guino);
@@ -432,7 +432,7 @@ class Fumar extends Phaser.Scene {
 
   voluta(x, y, tam, grande) {
     const normal = this.mundo === 'normal';
-    const h = this.add.image(x, y, normal ? 'niebla' : 'humo').setScale(tam * (normal ? 0.9 : 0.35)).setTint(0xf2eef8).setAlpha(grande ? 0.9 : 0.5).setDepth(29);
+    const h = this.add.image(x, y, normal ? 'tex-niebla' : 'humo').setScale(tam * (normal ? 0.9 : 0.35)).setTint(0xf2eef8).setAlpha(grande ? 0.9 : 0.5).setDepth(29);
     this.tweens.add({
       targets: h, x: x + Phaser.Math.Between(grande ? 30 : -40, grande ? 180 : 40), y: y - Phaser.Math.Between(140, 280),
       scale: tam * (grande ? 2.4 : 2) * (normal ? 2.5 : 1), alpha: 0, angle: Phaser.Math.Between(-40, 40), duration: grande ? 2000 : 1500, ease: 'Sine.out', onComplete: () => h.destroy(),

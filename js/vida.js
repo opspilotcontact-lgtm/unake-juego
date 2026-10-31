@@ -13,13 +13,13 @@ const LOGROS = [
   { id: 'rider10', nombre: 'Rider del mes', texto: 'Haz 10 encargos de la tienda', hecho: () => stat('entregas') >= 10, premio: 60 },
   { id: 'rider8', nombre: 'Sin frenos', texto: 'Racha de 8 encargos seguidos', hecho: () => leerRecord('Reparto') >= 8, premio: 120 },
   { id: 'gana10', nombre: 'Esto se me da bien', texto: 'Gana 10 minijuegos', hecho: () => stat('victorias') >= 10, premio: 60 },
-  { id: 'gana50', nombre: 'Rey de la aso', texto: 'Gana 50 minijuegos', hecho: () => stat('victorias') >= 50, premio: 300 },
-  { id: 'una-mas', nombre: 'Una más y lo dejo', texto: 'Juega 100 minijuegos', hecho: () => stat('partidas') >= 100, premio: 400 },
+  { id: 'gana50', nombre: 'Rey de la aso', texto: 'Gana 50 minijuegos', hecho: () => stat('victorias') >= 50, premio: 150 },
+  { id: 'una-mas', nombre: 'Una más y lo dejo', texto: 'Juega 100 minijuegos', hecho: () => stat('partidas') >= 100, premio: 200 },
   { id: 'estrellas10', nombre: 'Constelación', texto: 'Junta 10 estrellas', hecho: () => totalEstrellas() >= 10, premio: 80 },
   { id: 'estrellas20', nombre: 'Vía Láctea', texto: 'Junta 20 estrellas', hecho: () => totalEstrellas() >= 20, premio: 200 },
-  { id: 'estrellas-todas', nombre: 'Estrella fugaz', texto: 'Las 3 estrellas en todos los minijuegos', hecho: () => Object.keys(MISIONES).every(k => (ESTADO.estrellas[k] || 0) >= 3), premio: 1000 },
+  { id: 'estrellas-todas', nombre: 'Estrella fugaz', texto: 'Las 3 estrellas en todos los minijuegos', hecho: () => Object.keys(MISIONES).every(k => (ESTADO.estrellas[k] || 0) >= 3), premio: 500 },
   { id: 'rico', nombre: 'Forrado de monchis', texto: 'Ten 1.000 monchis a la vez', hecho: () => ESTADO.monchis >= 1000, premio: 50 },
-  { id: 'ganados', nombre: 'Economía de barrio', texto: 'Gana 5.000 monchis en total', hecho: () => stat('monchisGanados') >= 5000, premio: 300 },
+  { id: 'ganados', nombre: 'Economía de barrio', texto: 'Gana 5.000 monchis en total', hecho: () => stat('monchisGanados') >= 5000, premio: 150 },
   { id: 'risas', nombre: 'Te ríes de todo', texto: 'JAJAJA a 20 cosas del móvil', hecho: () => stat('risas') >= 20, premio: 40 },
   { id: 'movil', nombre: 'Adicto al Humogram', texto: 'Mira 60 cosas en el móvil', hecho: () => stat('movil') >= 60, premio: 100 },
   { id: 'apuesta1', nombre: 'Hagan juego', texto: 'Apuesta por primera vez', hecho: () => stat('apuestas') >= 1, premio: 10 },
@@ -31,7 +31,7 @@ const LOGROS = [
   { id: 'gatos5', nombre: 'Amigo de los gatos', texto: 'Acaricia (o intenta) 5 veces al gato tuerto', hecho: () => stat('gatos') >= 5, premio: 40 },
   { id: 'pedos3', nombre: 'Nariz de acero', texto: 'Cómete 3 pedos de Lasslow', hecho: () => stat('pedosRespirados') >= 3, premio: 30 },
   { id: 'nivel5', nombre: 'Escalador', texto: 'Llega al nivel 5 en un minijuego', hecho: () => Object.values(ESTADO.niveles || {}).some(n => n >= 5), premio: 120 },
-  { id: 'nivel10', nombre: 'Esto ya es vicio', texto: 'Llega al nivel 10 en un minijuego', hecho: () => Object.values(ESTADO.niveles || {}).some(n => n >= 10), premio: 400 },
+  { id: 'nivel10', nombre: 'Esto ya es vicio', texto: 'Llega al nivel 10 en un minijuego', hecho: () => Object.values(ESTADO.niveles || {}).some(n => n >= 10), premio: 200 },
   { id: 'niveles20', nombre: 'Todoterreno', texto: 'Sube 20 niveles en total', hecho: () => stat('nivelesSubidos') >= 20, premio: 250 },
   { id: 'farol', nombre: 'Cara de póquer', texto: 'Gánale a Palicaso a El farol', hecho: () => stat('gana_Farol') >= 1, premio: 50 },
   { id: 'periquito', nombre: 'Pin pin', texto: 'Calla a Perico en ¡Periquito!', hecho: () => stat('gana_Periquito') >= 1, premio: 50 },
@@ -39,30 +39,30 @@ const LOGROS = [
   { id: 'inspeccion', nombre: 'Aquí no hay nada', texto: 'Pasa la inspección del casero', hecho: () => stat('gana_Inspeccion') >= 1, premio: 60 },
   { id: 'invitado', nombre: '¿Me llamabais?', texto: 'Por fin invitan a Puky', hecho: () => stat('pukyInvitado') >= 1, premio: 150 },
   { id: 'noche1', nombre: 'Te conozco', texto: 'Completa la noche de alguien (3 de 3)', hecho: () => Object.keys(NOCHES).some(id => ESTADO.noches && ESTADO.noches[`${id}-2`]), premio: 100 },
-  { id: 'noches-todas', nombre: 'El alma de la aso', texto: 'Completa las noches de todos', hecho: () => Object.keys(NOCHES).every(id => ESTADO.noches && ESTADO.noches[`${id}-2`]), premio: 800 },
+  { id: 'noches-todas', nombre: 'El alma de la aso', texto: 'Completa las noches de todos', hecho: () => Object.keys(NOCHES).every(id => ESTADO.noches && ESTADO.noches[`${id}-2`]), premio: 400 },
   { id: 'aires', nombre: 'Combustible de señor', texto: 'Lleva a Lasslow hasta la Pompa', hecho: () => stat('gana_Aires') >= 1, premio: 60 },
   { id: 'palo', nombre: 'Devuélveme el palo', texto: 'Gánale a Perico en El palo', hecho: () => stat('gana_Palo') >= 1, premio: 60 },
   { id: 'sigilo', nombre: 'Como un fantasma', texto: 'Recupera los discos sin que te vean ni una vez', hecho: () => stat('sigiloLimpio') >= 1, premio: 120 },
   { id: 'armario1', nombre: 'Con estilo', texto: 'Cómprate algo en el armario', hecho: () => stat('prendas') >= 1, premio: 30 },
   { id: 'armario5', nombre: 'Icono del barrio', texto: 'Ten 5 cosas del armario', hecho: () => stat('prendas') >= 5, premio: 200 },
   { id: 'sit5', nombre: 'El que lo arregla todo', texto: 'Resuelve 5 problemas', hecho: () => stat('situaciones') >= 5, premio: 100 },
-  { id: 'sit20', nombre: 'Psicólogo del barrio', texto: 'Resuelve 20 problemas', hecho: () => stat('situaciones') >= 20, premio: 400 },
+  { id: 'sit20', nombre: 'Psicólogo del barrio', texto: 'Resuelve 20 problemas', hecho: () => stat('situaciones') >= 20, premio: 200 },
   { id: 'blancazo3', nombre: 'Ángel de Blancaso', texto: 'Salva a Blancaso 3 veces', hecho: () => stat('blancazos') >= 3, premio: 150 },
   { id: 'rescate5', nombre: 'Amigo de Monchiman', texto: '5 rescates con la señal', hecho: () => stat('rescates') >= 5, premio: 120 },
   { id: 'trivial', nombre: 'Sabe de todo', texto: 'Acierta 10 preguntas del barrio', hecho: () => stat('trivial') >= 10, premio: 80 },
   { id: 'recados', nombre: 'Correveidile', texto: 'Cumple 10 recados', hecho: () => stat('recados') >= 10, premio: 80 },
   { id: 'perico', nombre: 'Amigo de Perico', texto: 'Juega 20 veces a la contraseña', hecho: () => stat('jugada_Contrasena') >= 20, premio: 80 },
   { id: 'negocio10', nombre: 'Empresario', texto: 'Negocio a nivel 10', hecho: () => cuentasNegocio().total >= 10, premio: 100 },
-  { id: 'negocio25', nombre: 'Magnate del humo', texto: 'Negocio a nivel 25', hecho: () => cuentasNegocio().total >= 25, premio: 400 },
-  { id: 'salas', nombre: 'Unaké crece', texto: 'Abre las tres ampliaciones', hecho: () => ['reservado', 'bano', 'techo'].every(s => negocio().salas[s]), premio: 300 },
+  { id: 'negocio25', nombre: 'Magnate del humo', texto: 'Negocio a nivel 25', hecho: () => cuentasNegocio().total >= 25, premio: 200 },
+  { id: 'salas', nombre: 'Unaké crece', texto: 'Abre las tres ampliaciones', hecho: () => ['reservado', 'bano', 'techo'].every(s => negocio().salas[s]), premio: 150 },
   { id: 'deco3', nombre: 'Con gusto', texto: 'Pon 3 decoraciones', hecho: () => Object.keys(ESTADO.deco || {}).length >= 3, premio: 60 },
-  { id: 'deco-todas', nombre: 'Interiorista', texto: 'Todas las decoraciones', hecho: () => DECORACION.every(d => (ESTADO.deco || {})[d.id]), premio: 500 },
+  { id: 'deco-todas', nombre: 'Interiorista', texto: 'Todas las decoraciones', hecho: () => DECORACION.every(d => (ESTADO.deco || {})[d.id]), premio: 250 },
   { id: 'sucesos', nombre: 'Ojo de halcón', texto: 'Pilla 15 sucesos del barrio', hecho: () => stat('sucesos') >= 15, premio: 120 },
   { id: 'amarillo', nombre: 'Ha sido el amarillo', texto: 'Desmáyate una vez (no presumas)', hecho: () => stat('desmayos') >= 1, premio: 10 },
   { id: 'retos', nombre: 'Constante', texto: 'Completa 9 retos de la noche', hecho: () => stat('retos') >= 9, premio: 200 },
   { id: 'noches3', nombre: 'Vuelves siempre', texto: 'Juega 3 noches distintas', hecho: () => stat('noches') >= 3, premio: 100 },
-  { id: 'noches7', nombre: 'Parte del mobiliario', texto: 'Juega 7 noches distintas', hecho: () => stat('noches') >= 7, premio: 400 },
-  { id: 'historia', nombre: 'La noche más larga', texto: 'Acaba la historia', hecho: () => historiaAcabada(), premio: 500 },
+  { id: 'noches7', nombre: 'Parte del mobiliario', texto: 'Juega 7 noches distintas', hecho: () => stat('noches') >= 7, premio: 200 },
+  { id: 'historia', nombre: 'La noche más larga', texto: 'Acaba la historia', hecho: () => historiaAcabada(), premio: 250 },
 ];
 
 // Devuelve los logros recién conseguidos (y los apunta y paga).
@@ -160,7 +160,7 @@ function avisoDorado(scene, titulo, sub) {
 
 const SUCESOS = [
   // Monchiman cruza corriendo y se le caen monchis de la mochila.
-  { id: 'monchiman', humo: true, peso: 3, hacer: s => {
+  { id: 'monchiman', humo: true, desde: 2, peso: 3, hacer: s => {
     const y = s.py - 40;
     const m = s.add.image(-100, y - 160, 'monchiman').setScale(0.28).setDepth(870);
     sfx(s, 'whoosh');
@@ -212,7 +212,7 @@ const SUCESOS = [
     return 'Llueve humo en el barrio · colocón +8';
   } },
   // Puky asoma y, si lo tocas, te da un resucitador «que ha encontrado».
-  { id: 'puky', humo: true, peso: 1.5, hacer: s => {
+  { id: 'puky', humo: true, desde: 2, peso: 1.5, hacer: s => {
     const x = Phaser.Math.Between(300, ANCHO - 300);
     const p = s.add.image(x, ALTO + 140, 'puky').setOrigin(0.5, 1).setScale(0.3).setDepth(870);
     sfx(s, 'puky-gracioso', { volume: 0.5 });
@@ -401,12 +401,19 @@ function recogerPillables(s) {
 
 function sucesoBarrio(s) {
   const humo = enMundoHumo();
-  const posibles = SUCESOS.filter(x => (x.ambos || x.humo === humo) && x.id !== s.ultimoSuceso && (!x.req || s.textures.exists(x.req)));
-  const total = posibles.reduce((a, x) => a + x.peso, 0);
+  // Según el capítulo (`desde`) y con memoria: lo que ya salió pesa poco hasta haber visto todos.
+  const posibles = SUCESOS.filter(x => (x.ambos || x.humo === humo) && x.id !== s.ultimoSuceso && (!x.req || s.textures.exists(x.req)) && disponible(x));
+  if (!ESTADO.vistos || typeof ESTADO.vistos !== 'object') ESTADO.vistos = {};
+  let vistos = Array.isArray(ESTADO.vistos.sucesos) ? ESTADO.vistos.sucesos : (ESTADO.vistos.sucesos = []);
+  if (posibles.length && posibles.every(x => vistos.includes(x.id))) vistos = ESTADO.vistos.sucesos = [];
+  const pesoDe = x => x.peso * (vistos.includes(x.id) ? 0.15 : 1);
+  const total = posibles.reduce((a, x) => a + pesoDe(x), 0);
   let r = Math.random() * total;
-  const suc = posibles.find(x => (r -= x.peso) <= 0) || posibles[0];
+  const suc = posibles.find(x => (r -= pesoDe(x)) <= 0) || posibles[0];
   if (!suc) return;
   s.ultimoSuceso = suc.id;
+  vistos.push(suc.id);
+  guardarPartida();
   const aviso = suc.hacer(s);
   if (aviso) golpeTexto(s, ANCHO / 2, 250, aviso, COLOR.azul, 30).setDepth(1001);
 }

@@ -270,7 +270,8 @@ class Portada extends Phaser.Scene {
 
   ajustes() {
     this.limpiar();
-    this.marco(470);
+    this.marco(520);
+    this.panel.y = 380; // 7 botones: sube el panel para que Volver no se salga de la pantalla
     this.volver = () => this.menu();
     ESTADO.opciones = ESTADO.opciones || { sonido: true };
     const o = ESTADO.opciones;
@@ -280,34 +281,39 @@ class Portada extends Phaser.Scene {
     const ciclo = (lista, v) => lista[(lista.indexOf(v) + 1) % lista.length];
     const NIVELES = [0, 0.25, 0.5, 0.75, 1];
     const VELOCIDADES = { lenta: 'Lenta', normal: 'Normal', rapida: 'Rápida' };
-    const musica = this.opcion(-128, `Música: ${pct(o.musica ?? 0.6)}`, () => {
+    const musica = this.opcion(-134, `Música: ${pct(o.musica ?? 0.6)}`, () => {
       o.musica = ciclo(NIVELES, NIVELES.reduce((a, b) => (Math.abs(b - (o.musica ?? 0.6)) < Math.abs(a - (o.musica ?? 0.6)) ? b : a)));
       Musica.ajustar();
       guardarPartida();
       musica.etiqueta.setText(`Música: ${pct(o.musica)}`);
     }, { color: HEX.amarillo });
-    const efectos = this.opcion(-62, `Efectos: ${pct(o.efectos ?? 1)}`, () => {
+    const efectos = this.opcion(-76, `Efectos: ${pct(o.efectos ?? 1)}`, () => {
       o.efectos = ciclo(NIVELES, o.efectos ?? 1);
       guardarPartida();
       sfx(this, 'pop');
       efectos.etiqueta.setText(`Efectos: ${pct(o.efectos)}`);
     }, { color: HEX.amarillo });
-    const texto_ = this.opcion(4, `Texto de las escenas: ${VELOCIDADES[o.texto || 'normal']}`, () => {
+    const texto_ = this.opcion(-18, `Texto de las escenas: ${VELOCIDADES[o.texto || 'normal']}`, () => {
       o.texto = ciclo(Object.keys(VELOCIDADES), o.texto || 'normal');
       guardarPartida();
       texto_.etiqueta.setText(`Texto de las escenas: ${VELOCIDADES[o.texto]}`);
     }, { color: HEX.rosa });
-    const sonido = this.opcion(70, `Sonido: ${o.sonido !== false ? 'Sí' : 'No'}`, () => {
+    const sonido = this.opcion(40, `Sonido: ${o.sonido !== false ? 'Sí' : 'No'}`, () => {
       o.sonido = o.sonido === false;
       this.sound.mute = !o.sonido;
       guardarPartida();
       sonido.etiqueta.setText(`Sonido: ${o.sonido ? 'Sí' : 'No'}`);
     }, { color: HEX.crema });
-    this.opcion(136, this.scale.isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa', () => {
+    const secundarios = this.opcion(98, `Encargos secundarios: ${o.secundarios !== false ? 'Sí' : 'No'}`, () => {
+      o.secundarios = o.secundarios === false;
+      guardarPartida();
+      secundarios.etiqueta.setText(`Encargos secundarios: ${o.secundarios ? 'Sí' : 'No'}`);
+    }, { color: HEX.azul });
+    this.opcion(156, this.scale.isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa', () => {
       if (this.scale.isFullscreen) this.scale.stopFullscreen(); else this.scale.startFullscreen();
       this.time.delayedCall(300, () => this.ajustes());
     }, { color: HEX.verde });
-    this.opcion(202, 'Volver (Esc)', () => this.menu(), { color: HEX.crema });
+    this.opcion(214, 'Volver (Esc)', () => this.menu(), { color: HEX.crema });
     this.resaltar();
   }
 

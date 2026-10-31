@@ -356,7 +356,7 @@ class Arranque extends Phaser.Scene {
 
   // Niebla suave (sin contorno) para el humo sobre fondos de foto del mundo normal.
   niebla() {
-    const lienzo = this.textures.createCanvas('niebla', 256, 256);
+    const lienzo = this.textures.createCanvas('tex-niebla', 256, 256);
     const ctx = lienzo.getContext();
     const gr = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
     gr.addColorStop(0, 'rgba(255,255,255,0.85)');

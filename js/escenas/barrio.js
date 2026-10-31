@@ -169,6 +169,8 @@ class Barrio extends Phaser.Scene {
     this.notif = null;
     this.tSituacion = 30;
     this.marcasSit = [];
+    this.lugarActual = null;       // el sitio con el que se habla (para la fila «Volver a jugar»)
+    ESTADO.modPartida = null;      // la noche especial solo vale para la partida que se lanzó desde su tarjeta
     this.recogiblesSala = [];
     this.tSuceso = Phaser.Math.Between(25, 45);
     this.tLogros = 2;
@@ -333,6 +335,8 @@ class Barrio extends Phaser.Scene {
     this.textoCaja = null;
     this.cosas = s.cosas.filter(cosa => !QUIEN[cosa.id] || estaEn(cosa.id, nombre)).map(cosa => this.montarCosa(humo ? cosa : { ...cosa, ...(cosa.n || {}) }));
     this.cosas.push(...visitasDeSala(this, nombre));
+    // Lo que engancha se queda: los objetos que alojan minijuegos ya abiertos (la llave del casero, la furgo).
+    this.cosas.push(...objetosLugar(this, nombre, this.mundo).map(o => this.montarCosa(o)));
     if (nombre === 'dentro' && humo && (ESTADO.capitulo || 0) === 6 && this.textures.exists('obj-llave')) {
       const sc = arteO('casero', 'obj-llave');
       this.cosas.push(this.montarCosa({ id: 'casero', tipo: 'mision', mision: 'Inspeccion', sprite: sc, x: 1000, y: 660, escala: 230 / this.textures.get(sc).getSourceImage().height, nombre: 'El casero' }));
@@ -393,10 +397,10 @@ class Barrio extends Phaser.Scene {
     m.zona = zona;
 
     const clave = this.misionDe(m);
-    const marcaTexto = m.tipo === 'tienda' ? '$' : m.tipo === 'sofa' ? '~' : m.tipo === 'barra' ? '¡' : m.tipo === 'negocio' ? 'N' : m.tipo === 'subir' ? '^' : m.tipo === 'tragaperras' || m.tipo === 'carrera' ? '€' : m.tipo === 'armario' ? 'A' : clave ? '!' : null;
+    const marcaTexto = m.tipo === 'tienda' ? '$' : m.tipo === 'sofa' ? '~' : m.tipo === 'barra' ? '¡' : m.tipo === 'negocio' ? 'N' : m.tipo === 'subir' ? '^' : m.tipo === 'tragaperras' || m.tipo === 'carrera' ? '€' : m.tipo === 'armario' ? 'A' : m.tipo === 'lugar' ? 'J' : clave ? '!' : null;
     if (marcaTexto) {
       const yMarca = m.y - m.alto - 40;
-      const etiqueta = { tienda: 'Tienda', sofa: 'Fumar', barra: 'Barra', negocio: 'Negocio', subir: 'Techo', tragaperras: 'Apostar', carrera: 'Apostar', armario: 'Armario' }[m.tipo] || '!';
+      const etiqueta = { tienda: 'Tienda', sofa: 'Fumar', barra: 'Barra', negocio: 'Negocio', subir: 'Techo', tragaperras: 'Apostar', carrera: 'Apostar', armario: 'Armario', lugar: 'Jugar' }[m.tipo] || '!';
       const deNoche = this.mundo === 'normal' && (m.tipo === 'mision' || m.tipo === 'senal');
       const marca = texto(this, m.x, yMarca, deNoche ? 'De noche' : etiqueta, clave && !deNoche ? 54 : 22, deNoche ? COLOR.azul : COLOR.amarillo).setDepth(800);
       m.marca = marca;
@@ -410,7 +414,7 @@ class Barrio extends Phaser.Scene {
         const est = estrellas(this, m.x, yMarca + 42, ESTADO.estrellas[clave] || 0, 11).setDepth(800);
         m.est = est;
         this.objSala.push(est);
-        if (m.tipo === 'senal' && ((totalEstrellas() < 3 && (ESTADO.capitulo || 0) !== 6) || this.mundo === 'normal')) { marca.setText('?').setColor(COLOR.crema); est.setVisible(false); }
+        if (m.tipo === 'senal' && (!mEncendida() || this.mundo === 'normal')) { marca.setText('?').setColor(COLOR.crema); est.setVisible(false); }
       }
     }
     return m;
@@ -900,6 +904,7 @@ class Barrio extends Phaser.Scene {
   // ---------- Interacciones ----------
 
   interactuar(c) {
+    this.lugarActual = c.id; // las tarjetas de este rato ofrecen «Volver a jugar» con lo que vive aquí
     if (c.img) this.tweens.add({ targets: c.img, y: c.img.y - 14, duration: 110, yoyo: true, ease: 'Sine.out' });
     // Un recado para esta persona va antes que nada.
     const r = ESTADO.recado;
@@ -922,11 +927,24 @@ class Barrio extends Phaser.Scene {
     if (ESTADO.situaciones[c.id] && this.mundo === 'normal') golpeTexto(this, Phaser.Math.Clamp(c.x, 220, ANCHO - 220), Math.max(160, c.y - c.alto - 60), `${QUIEN[c.id] ? QUIEN[c.id].nombre : ''}: de noche te cuento mi problema`, COLOR.rosa, 22);
     const charlar = { etiqueta: 'Charlar', accion: () => { this.cerrarModal(); this.encuentro(c); }, color: HEX.azul };
     switch (c.tipo) {
-      case 'charla': return this.encuentro(c);
+      case 'charla': {
+        // Lo que engancha se queda: quien aloja un minijuego abierto lo ofrece antes de charlar.
+        const lug = lugaresDe(c.id, this.mundo);
+        if (lug.length) return this.tarjeta(lug[0], null, null, [charlar]);
+        return this.encuentro(c);
+      }
+      case 'lugar': {
+        const lug = lugaresDe(c.id, this.mundo);
+        // La furgo de la aso también es un punto de encargos que rotan.
+        const encargos = c.id === 'furgo' && furgoConEncargos()
+          ? [{ etiqueta: 'Encargos', accion: () => this.encargosFurgo(), color: HEX.verde }] : [];
+        return this.tarjeta(lug[0], null, null, encargos);
+      }
       case 'mision':
         if (this.mundo === 'normal') return this.deNoche(c);
-        // Las noches de cada uno abren minijuegos nuevos en su tarjeta (Por los aires, El palo).
-        return this.tarjeta(c.mision, null, null, [charlar, ...minijuegosAbiertos(c.id).map(k => ({ etiqueta: MISIONES[k].nombre, accion: () => this.tarjeta(k), color: HEX.rosa }))]);
+        // Los minijuegos abiertos de este sitio (las noches abren Por los aires y El palo) salen
+        // debajo, en la fila «Volver a jugar» de la propia tarjeta.
+        return this.tarjeta(c.mision, null, null, [charlar]);
       case 'taller': return this.taller();
       case 'armario': return this.armario();
       case 'tienda': return this.tienda();
@@ -953,7 +971,7 @@ class Barrio extends Phaser.Scene {
         return this.tarjeta('Reparto', () => this.empezarReparto(0));
       case 'senal':
         if (this.mundo === 'normal') return this.charla(c, 'De día la M no se enciende. Es solo un cartel.');
-        if (totalEstrellas() < 3 && (ESTADO.capitulo || 0) !== 6) return this.charla(c, `La M está apagada. Se enciende cuando tengas 3 estrellas (llevas ${totalEstrellas()}).`);
+        if (!mEncendida()) return this.charla(c, `La M está apagada. Se enciende cuando tengas 3 estrellas (llevas ${totalEstrellas()}).`);
         return this.tarjeta('Rescate', null, this.senal ? '¡Señal encendida: monchis x2!' : null);
       case 'puerta':
         if (this.reparto) {
@@ -963,7 +981,7 @@ class Barrio extends Phaser.Scene {
         if (ESTADO.dentro) {
           // Desde «Perico lo sabe», en la puerta se juega a callarle.
           const otro = this.mundo === 'humo' && (ESTADO.capitulo || 0) >= 5
-            ? { etiqueta: '¡Periquito!', accion: () => this.lanzar('Periquito'), color: HEX.rosa } : charlar;
+            ? { etiqueta: '¡Periquito!', clave: 'Periquito', accion: () => this.lanzar('Periquito'), color: HEX.rosa } : charlar;
           return this.tarjeta('Contrasena', null, null, [{ etiqueta: 'Pasar', accion: () => { this.cerrarModal(); this.cambiarSala('dentro', 'puerta'); } }, otro]);
         }
         return this.tarjeta('Contrasena', null, null, [charlar]);
@@ -1016,7 +1034,8 @@ class Barrio extends Phaser.Scene {
       const s = nuevaSituacion(id, plId);
       if (!s) return;
       ESTADO.situaciones[id] = s;
-      this.time.delayedCall(800 + i * 2500, () => this.toast(`${QUIEN[id].nombre} tiene un problema`, `«${s.titulo}» · búscale (${SALAS[this.salaDe(id)].nombre})`));
+      // Estas son de historia (las pide el capítulo): único caso con aviso.
+      this.time.delayedCall(800 + i * 2500, () => this.cuandoLibre(() => this.toast(`${QUIEN[id].nombre} tiene un problema`, `«${s.titulo}» · búscale (${SALAS[this.salaDe(id)].nombre})`)));
     });
     guardarPartida();
     this.marcarSituaciones();
@@ -1165,17 +1184,23 @@ class Barrio extends Phaser.Scene {
     const cap = capituloActual();
     const n = ESTADO.capitulo || 0;
     const lineas = acabada ? [] : cap.objetivos.map(o => [o.hecho(), o.texto + (o.progreso && !o.hecho() ? ` (${o.progreso()})` : '')]);
-    const sits = Object.entries(ESTADO.situaciones || {}).map(([id, s]) => {
+    // Historia y ampliaciones se listan una a una; las opcionales, en una sola línea resumen tenue.
+    const todas = Object.entries(ESTADO.situaciones || {});
+    const opcionales = todas.filter(([id, s]) => !this.esSitHistoria(id) && !s.ampliacion);
+    const sits = todas.filter(([id, s]) => this.esSitHistoria(id) || s.ampliacion).map(([id, s]) => {
       const p = s.pasos[s.paso];
       const estado = !s.aceptada ? 'tiene un problema' : p && p.recoger ? `${RECOGIBLES[p.recoger].nombre}s ${p.hechos}/${p.n}` : `¡a jugar! (${MISIONES[p.mision].nombre})`;
       return `${QUIEN[id].nombre}: ${estado}`;
     });
+    // Las de la historia, en dorado y con «!» (como su marca en el barrio); el resto, en rosa.
+    const deHistoria = new Set(todas.filter(([id]) => this.esSitHistoria(id)).map(([id, s]) => sits.find(t => t.startsWith(`${QUIEN[id].nombre}:`))));
+    const nOpc = this.secundariosActivos() ? opcionales.length : 0;
     const cn = cuentasNegocio();
     if (cn.total > 0) sits.push(`${cn.rango}: ${Math.floor(cn.clientes)} clientes · caja ${Math.floor(negocio().caja)}`);
     const R = retosDeHoy();
     const hechos = R.lista.filter(r => r.hecho).length;
     sits.push(hechos < 3 ? `Retos de la noche: ${hechos}/3 · pulsa L` : 'Retos de la noche: ¡los tres! Vuelve mañana');
-    const firma = JSON.stringify([n, lineas, ESTADO.hucha, sits]);
+    const firma = JSON.stringify([n, lineas, ESTADO.hucha, sits, nOpc]);
     if (firma === this.firmaObjetivos) return;
     const nuevo = this.firmaObjetivos !== '' && firma !== this.firmaObjetivos;
     this.firmaObjetivos = firma;
@@ -1183,7 +1208,7 @@ class Barrio extends Phaser.Scene {
     c.removeAll(true);
     const ancho = 340;
     const filas = acabada ? 1 : lineas.length;
-    const alto = 42 + filas * 30 + (n >= 1 ? 28 : 0) + sits.length * 24 + (sits.length ? 8 : 0);
+    const alto = 42 + filas * 30 + (n >= 1 ? 28 : 0) + sits.length * 24 + (nOpc ? 22 : 0) + (sits.length ? 8 : 0);
     this.panelObjetivos.medida = { ancho, alto }; // el fondo es un dibujo: Phaser no le mide el tamaño
     c.add(this.add.graphics().fillStyle(HEX.tinta, 0.78).fillRoundedRect(-ancho, 0, ancho, alto, 16));
     c.add(this.add.text(-ancho + 14, 10, acabada ? 'Modo libre' : `Cap. ${n + 1} · ${cap.titulo}`, { fontFamily: FUENTE, fontSize: '17px', color: COLOR.amarillo }));
@@ -1197,9 +1222,11 @@ class Barrio extends Phaser.Scene {
     });
     sits.forEach((t, i) => {
       const y = 50 + filas * 30 + i * 24;
-      c.add(this.add.text(-ancho + 14, y, '?', { fontFamily: FUENTE, fontSize: '18px', color: COLOR.rosa }).setOrigin(0, 0.5));
-      c.add(this.add.text(-ancho + 38, y, t, { fontFamily: FUENTE, fontSize: '14px', color: '#ffb3d1' }).setOrigin(0, 0.5));
+      const h = deHistoria.has(t);
+      c.add(this.add.text(-ancho + 14, y, h ? '!' : '?', { fontFamily: FUENTE, fontSize: '18px', color: h ? COLOR.amarillo : COLOR.rosa }).setOrigin(0, 0.5));
+      c.add(this.add.text(-ancho + 38, y, t, { fontFamily: FUENTE, fontSize: '14px', color: h ? '#ffe08a' : '#ffb3d1' }).setOrigin(0, 0.5));
     });
+    if (nOpc) c.add(this.add.text(-ancho + 14, 50 + filas * 30 + sits.length * 24, `Encargos opcionales: ${nOpc}`, { fontFamily: FUENTE, fontSize: '13px', color: COLOR.crema }).setOrigin(0, 0.5).setAlpha(0.5));
     if (n >= 1) {
       const y = alto - 22;
       const f = Math.min(1, ESTADO.hucha / META_HUCHA);
@@ -1322,6 +1349,9 @@ class Barrio extends Phaser.Scene {
         m.add(boton(this, -60 + (i % 2) * 300, 70 + Math.floor(i / 2) * 80, t, acciones[i], { ancho: 280, alto: 62, tam: 21, color: i === 3 ? HEX.azul : HEX.amarillo }));
       });
       m.add(boton(this, 90, 215, 'Cerrar (Esc)', () => this.cerrarModal(), { ancho: 220, alto: 46, tam: 20, color: HEX.crema }));
+      // Lo que engancha se queda: La caja no cuadra sigue en la plaza una vez ganada.
+      const repetir = lugaresDe('blancaso', this.mundo);
+      if (repetir.length) this.filaVolver(m, repetir, 'blancaso', { x0: -400, x1: -20, y: 215, alto: 48 });
     }, () => this.cerrarModal());
     this.modal.numeros = acciones;
   }
@@ -1387,7 +1417,7 @@ class Barrio extends Phaser.Scene {
       golpeTexto(this, ANCHO / 2, 300, `+${m} monchis${b ? ` · +${b} bolsita${b > 1 ? 's' : ''}` : ''}${bono ? ` · bono del día +${bono}` : ''}`, COLOR.amarillo, 40);
     };
     const comprar = mj => {
-      if (nivelNegocio(mj.id) >= NIVEL_MAX) return;
+      if (nivelNegocio(mj.id) >= nivelMaxPorCapitulo(ESTADO.capitulo)) return;
       if (!this.pagar(precioMejora(mj))) return;
       n.niveles[mj.id] = nivelNegocio(mj.id) + 1;
       sfx(this, 'tiroriro');
@@ -1432,8 +1462,8 @@ class Barrio extends Phaser.Scene {
         const nv = nivelNegocio(mj.id);
         m.add(this.add.text(-40, y - 16, `${i + 1} · ${mj.nombre}`, { fontFamily: FUENTE, fontSize: '18px', color: COLOR.crema }));
         m.add(this.add.text(-40, y + 6, mj.desc, { fontFamily: FUENTE, fontSize: '13px', color: COLOR.azul }));
-        for (let k = 0; k < NIVEL_MAX; k++) m.add(this.add.circle(210 + k * 13, y + 14, 5, k < nv ? HEX.amarillo : 0x000000, k < nv ? 1 : 0.4).setStrokeStyle(2, HEX.crema));
-        if (nv >= NIVEL_MAX) m.add(texto(this, 330, y, 'Al máximo', 16, COLOR.verde));
+        for (let k = 0; k < nivelMaxPorCapitulo(ESTADO.capitulo); k++) m.add(this.add.circle(210 + k * 13, y + 14, 5, k < nv ? HEX.amarillo : 0x000000, k < nv ? 1 : 0.4).setStrokeStyle(2, HEX.crema));
+        if (nv >= nivelMaxPorCapitulo(ESTADO.capitulo)) m.add(texto(this, 330, y, 'Al máximo', 16, COLOR.verde));
         else {
           const precio = precioMejora(mj);
           m.add(boton(this, 330, y, `${precio}`, () => comprar(mj), { ancho: 110, alto: 42, tam: 18, color: ESTADO.monchis >= precio ? HEX.amarillo : 0x8a7fa0 }));
@@ -1549,7 +1579,7 @@ class Barrio extends Phaser.Scene {
     ESTADO.situaciones[id] = s;
     guardarPartida();
     this.marcarSituaciones();
-    this.toast(`${QUIEN[id].nombre} tiene un problema`, `«${s.titulo}» · búscale (${SALAS[this.salaDe(id)].nombre})`);
+    // Las situaciones al azar son opcionales: sin aviso (la marca tenue basta).
   }
 
   // Logros y retos: se miran cada segundo; lo nuevo sale en aviso dorado (de uno en uno).
@@ -1709,15 +1739,70 @@ class Barrio extends Phaser.Scene {
     return b;
   }
 
+  // ¿Es una situación que pide el capítulo actual? Las demás son encargos secundarios.
+  esSitHistoria(id) {
+    const s = ESTADO.situaciones && ESTADO.situaciones[id];
+    if (!s || historiaAcabada()) return false;
+    return (capituloActual().situaciones || []).some(([pid, pl]) => pid === id && s.pl === pl);
+  }
+
+  // Los encargos opcionales (ni de historia ni de ampliación de sala) se pueden apagar en Opciones.
+  // Las ampliaciones se tratan como opcionales pero siempre visibles.
+  secundariosActivos() { return !ESTADO.opciones || ESTADO.opciones.secundarios !== false; }
+
+  // Ids de las situaciones que merecen marca o aviso: historia, ampliaciones y (si está activada
+  // la opción) las opcionales.
+  sitVisible(id) {
+    const s = ESTADO.situaciones && ESTADO.situaciones[id];
+    if (!s) return false;
+    return this.esSitHistoria(id) || !!s.ampliacion || this.secundariosActivos();
+  }
+
+  // Marca sobre el personaje con problema: la de historia, grande y dorada con «!»; las opcionales,
+  // pequeñas y apagadas con «?». Como mucho 2 opcionales a la vez: this.cosas ya es solo la sala
+  // actual, así que se quedan las 2 más antiguas (el orden de inserción de ESTADO.situaciones).
   marcarSituaciones() {
     (this.marcasSit || []).forEach(m => m.destroy());
     this.marcasSit = [];
+    const orden = Object.keys(ESTADO.situaciones || {});
+    const opc = (this.cosas || []).filter(c => ESTADO.situaciones[c.id] && !this.esSitHistoria(c.id) && !ESTADO.situaciones[c.id].ampliacion && this.sitVisible(c.id))
+      .sort((a, b) => orden.indexOf(a.id) - orden.indexOf(b.id));
+    const elegidas = new Set(opc.slice(0, 2).map(c => c.id));
     (this.cosas || []).forEach(c => {
-      if (!ESTADO.situaciones[c.id]) return;
+      const s = ESTADO.situaciones[c.id];
+      const historia = !!s && this.esSitHistoria(c.id);
+      // Una sola marca por persona: la de la historia sustituye a la «!» de su minijuego.
+      if (c.marca && c.marca.scene) c.marca.setVisible(!historia);
+      if (!s) return;
+      if (!historia && !s.ampliacion && !elegidas.has(c.id)) return;
       const y = c.y - c.alto - 40;
-      const m = texto(this, c.x - 64, y, '?', 50, COLOR.rosa).setDepth(801);
-      this.tweens.add({ targets: m, y: y - 12, angle: { from: -8, to: 8 }, duration: 450, yoyo: true, repeat: -1 });
+      const m = historia
+        ? texto(this, c.x, y, '!', 66, COLOR.amarillo)
+        : texto(this, c.x - 64, y, '?', 30, COLOR.rosa).setAlpha(0.55);
+      m.setDepth(801);
+      this.tweens.add({ targets: m, y: y - (historia ? 14 : 6), angle: { from: -8, to: 8 }, duration: historia ? 450 : 800, yoyo: true, repeat: -1 });
       this.marcasSit.push(m);
+    });
+    this.marcarFichas();
+  }
+
+  // Una ficha de recreativa, pequeña y discreta, junto a quien tiene minijuegos para repetir. No compite
+  // con el «!» dorado ni con el «?»: se esconde si el sitio tiene un problema de historia y se apaga con
+  // la misma opción que los encargos secundarios.
+  marcarFichas() {
+    if (!this.secundariosActivos()) return;
+    (this.cosas || []).forEach(c => {
+      if (c.oculta || !c.id) return;
+      if (ESTADO.situaciones && ESTADO.situaciones[c.id] && this.esSitHistoria(c.id)) return;
+      const hay = lugaresRepetibles(c.id, this.mundo, this.misionDe(c)).length;
+      if (!hay) return;
+      const x = c.x + (c.tipo === 'lugar' ? 74 : 60);
+      const y = c.y - c.alto - 6;
+      const ficha = this.add.container(x, y).setDepth(799).setAlpha(0.85);
+      ficha.add(this.add.circle(0, 0, 13, HEX.azul).setStrokeStyle(4, HEX.tinta));
+      ficha.add(this.add.triangle(2, 0, -5, -7, -5, 7, 7, 0, HEX.tinta));
+      this.tweens.add({ targets: ficha, y: y - 5, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      this.marcasSit.push(ficha);
     });
   }
 
@@ -1770,7 +1855,7 @@ class Barrio extends Phaser.Scene {
     }
     // Desde «Perico lo sabe», en la puerta siempre se puede jugar a ¡Periquito!, tenga o no un problema.
     const periquito = c.tipo === 'puerta' && ESTADO.dentro && (ESTADO.capitulo || 0) >= 5
-      ? { etiqueta: '¡Periquito!', accion: () => this.lanzar('Periquito'), color: HEX.rosa } : null;
+      ? { etiqueta: '¡Periquito!', clave: 'Periquito', accion: () => this.lanzar('Periquito'), color: HEX.rosa } : null;
     if (paso && paso.recoger && periquito) {
       const salas = [...new Set(ESTADO.recogibles.filter(r => r.sit === c.id).map(r => SALAS[r.sala].nombre))].join(', ');
       return this.tarjeta('Periquito', null, `Aún le faltan ${paso.n - paso.hechos} (${salas})`, [{ etiqueta: 'Pasar', accion: pasar, color: HEX.azul }]);
@@ -1885,17 +1970,14 @@ class Barrio extends Phaser.Scene {
 
     const al = lista => this.sinRepetir(lista);
     // Casi la mitad de las veces, comentan lo que está pasando en la historia.
-    if (tipo === 'tonteria') { this.poseNpc(c, 'hablando'); return this.charla(c, (Math.random() < 0.45 && fraseCapitulo(c.id)) || al(TONTERIAS[c.id])); }
-    if (tipo === 'colocada') { this.poseNpc(c, 'sorprendido'); return this.charla(c, al(COLOCADAS)); }
+    if (tipo === 'tonteria') { this.poseNpc(c, 'hablando'); return this.charla(c, (Math.random() < 0.45 && fraseCapitulo(c.id)) || elegirTonteria(c.id)); }
+    if (tipo === 'colocada') { this.poseNpc(c, 'sorprendido'); return this.charla(c, elegirColocada()); }
     if (tipo === 'pista') return this.pista(c, faltan);
     if (tipo === 'recado') return this.nuevoRecado(c);
     if (tipo === 'regalo') return this.regalo(c);
     if (tipo === 'trivial') return this.trivial(c);
     // El móvil: primero te lo anuncia, luego lo saca.
-    const contenido = tipo === 'meme' ? { tipo, m: Math.random() < 0.55 ? memeGenerado() : al(MEMES) }
-      : tipo === 'video' ? { tipo, v: al(VIDEOS) }
-        : tipo === 'noticia' ? { tipo, n: al(NOTICIAS) }
-          : { tipo: 'chat', mensajes: Math.random() < 0.35 ? chatDinamico() : al(CHATS) };
+    const contenido = elegirContenido(tipo);
     this.poseNpc(c, 'riendo');
     this.charla(c, al(['¡Mira esto, mira!', '¿Has visto esto? JAJA', 'Te lo enseño, que es buenísimo', 'Ojo a esto…', 'Esto lo tienes que ver']));
     this.bloqueado = true;
@@ -1980,7 +2062,7 @@ class Barrio extends Phaser.Scene {
   }
 
   trivial(c) {
-    const q = this.sinRepetir(TRIVIAL);
+    const q = elegirTrivial();
     const opciones = Phaser.Utils.Array.Shuffle([...q.r]);
     this.poseNpc(c, 'hablando', 6000);
     const contestar = o => {
@@ -2025,7 +2107,7 @@ class Barrio extends Phaser.Scene {
     if (Math.random() < 0.5) {
       const posibles = DESTINOS.filter(d => d.id !== c.id && (ESTADO.dentro || d.sala !== 'dentro' && d.sala !== 'cocina'));
       const a = Phaser.Utils.Array.GetRandom(posibles).id;
-      const texto = Phaser.Utils.Array.GetRandom(MENSAJES);
+      const texto = elegirMensaje();
       ESTADO.recado = { tipo: 'mensaje', de: c.id, a, texto, premio: 20 };
       this.charla(c, `Oye, ¿le dices a ${QUIEN[a].nombre} ${texto}? Te lo pago.`);
     } else {
@@ -2049,7 +2131,7 @@ class Barrio extends Phaser.Scene {
     this.marcarRecado();
     sfx(this, 'campanita');
     this.poseNpc(c, 'riendo');
-    this.charla(c, r.tipo === 'mensaje' ? Phaser.Utils.Array.GetRandom(RESPUESTAS) : '¡Gracias! Toma, y lo que sobra para ti.');
+    this.charla(c, r.tipo === 'mensaje' ? elegirRespuesta() : '¡Gracias! Toma, y lo que sobra para ti.');
     golpeTexto(this, this.px, this.py - 220, `Recado hecho · +${r.premio} monchis`, COLOR.amarillo, 36);
   }
 
@@ -2072,7 +2154,7 @@ class Barrio extends Phaser.Scene {
     const remitente = Phaser.Utils.Array.GetRandom(['palicaso', 'blancaso', 'pompa', 'lasslow', 'cotine', 'perico']);
     const tipo = Phaser.Utils.Array.GetRandom(['meme', 'meme', 'video', 'noticia', 'chat']);
     const al = l => this.sinRepetir(l);
-    const contenido = tipo === 'meme' ? { tipo, m: Math.random() < 0.55 ? memeGenerado() : al(MEMES) } : tipo === 'video' ? { tipo, v: al(VIDEOS) } : tipo === 'noticia' ? { tipo, n: al(NOTICIAS) } : { tipo, mensajes: Math.random() < 0.35 ? chatDinamico() : al(CHATS) };
+    const contenido = elegirContenido(tipo);
     const que = { meme: 'un meme', video: 'un vídeo', noticia: 'una noticia', chat: 'mensajes en el grupo' }[tipo];
     const t = this.add.container(-260, ALTO - 150).setDepth(905);
     const g = this.add.graphics();
@@ -2114,9 +2196,10 @@ class Barrio extends Phaser.Scene {
     const por = id => conImg.find(c => c.id === id);
     // Las conversaciones del capítulo en curso tienen preferencia.
     const delCap = (DIALOGOS_CAP[ESTADO.capitulo || 0] || []).filter(d => d.every(([id]) => por(id)));
-    const posibles = delCap.length && Math.random() < 0.6 ? delCap : DIALOGOS.filter(d => d.every(([id]) => por(id)));
+    // Las de siempre, solo las que ya pueden salir en este capítulo y sin repetir hasta agotarlas.
+    const posibles = delCap.length && Math.random() < 0.6 ? delCap : dialogosDisponibles().filter(d => d.every(([id]) => por(id)));
     if (posibles.length && Math.random() < 0.7) {
-      const charla = Phaser.Utils.Array.GetRandom(posibles);
+      const charla = posibles === delCap ? Phaser.Utils.Array.GetRandom(posibles) : elegirDialogo(posibles);
       this.voz(() => charla.forEach(([id, frase], i) => this.time.delayedCall(i * 2400, () => { if (!this.modal) this.burbujaAmbiente(por(id), frase); })), { dura: charla.length * 2400 });
       return;
     }
@@ -2124,7 +2207,7 @@ class Barrio extends Phaser.Scene {
     if (lejos.length && Math.random() < 0.8) {
       const c = Phaser.Utils.Array.GetRandom(lejos);
       const delCap = Math.random() < 0.55 && fraseCapitulo(c.id);
-      this.voz(() => this.burbujaAmbiente(c, delCap || Phaser.Utils.Array.GetRandom(ESTADO.colocon > 65 ? COLOCADAS : TONTERIAS[c.id])), { dura: 2400 });
+      this.voz(() => this.burbujaAmbiente(c, delCap || (ESTADO.colocon > 65 ? elegirColocada() : elegirTonteria(c.id))), { dura: 2400 });
     }
   }
 
@@ -2180,7 +2263,8 @@ te ha mandado esto`, 24, COLOR.amarillo));
     cont.add(boton(this, 1030, 420, 'JAJAJA (E)', reir, { ancho: 260, tam: 26, color: HEX.amarillo }));
     cont.add(boton(this, 1030, 510, 'Pasar (Esc)', cerrar, { ancho: 260, tam: 22, color: HEX.crema }));
     if (this.modal) this.cerrarModal();
-    const miModal = this.modal = { velo, c: cont };
+    // Si otra cosa cierra la ventana (el vigilante, una escena), los mensajes que faltaban se paran.
+    const miModal = this.modal = { velo, c: cont, alQuitar: () => m.parar() };
     this.modalCerrar = cerrar;
     this.modalAccion = reir;
   }
@@ -2281,12 +2365,42 @@ te ha mandado esto`, 24, COLOR.amarillo));
     this.time.delayedCall(400, () => this.cuandoLibre(fn, intentos - 1));
   }
 
-  // extras: botones de más, como { etiqueta, accion, color } (Pasar, Charlar…).
-  tarjeta(clave, accionPropia, nota, extras = []) {
+  // Fila «Volver a jugar»: un botón por minijuego abierto, con su nombre, sus estrellas y su récord.
+  // Devuelve las acciones de cada botón (para las teclas numéricas). Cada botón abre la tarjeta de ese
+  // minijuego (donde puede salir la noche especial).
+  filaVolver(c, claves, sitio, { x0 = -390, x1 = 390, y = 172, alto = 46, tam = 15 } = {}) {
+    const hueco = (x1 - x0) / claves.length;
+    const ancho = Math.min(260, hueco - 10);
+    return claves.map((k, i) => {
+      const accion = () => this.tarjeta(k, null, null, [], { sitio, sinFila: true });
+      const b = boton(this, x0 + hueco * (i + 0.5), y, MISIONES[k].nombre, accion, { ancho, alto, tam, color: HEX.rosa });
+      c.add(b);
+      b.etiqueta.setY(-9);
+      const n = ESTADO.estrellas[k] || 0;
+      for (let e = 0; e < 3; e++) b.add(this.add.star(-34 + e * 14, 10, 5, 3, 7, e < n ? HEX.amarillo : 0x7a3a8c));
+      const rec = leerRecord(k);
+      b.add(this.add.text(6, 10, rec ? `Récord ${rec}` : 'Sin récord', { fontFamily: FUENTE, fontSize: '12px', color: COLOR.tinta }).setOrigin(0, 0.5));
+      return accion;
+    });
+  }
+
+  // extras: botones de más, como { etiqueta, accion, color, clave? } (Pasar, Charlar…).
+  // opts: { sitio } con quién habla (por defecto, con quien se está hablando), { sinFila } sin «Volver a jugar»,
+  // { forzarMod } fuerza la noche especial (pruebas).
+  tarjeta(clave, accionPropia, nota, extras = [], opts = {}) {
     const m = MISIONES[clave];
+    const sitio = opts.sitio !== undefined ? opts.sitio : this.lugarActual;
     const jugar = accionPropia
       ? () => { this.cerrarModal(); accionPropia(); }
-      : () => this.lanzar(clave);
+      : () => this.lanzar(clave, { conMod: true });
+    // Lo que engancha se queda: lo demás que vive en este sitio y ya está abierto, debajo de lo de la historia.
+    const fila = opts.sinFila ? [] : lugaresDe(sitio, this.mundo).filter(k => k !== clave && !extras.some(e => e.clave === k));
+    // La noche especial: a veces, al volver a jugar algo ya ganado (nunca en un problema de historia).
+    const mod = !accionPropia && !ESTADO.situacionEnJuego ? sortearModPartida(clave, sitio, opts.forzarMod) : (ESTADO.modPartida = null);
+    const textoMod = mod ? textoModPartida(ESTADO.modPartida) : null;
+    const compacto = fila.length > 0;
+    let accionesFila = [];
+    const cerrar = () => { ESTADO.modPartida = null; this.cerrarModal(); };
     this.abrirModal(c => {
       const normales = { perico: 'n-perico', cotine: 'n-cotine', 'lasslow-digno': 'n-lasslow' };
       const img = this.add.image(-280, -30, this.mundo === 'normal' && normales[m.sprite] ? normales[m.sprite] : m.sprite);
@@ -2297,33 +2411,69 @@ te ha mandado esto`, 24, COLOR.amarillo));
       c.add(this.add.text(110, -70, m.texto, {
         fontFamily: FUENTE, fontSize: '22px', color: COLOR.crema, align: 'center', wordWrap: { width: 500 },
       }).setOrigin(0.5));
-      c.add(estrellas(this, 110, 40, ESTADO.estrellas[clave] || 0, 20));
+      // Con fila o con noche especial hace falta sitio: lo de arriba sube un poco.
+      const dy = compacto ? -14 : 0;
+      c.add(estrellas(this, 110, 40 + dy, ESTADO.estrellas[clave] || 0, 20));
       const rec = leerRecord(clave);
       const unidad = clave === 'Reparto' ? 'entregas seguidas' : 'puntos';
-      c.add(texto(this, 110, 82, `Nivel ${nivelDe(clave)}: llega a ${metaNivel(clave)} ${unidad} para subir (+${premioNivel(nivelDe(clave))} monchis)`, 20, COLOR.azul, 560));
-      c.add(texto(this, 110, 108, `${rec ? `Récord: ${rec}  ·  ` : ''}Estrellas: ${m.umbrales.join(' · ')}`, 16, COLOR.crema, 540));
-      if (nota) c.add(texto(this, 110, 138, nota, 20, COLOR.amarillo, 540));
+      c.add(texto(this, 110, 82 + dy, `Nivel ${nivelDe(clave)}: llega a ${metaNivel(clave)} ${unidad} para subir (+${premioNivel(nivelDe(clave))} monchis)`, 20, COLOR.azul, 560));
+      c.add(texto(this, 110, 108 + dy, `${rec ? `Récord: ${rec}  ·  ` : ''}Estrellas: ${m.umbrales.join(' · ')}`, 16, COLOR.crema, 540));
+      const yTextos = compacto ? 126 : 138;
+      if (nota) c.add(texto(this, 110, textoMod ? yTextos - 10 : yTextos, nota, textoMod ? 17 : 20, COLOR.amarillo, 540));
+      if (textoMod) c.add(texto(this, 110, nota ? yTextos + 18 : yTextos + (compacto ? 0 : 6), `${textoMod.titulo}\n«${textoMod.voz}»`, 15, COLOR.verde, 700));
       const botones = [
         { etiqueta: 'Jugar (E)', accion: jugar, color: HEX.amarillo },
         ...extras,
-        { etiqueta: 'Ahora no (Esc)', accion: () => this.cerrarModal(), color: HEX.crema },
+        { etiqueta: 'Ahora no (Esc)', accion: cerrar, color: HEX.crema },
       ];
+      const yBot = compacto ? 222 : textoMod ? 206 : 190;
+      const altoBot = compacto ? 44 : textoMod ? 58 : 76;
       const ancho = Math.min(250, 780 / botones.length - 14);
       botones.forEach((b, i) => {
         const x = -390 + (780 / botones.length) * (i + 0.5);
         const etiqueta = i > 0 && i < botones.length - 1 ? `${b.etiqueta} (${i + 1})` : b.etiqueta;
-        c.add(boton(this, x, 190, etiqueta, b.accion, { ancho, tam: botones.length > 3 ? 19 : 24, color: b.color || HEX.verde }));
+        c.add(boton(this, x, yBot, etiqueta, b.accion, { ancho, alto: altoBot, tam: botones.length > 3 ? 19 : compacto ? 22 : 24, color: b.color || HEX.verde }));
       });
-    }, () => this.cerrarModal(), jugar);
-    this.modal.numeros = [jugar, ...extras.map(e => e.accion)];
+      if (compacto) accionesFila = this.filaVolver(c, fila, sitio, {});
+    }, cerrar, jugar);
+    this.modal.numeros = [jugar, ...extras.map(e => e.accion), ...accionesFila];
   }
 
-  lanzar(clave, datos = {}) {
+  lanzar(clave, { conMod, ...datos } = {}) {
+    // La noche especial solo vale si la partida sale de la tarjeta que la ofreció.
+    if (!conMod || !ESTADO.modPartida || ESTADO.modPartida.mision !== clave) ESTADO.modPartida = null;
+    // Un problema del barrio con paso de furgo lleva su encargo (ver SITUACIONES_FURGO en lugares.js).
+    if (clave === 'Furgo' && !datos.encargo && ESTADO.situacionEnJuego) {
+      const sit = ESTADO.situaciones[ESTADO.situacionEnJuego];
+      const paso = sit && sit.pasos[sit.paso];
+      const enc = paso && paso.encargo ? encargoFurgoPorId(paso.encargo) : null;
+      if (enc) datos.encargo = enc;
+    }
     ESTADO.x = this.px;
     ESTADO.y = this.py;
     guardarPartida();
     this.cerrarModal();
     irA(this, clave, { rotulo: Phaser.Utils.Array.GetRandom(ROTULOS), senal: clave === 'Rescate' && !!this.senal, ...datos });
+  }
+
+  // La furgo de la aso: encargos secundarios que rotan (3 a la vez). Cada uno se lanza con el contrato
+  // irA(this, 'Furgo', { encargo }) y, al cogerlo, sale otro distinto en su lugar.
+  encargosFurgo() {
+    const lista = encargosFurgoAbiertos(3);
+    const coger = e => { tomarEncargoFurgo(e.id); this.lanzar('Furgo', { encargo: e }); };
+    this.abrirModal(c => {
+      c.add(texto(this, 0, -212, 'Encargos con la furgo', 38, COLOR.amarillo));
+      lista.forEach((e, i) => {
+        const y = -128 + i * 92;
+        c.add(this.add.rectangle(-30, y, 640, 82, 0x3d1d5e).setStrokeStyle(3, HEX.tinta));
+        c.add(this.add.text(-340, y - 34, `${e.clienteNombre} · ${e.titulo}`, { fontFamily: FUENTE, fontSize: '20px', color: COLOR.amarillo }));
+        c.add(this.add.text(-340, y - 8, `«${e.frase}»`, { fontFamily: FUENTE, fontSize: '14px', color: COLOR.crema, wordWrap: { width: 600 } }));
+        c.add(this.add.text(-340, y + 22, `${{ normal: 'Carga normal', fragil: 'Frágil', pasajero: 'Pasajero' }[e.carga] || e.carga} · ${textoPremioEncargo(e.premio)}`, { fontFamily: FUENTE, fontSize: '14px', color: COLOR.verde }));
+        c.add(boton(this, 330, y, `Llevar (${i + 1})`, () => coger(e), { ancho: 170, alto: 58, tam: 20, color: HEX.verde }));
+      });
+      c.add(boton(this, 0, 200, 'Cerrar (Esc)', () => this.cerrarModal(), { ancho: 220, alto: 46, tam: 20, color: HEX.crema }));
+    }, () => this.cerrarModal());
+    this.modal.numeros = lista.map(e => () => coger(e));
   }
 
   // Lista de cosas con precio, para el taller, la tienda y la barra.
@@ -2476,6 +2626,9 @@ te ha mandado esto`, 24, COLOR.amarillo));
         m.add(boton(this, -60, 150, `La bolsita · ${PRECIO_BOLSITA} monchis (E)`, pedir, { ancho: 380, tam: 22 }));
         m.add(boton(this, 260, 150, 'Ahora no (Esc)', () => this.cerrarModal(), { ancho: 220, tam: 22, color: HEX.crema }));
       }
+      // Lo que engancha se queda: los minijuegos de la barra ya abiertos (El farol sale en su botón).
+      const repetir = lugaresDe('palicaso', this.mundo).filter(k => !(farol && k === 'Farol'));
+      if (repetir.length) this.filaVolver(m, repetir, 'palicaso', { y: 218, alto: 40 });
     }, () => this.cerrarModal(), pedir);
   }
 

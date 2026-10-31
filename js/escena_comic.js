@@ -33,6 +33,43 @@ function posesDe(id, humo) {
   return [`n-${id}`, `n-${id}-hablando`, `n-${id}-sorprendido`];
 }
 
+// Quién es quién en el texto (para centrar el momento persona en el nombrado).
+const NOMBRES_EN_TEXTO = { blancaso: /Blancaso/, palicaso: /Palicaso/, lasslow: /Lasslow/, perico: /Perico/, cotine: /Cotine/, pompa: /Pompa/, puky: /Puky/, vuper: /Vuper/ };
+
+// Onomatopeyas del juego (en minúsculas, sin signos).
+const ONOMATOPEYAS = 'plof|plink|plaf|plop|blurp|glups|ñam|slurp|pum|zas|crac|boing|prrr+t|pff+|pof|chof|splash|puaj|glub|bzzz+|ring';
+const RE_ONO_LINEA = new RegExp('^(?:' + ONOMATOPEYAS + ')$', 'i');
+const RE_ONO_FRASE = new RegExp('(?:^|[.!?…]\\s+)(¡?(?:' + ONOMATOPEYAS + ')[.!]*)(?=\\s|$)', 'i');
+
+// Qué énfasis le toca a una línea de historia, sin que el guion marque nada. Conservador:
+// devuelve { tipo, texto } o null. La dosis (un efecto fuerte cada 3 líneas) la aplica quien llama.
+Comic.enfasisAuto = function (quien, txt, { esUltimaDeCierre = false, esPrimera = false, tensionHecha = false } = {}) {
+  if (esUltimaDeCierre) return { tipo: 'chiste' };
+  if (/se (?:le|les) limpian? (?:los )?ojos/i.test(txt)) return { tipo: 'ternura' };
+  // Onomatopeya: la línea entera (cualquier hablante) o una frase suelta del narrador.
+  const limpio = txt.replace(/[¡!¿?.…\-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const pocas = limpio.split(' ').length <= 2 && limpio.length <= 12;
+  if (pocas && (RE_ONO_LINEA.test(limpio) || (limpio === limpio.toUpperCase() && /[A-ZÁÉÍÓÚÑ]{3,}/.test(limpio)))) return { tipo: 'golpe', texto: '¡' + limpio.toUpperCase() + '!' };
+  if (quien === 'narrador') {
+    const m = RE_ONO_FRASE.exec(txt);
+    if (m) return { tipo: 'golpe', texto: '¡' + m[1].replace(/[¡!.]/g, '').toUpperCase() + '!' };
+  }
+  if (/otra vez no/i.test(txt)) return { tipo: 'bajon' };
+  if (!tensionHecha && ((quien === 'casero' && esPrimera) || /inspecci[oó]n|amarill/i.test(txt))) return { tipo: 'tension' };
+  // Gritos: mayúsculas o varios «!» seguidos. Con insulto u orden, bronca; si no, sorpresa.
+  if (quien !== 'narrador') {
+    const letras = txt.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g, '');
+    const mayus = letras.replace(/[^A-ZÁÉÍÓÚÑ]/g, '').length;
+    const gritaMay = letras.length >= 4 && mayus / letras.length >= 0.7 && !/^(?:ja|je|ji)+$/i.test(letras);
+    const gritaAdm = /!!|¡¡|(?:!.*){3,}/.test(txt);
+    if (gritaMay || gritaAdm) {
+      const bronca = gritaMay || /c[aá]llate|fuera|largo|idiota|basta|te dije|harto|ya est[aá] bien|devu[eé]lve|\bno\b/i.test(txt);
+      return { tipo: bronca && !/[¿?]/.test(txt) ? 'bronca' : 'sorpresa' };
+    }
+  }
+  return null;
+};
+
 Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
   const humo = scene.mundo === 'humo';
   const n = Math.min(opciones.cap ?? (ESTADO.capitulo || 0), FONDO_CAPITULO.length - 1);
@@ -48,7 +85,8 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
   // Si algo la cierra antes de tiempo, su final (la historia) se ejecuta igual, una sola vez.
   let acabada = false;
   const acabar = () => { if (acabada) return; acabada = true; if (typeof Musica !== 'undefined') Musica.alEntrar(scene); if (alAcabar) alAcabar(); };
-  scene.modal = { velo, c: raiz, alQuitar: () => scene.time.delayedCall(10, acabar) };
+  // Si la ventana se cierra desde fuera, no queda ningún énfasis vivo.
+  scene.modal = { velo, c: raiz, alQuitar: () => { Comic.limpiarEnfasis(scene); scene.time.delayedCall(10, acabar); } };
 
   // El escenario: fondo + personajes, dentro de un contenedor que hace de cámara.
   const escenario = scene.add.container(0, 0);
@@ -56,8 +94,17 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
   const bg = scene.add.image(ANCHO / 2, ALTO / 2, scene.textures.exists(fondoClave) ? fondoClave : 'bg-dentro');
   bg.setScale(Math.max(ANCHO / bg.width, ALTO / bg.height) * 1.05);
   escenario.add(bg);
+  // Capas del énfasis de cómic: «fondo» (entre el fondo y los personajes, se mueve con la cámara),
+  // «frente» (viñetas y tintes, por debajo del bocadillo) y «sobre» (rótulos y letras, por encima).
+  const capaFondo = scene.add.container(0, 0);
+  escenario.add(capaFondo);
+  const capaFrente = scene.add.container(0, 0);
+  raiz.add(capaFrente);
   const ui = scene.add.container(0, 0);
   raiz.add(ui);
+  const capaSobre = scene.add.container(0, 0);
+  raiz.add(capaSobre);
+  const capas = { fondo: capaFondo, frente: capaFrente, sobre: capaSobre };
 
   // Reparto: los que hablan, repartidos por el suelo (Vuper a la izquierda si sale).
   const ids = [...new Set(lineas.map(l => l[0]).filter(q => posesDe(q, humo)))];
@@ -78,11 +125,14 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
   const pose = (a, k) => { if (!a) return; a.img.setTexture(a.poses[k]); a.img.setScale(a.alto / a.img.height); };
 
   // Cámara: encuadra un punto con zoom (0 ms = corte seco).
-  const encuadre = (fx, fy, z, ms = 0) => {
+  let mira = null; // el encuadre de la línea (para acercar y volver)
+  const camActual = { cx: 0, cy: 0, z: 1 };
+  const encuadre = (fx, fy, z, ms = 0, esEfecto = false) => {
     const x = ANCHO / 2 - fx * z;
     const y = ALTO / 2 - fy * z;
     const cx = Phaser.Math.Clamp(x, ANCHO - ANCHO * z * 1.02, 0);
     const cy = Phaser.Math.Clamp(y, ALTO - ALTO * z * 1.02, 0);
+    if (!esEfecto) { mira = { fx, fy, z }; camActual.cx = cx; camActual.cy = cy; camActual.z = z; }
     scene.tweens.killTweensOf(escenario);
     if (!ms) escenario.setScale(z).setPosition(cx, cy);
     else scene.tweens.add({ targets: escenario, scale: z, x: cx, y: cy, duration: ms, ease: 'Sine.inOut' });
@@ -92,12 +142,30 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
   let escribiendo = null;
   let piezas = [];
   let bloqueado = false;
-  const limpiar = () => { piezas.forEach(p => p.destroy()); piezas = []; };
+  // Estado del énfasis de la línea: ritmo de escritura, rebote del actor, atenuado de los demás.
+  let ritmoK = 1, rebote = null, tweensFx = [];
+  let ultimaFuerte = -99, tensionHecha = false;
+  const frenarFx = () => {
+    Comic.limpiarEnfasis(scene);
+    if (rebote) { rebote.stop(); rebote = null; }
+    tweensFx.forEach(t => t.stop());
+    tweensFx = [];
+    ritmoK = 1;
+    Object.values(actores).forEach(a => { if (a.img.scene) { a.img.setAlpha(1); a.img.setScale(a.alto / a.img.height); } });
+  };
+  const limpiar = () => { piezas.forEach(p => p.destroy()); piezas = []; frenarFx(); };
+  const rebotar = (id) => {
+    const a = actores[id];
+    if (!a) return;
+    const sc = a.alto / a.img.height;
+    if (rebote) rebote.stop();
+    rebote = scene.tweens.addCounter({ from: 0, to: 1, duration: 120, yoyo: true, repeat: 2, onUpdate: t => { const v = t.getValue(); a.img.setScale(sc * (1 - 0.1 * v), sc * (1 + 0.14 * v)); }, onComplete: () => a.img.setScale(sc) });
+  };
   const escribir = (txtObj, txt, alFin) => {
     let k = 0;
     txtObj.setText('');
     escribiendo = { fin: () => { if (escribiendo) { escribiendo.ev.remove(); escribiendo = null; txtObj.setText(txt); if (alFin) alFin(); } } };
-    const ritmo = { lenta: 44, normal: 24, rapida: 9 }[(ESTADO.opciones || {}).texto || 'normal'];
+    const ritmo = Math.round({ lenta: 44, normal: 24, rapida: 9 }[(ESTADO.opciones || {}).texto || 'normal'] * ritmoK);
     escribiendo.ev = scene.time.addEvent({ delay: ritmo, repeat: txt.length - 1, callback: () => { k++; txtObj.setText(txt.slice(0, k)); if (k >= txt.length && escribiendo) { escribiendo = null; if (alFin) alFin(); } } });
   };
   const vistas = (ESTADO.cartelasVistas = ESTADO.cartelasVistas || {});
@@ -116,6 +184,54 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
     }, { x: ANCHO / 2, y: ALTO / 2 - 60 });
   };
 
+  // Decide (guion o reglas automáticas, con dosis) y lanza el énfasis de la línea i. Devuelve si salió uno.
+  const lanzarFx = (quien, txt, extra, ctx) => {
+    let tipo = null, texto = extra && extra.texto, explicito = false;
+    if (extra && 'fx' in extra) { tipo = extra.fx; explicito = !!tipo; } // { fx: null } lo apaga
+    else {
+      const esPrimera = lineas.slice(0, i).every(l => l[0] === 'titulo');
+      const esUltimaDeCierre = !!opciones.momento && i === lineas.length - 1;
+      const auto = Comic.enfasisAuto(quien, txt, { esUltimaDeCierre, esPrimera, tensionHecha });
+      if (auto) { tipo = auto.tipo; texto = texto || auto.texto; }
+    }
+    if (!tipo) return false;
+    // Dosis: un efecto fuerte como mucho cada 3 líneas. Los suaves (golpe) y los dos reservados
+    // (momento persona y remate) no cuentan. Lo explícito del guion siempre sale.
+    const real = Comic.ALIAS_ENFASIS[tipo] || tipo;
+    const suave = real === 'golpe', reservado = real === 'chiste' || real === 'ternura';
+    if (!explicito && !suave && !reservado && i - ultimaFuerte < 3) return false;
+    if (ctx && ctx.preguntaCorta && !explicito) return false;
+    // Con quién va el efecto: el que habla o el nombrado en el texto (narrador).
+    const id = actores[quien] ? quien : Object.keys(NOMBRES_EN_TEXTO).find(k => actores[k] && NOMBRES_EN_TEXTO[k].test(txt));
+    const af = id ? actores[id] : null;
+    if (quien === 'narrador' && af && real === 'ternura') encuadre(af.x, 690 - af.alto * 0.62, 1.5, 700); // el momento persona se acerca a quien toca
+    const cabeza = af ? { x: Phaser.Math.Clamp(camActual.cx + camActual.z * af.x, 200, ANCHO - 200), y: Phaser.Math.Clamp(camActual.cy + camActual.z * (690 - af.alto * 0.85), 220, ALTO - 260) } : null;
+    // La cara del otro (asco): la pose de sorpresa del siguiente en hablar.
+    const otro = ctx && ctx.sigue && actores[ctx.sigue];
+    const res = Comic.enfasis(scene, tipo, {
+      capas, cabeza, texto,
+      foco: af ? { x: af.x, y: 690 - af.alto * 0.5 } : null,
+      acercar: (k, ms) => { if (mira) encuadre(mira.fx, mira.fy, mira.z * k, ms, true); },
+      rebote: () => rebotar(id),
+      atenuar: () => Object.entries(actores).forEach(([k, a]) => { if (k !== id) tweensFx.push(scene.tweens.add({ targets: a.img, alpha: 0.25, duration: 500 })); }),
+      bocadillo: ctx && ctx.b, cola: ctx && ctx.cola, estiloFijo: ctx && ctx.estiloFijo,
+      cara: otro ? otro.poses[2] : null,
+      retardo: Math.min(1200, txt.length * 24 + 300),
+    });
+    if (!res) return false;
+    if (!suave) ultimaFuerte = i;
+    if (real === 'tension') tensionHecha = true;
+    ritmoK = res.lento;
+    if (res.pausa) {
+      // Pausa dramática: no se puede pasar de línea por accidente. Solo si no hay otro bloqueo.
+      if (!bloqueado) {
+        bloqueado = 'fx';
+        scene.time.delayedCall(res.pausa, () => { if (bloqueado === 'fx') bloqueado = false; });
+      }
+    }
+    return true;
+  };
+
   const siguiente = () => {
     if (bloqueado) return;
     if (escribiendo) return escribiendo.fin();
@@ -123,6 +239,7 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
     limpiar();
     if (i >= lineas.length) return terminar();
     const [quien, txt, arte] = lineas[i];
+    const extra = arte && typeof arte === 'object' ? arte : null; // { fx: 'terror' | null, texto, bocadillo }
     if (musicaPendiente && quien !== 'titulo') { musicaPendiente = false; Musica.poner(scene, huecoEscena); }
 
     if (quien === 'titulo') {
@@ -182,15 +299,18 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
       const g = scene.add.graphics();
       g.fillStyle(HEX.tinta, 1).fillRect(8, 8, 1040, medida.height + 36);
       g.fillStyle(UNAKE.amarillo, 1).fillRect(0, 0, 1040, medida.height + 36).lineStyle(6, HEX.tinta, 1).strokeRect(0, 0, 1040, medida.height + 36);
+      // Trama de puntos (halftone) sutil sobre el amarillo, como en un cómic impreso.
+      const trama = scene.add.tileSprite(0, 0, 1040, medida.height + 36, Comic.texTrama(scene)).setOrigin(0).setTint(0xe0a800).setAlpha(0.3).setTileScale(0.32);
       medida.destroy();
-      caja.add([g, t]);
+      caja.add([g, trama, t]);
       caja.x = -1100;
       scene.tweens.add({ targets: caja, x: 60, duration: 260, ease: 'Back.out' });
       ui.add(caja); piezas.push(caja);
       sfx(scene, 'zas', { volume: 0.35 });
-      escribir(t, txt);
       Object.values(actores).forEach(a => pose(a, 0));
       ultimo = null;
+      lanzarFx(quien, txt, extra, null);
+      escribir(t, txt);
       return;
     }
 
@@ -211,9 +331,17 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
     const b = bocadillo(scene, ANCHO / 2 + (a.x < ANCHO / 2 ? 170 : -170), 130, txt, { tam: 30, ancho: 640, cola: a.x < ANCHO / 2 ? 'izq' : 'der' });
     b.setDepth(0);
     ui.add(b); piezas.push(b);
-    const tb = b.list[1];
-    escribir(tb, txt);
     sfx(scene, 'pop', { volume: 0.3 });
+    // Forma del bocadillo: la que pide el guion o la que sugiere el texto (pensamiento, susurro).
+    const estiloGuion = extra && extra.bocadillo;
+    const estiloTexto = /^\(.*\)$/.test(txt.trim()) ? 'nube' : /^(?:shh|psst|chist)|\(en voz baja\)/i.test(txt.trim()) ? 'susurro' : null;
+    const estilo = estiloGuion || estiloTexto;
+    if (estilo) Comic.estiloBocadillo(scene, b, estilo, a.x < ANCHO / 2 ? 'izq' : 'der');
+    // Si la línea es una pregunta corta, la pantalla de reacción manda sobre el énfasis automático.
+    const siguienteQuien = lineas[i + 1] && lineas[i + 1][0];
+    const preguntaCorta = txt.length < 18 && txt.includes('?') && actores[siguienteQuien] && siguienteQuien !== quien;
+    const hayFx = lanzarFx(quien, txt, extra, { b, a, cola: a.x < ANCHO / 2 ? 'izq' : 'der', estiloFijo: !!estilo, preguntaCorta, sigue: siguienteQuien });
+    escribir(b.list[1], txt);
 
     // Cartela la primera vez que sale alguien.
     if (CARTELAS[quien] && !vistas[quien]) {
@@ -225,15 +353,16 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
       ui.add(cart);
       piezas.push(cart); // se va con la línea
     }
-    // Remates según la frase.
+    // Remates según la frase (solo si no ha salido ya un énfasis, para no apilar efectos).
     const pantalla = { x: ANCHO / 2, y: 260 };
-    if (/JA/.test(txt)) { scene.cameras.main.shake(220, 0.006); Comic.emote(scene, pantalla.x - 120, pantalla.y, 'chispas', { profundidad: 990 }); }
+    if (hayFx) { /* ya tiene su efecto */ }
+    else if (/JA/.test(txt)) { scene.cameras.main.shake(220, 0.006); Comic.emote(scene, pantalla.x - 120, pantalla.y, 'chispas', { profundidad: 990 }); }
     else if (/¡Escucha/.test(txt)) Comic.emote(scene, pantalla.x - 140, pantalla.y + 20, 'chispas', { profundidad: 990 });
     else if (/…$|Otra vez no/.test(txt)) Comic.emote(scene, pantalla.x - 130, pantalla.y + 40, 'gota', { profundidad: 990 });
     else if (/casero|cierra|alquiler/.test(txt)) Comic.emote(scene, pantalla.x - 130, pantalla.y + 30, 'calavera', { profundidad: 990, tam: 64 });
     // Pregunta corta («¿Una qué?»): pantalla de reacción del que tiene que contestar.
-    const siguienteQuien = lineas[i + 1] && lineas[i + 1][0];
-    if (txt.length < 18 && txt.includes('?') && actores[siguienteQuien] && siguienteQuien !== quien) {
+    if (preguntaCorta) {
+      ultimaFuerte = i;
       bloqueado = true;
       scene.time.delayedCall(700, () => {
         Comic.reaccion(scene, actores[siguienteQuien].poses[2], { color: UNAKE.rosa, ms: 600 }).then(() => { bloqueado = false; });
