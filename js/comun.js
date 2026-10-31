@@ -172,6 +172,9 @@ function irA(scene, clave, datos = {}) {
 
 function entrar(scene, datos) {
   scene._saliendo = false;
+  // Phaser reutiliza la misma escena al volver a jugar: la marca de «partida terminada» de la
+  // anterior bloqueaba el final de la siguiente (se quedaba parada). Se borra al entrar.
+  scene._acabado = false;
   if (typeof Musica !== 'undefined' && scene.scene.key !== 'Portada') Musica.alEntrar(scene);
   scene.panelAbierto = false;
   if (datos && datos.humo) {

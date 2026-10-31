@@ -64,6 +64,10 @@ class Fumar extends Phaser.Scene {
     this.blancasoFumo = false;
     this.mundo = this.datos.mundo === 'normal' ? 'normal' : 'humo';
     this.acabado = false;
+    // Phaser reutiliza la escena: lo de la sesión anterior no puede quedarse puesto.
+    this.porroFuera = false;
+    this.rompiendo = false;
+    this.aguantando = false;
     this.cambiado = false;
 
     this.bg = fondo(this, this.mundo === 'humo' ? 'bg-sofa' : 'bgn-sofa');

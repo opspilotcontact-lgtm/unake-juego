@@ -42,6 +42,7 @@ class Poscreditos extends Phaser.Scene {
 
   create(datos) {
     this.paso = 0;
+    this.ocupado = false;
     fondo(this, 'bg-fuera');
     this.add.rectangle(ANCHO / 2, ALTO / 2, ANCHO, ALTO, HEX.tinta, 0.35);
     this.puky = this.add.image(330, 690, 'puky').setOrigin(0.5, 1).setDepth(5);

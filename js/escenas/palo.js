@@ -17,6 +17,8 @@ class Palo extends Phaser.Scene {
     this.pipas = [];
     this.t = 0;
     this.cadencia = 0;
+    this.picando = false; // si la anterior acabó en pleno picado, Perico no volvía a disparar
+    this.proximo = 1.2;
 
     fondo(this, 'bg-cielo');
     this.add.rectangle(ANCHO / 2, ALTO / 2, ANCHO, ALTO, HEX.tinta, 0.15);
