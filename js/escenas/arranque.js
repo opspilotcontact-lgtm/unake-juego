@@ -31,6 +31,8 @@ const POSES_NORMAL = ['caminando', 'hablando', 'riendo', 'sorprendido', 'fumando
 // Arte generado (jpg): solo lo que hay (js/arte.js lo escribe preparar_assets.py).
 ARTE.forEach(k => IMAGENES.push(k));
 ARTE_PNG.forEach(k => SPRITES.push(k));
+// Bailarines del recuerdo y puerta del remate de la tormenta (Gemini, herramientas/preparar_bailarines_puerta.py).
+['obj-bailarin-1', 'obj-bailarin-2', 'obj-bailarin-3', 'obj-puerta-cuarto'].forEach(k => { if (!SPRITES.includes(k)) SPRITES.push(k); });
 // Las canciones del grupo que ya estén (huecos de musica.js).
 const MUSICAS = (typeof MUSICA_DISPONIBLE !== 'undefined' ? MUSICA_DISPONIBLE : []);
 

@@ -68,17 +68,17 @@ class Blancazo extends Phaser.Scene {
     this.barraJefe = this.add.rectangle(ANCHO / 2 - 304, 64, 608, 18, 0xf5d23a).setOrigin(0, 0.5).setDepth(D);
     [2 / 3, 1 / 3].forEach(f => this.add.rectangle(ANCHO / 2 - 304 + 608 * f, 64, 4, 28, HEX.tinta).setDepth(D + 1));
     this.corazones = [0, 1, 2].map(i => this.add.image(40 + i * 56, 40, 'monchiman').setScale(0.09).setDepth(D));
-    texto(this, 112, 82, 'RESUCITADOR (X)', 18, COLOR.crema).setDepth(D);
+    texto(this, 112, 82, MOVIL ? 'RESUCITADOR' : 'RESUCITADOR (X)', 18, COLOR.crema).setDepth(D);
     this.add.rectangle(112, 108, 200, 22, HEX.tinta).setStrokeStyle(3, HEX.crema).setDepth(D);
     this.barraCarga = this.add.rectangle(14, 108, 0, 14, 0xb68cff).setOrigin(0, 0.5).setDepth(D);
-    boton(this, ANCHO - 120, 120, 'Nube (Mayús)', () => this.nube(), { ancho: 200, alto: 54, tam: 19, color: HEX.crema }).setDepth(D);
-    boton(this, ANCHO - 120, 184, 'Resucitador (X)', () => this.resucitador(), { ancho: 200, alto: 54, tam: 19, color: 0xb68cff }).setDepth(D);
+    boton(this, ANCHO - 120, 120, MOVIL ? 'Nube' : 'Nube (Mayús)', () => this.nube(), { ancho: 200, alto: 54, tam: 19, color: HEX.crema }).setDepth(D);
+    boton(this, ANCHO - 120, 184, MOVIL ? 'Resucitador' : 'Resucitador (X)', () => this.resucitador(), { ancho: 200, alto: 54, tam: 19, color: 0xb68cff }).setDepth(D);
   }
 
   presentacion() {
     const t1 = texto(this, ANCHO / 2, 300, 'PUKY · EL BLANCAZO', 76, COLOR.amarillo).setDepth(200).setScale(0);
     const banda = this.add.rectangle(ANCHO / 2, 390, ANCHO, 50, HEX.tinta, 0.75).setDepth(199);
-    const t2 = texto(this, ANCHO / 2, 390, 'Flechas para moverte · disparas solo · Mayús esquiva · X resucitador', 24, COLOR.crema).setDepth(200).setAlpha(0);
+    const t2 = texto(this, ANCHO / 2, 390, MOVIL ? 'Muévete · disparas solo · «Nube» esquiva · «Resucitador» remata' : 'Flechas para moverte · disparas solo · Mayús esquiva · X resucitador', 24, COLOR.crema).setDepth(200).setAlpha(0);
     sfx(this, 'sting', { volume: 0.6 });
     this.tweens.add({ targets: t1, scale: 1, duration: 450, ease: 'Back.out' });
     this.tweens.add({ targets: t2, alpha: 1, duration: 400, delay: 300 });
@@ -358,7 +358,14 @@ class Blancazo extends Phaser.Scene {
     this.fase = n;
     this.texturaPuky(this.posePuky());
     sfx(this, n === 2 ? 'risas' : 'temblor', { volume: 0.6 });
-    this.cameras.main.shake(500, 0.012);
+    // Juice corto (regla del usuario: nada de temblores largos). El cambio se ve en Puky, no en la pantalla.
+    this.cameras.main.shake(160, 0.006);
+    if (n === 2) this.tweens.add({ targets: this.puky, angle: { from: -7, to: 7 }, duration: 90, yoyo: true, repeat: 3, onComplete: () => this.puky.setAngle(0) });
+    else {
+      this.puky.setTint(0xff7a5c);
+      this.time.delayedCall(220, () => this.puky.active && this.puky.clearTint());
+      this.salpicon(this.puky.x, this.puky.y - 160, 16);
+    }
     golpeTexto(this, ANCHO / 2, 200, grito, COLOR.amarillo, 52).setDepth(200);
     this.ataqueT = 1.4;
     if (n === 3) this.tweens.add({ targets: this.puky, y: SUELO_B - 140, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -406,8 +413,9 @@ class Blancazo extends Phaser.Scene {
     this.corazones[this.vida].setTint(0x333333).setAlpha(0.4);
     sfx(this, 'golpe');
     sfx(this, 'chof', { volume: 0.6 });
-    this.cameras.main.shake(300, 0.015);
-    this.cameras.main.flash(120, 245, 210, 58);
+    // Golpe: temblor breve y el salpicón sobre Monchiman (sin destello a pantalla completa).
+    this.cameras.main.shake(140, 0.006);
+    this.salpicon(this.heroe.x, this.heroe.y - 30, 8);
     this.heroe.setTintFill(0xf5d23a);
     this.time.delayedCall(120, () => this.heroe.clearTint());
     if (this.vida <= 0) this.derrota();
@@ -427,8 +435,12 @@ class Blancazo extends Phaser.Scene {
     this.tweens.killTweensOf(this.puky);
     this.puky.setTexture('puky-horror').setFlipX(false);
     sfx(this, 'temblor');
-    this.cameras.main.shake(900, 0.02);
+    // El que tiembla es Puky, no la pantalla: un golpe corto de cámara y él se deshace en dos salpicones.
+    this.cameras.main.shake(200, 0.008);
+    const px0 = this.puky.x;
+    this.tweens.add({ targets: this.puky, x: px0 + 6, duration: 50, yoyo: true, repeat: 7, onComplete: () => this.puky.setX(px0) });
     this.salpicon(this.puky.x, this.puky.y - 200, 40);
+    this.time.delayedCall(450, () => this.salpicon(this.puky.x, this.puky.y - 120, 24));
     this.time.delayedCall(900, () => {
       this.puky.setTexture('puky-charco').setY(SUELO_B);
       this.puky.setScale(420 / this.puky.width);
@@ -447,7 +459,7 @@ class Blancazo extends Phaser.Scene {
     const puntos = Math.max(0, Math.round(1200 + this.vida * 150 - this.t * 5 + this.supers * 40 - this.golpes * 50));
     this.time.delayedCall(3600, () => panelFinal(this, {
       titulo: '¡Blancaso, a salvo!',
-      linea: `Puky, hecho un charco en ${Math.round(this.t)} s. A Blancaso se le limpian los ojos: momento persona.`,
+      linea: `Puky, hecho un charco en ${Math.round(this.t)} s. A Blancaso se le limpian los ojos.`,
       puntos, clave: 'Blancazo',
     }));
   }

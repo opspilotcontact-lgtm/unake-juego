@@ -37,7 +37,7 @@ class Tarta extends Phaser.Scene {
 
     // Marcadores.
     this.receta = this.add.container(ANCHO / 2, 110).setDepth(50);
-    texto(this, 100, 40, 'HAMBRE', 26, COLOR.rosa).setDepth(50);
+    texto(this, 162, 40, 'HAMBRE', 26, COLOR.rosa).setOrigin(1, 0.5).setDepth(50); // pegada a la barra por la derecha: en el móvil crece y se metía dentro
     this.add.rectangle(330, 40, 316, 30, HEX.tinta).setStrokeStyle(4, HEX.crema).setDepth(50);
     this.barraHambre = this.add.rectangle(176, 40, 0, 22, HEX.rosa).setOrigin(0, 0.5).setDepth(50);
     this.textoPuntos = texto(this, 1100, 40, '0 puntos', 30, COLOR.amarillo).setDepth(50);
@@ -52,9 +52,13 @@ class Tarta extends Phaser.Scene {
     this.nuevaReceta();
     entrar(this, datos);
     this.time.delayedCall(datos && datos.rotulo ? 1900 : 400, () => {
-      const fondoAyuda = this.add.rectangle(640, 360, 1060, 230, HEX.tinta, 0.8).setDepth(59);
-      const ayuda = texto(this, 640, 330, 'Atrapa los pisos en el orden de la receta y acaba con la guinda.\nLas patatas, para Cotine: si el hambre llega arriba, se come la tarta y pierdes una vida.\n¡Ojo con las colillas!', 28, COLOR.crema, 1000).setDepth(60);
-      const pista = texto(this, 640, 440, 'Flechas o arrastra con el dedo', 22, COLOR.azul).setDepth(60);
+      // La caja se mide con el texto (en el móvil la letra crece ×1,3 y antes se salía y pisaba la pista).
+      const ayuda = texto(this, 640, 0, 'Atrapa los pisos en el orden de la receta y acaba con la guinda.\nLas patatas, para Cotine: si el hambre llega arriba, se come la tarta y pierdes una vida.\n¡Ojo con las colillas!', 28, COLOR.crema, 1000).setDepth(60);
+      const pista = texto(this, 640, 0, 'Flechas o arrastra con el dedo', 22, COLOR.azul).setDepth(60);
+      const altoAyuda = ayuda.height + 14 + pista.height;
+      ayuda.setY(360 - altoAyuda / 2 + ayuda.height / 2);
+      pista.setY(360 + altoAyuda / 2 - pista.height / 2);
+      const fondoAyuda = this.add.rectangle(640, 360, 1060, altoAyuda + 40, HEX.tinta, 0.8).setDepth(59);
       this.time.delayedCall(3200, () => { ayuda.destroy(); pista.destroy(); fondoAyuda.destroy(); this.activo = true; });
     });
   }
@@ -159,7 +163,7 @@ class Tarta extends Phaser.Scene {
       }
     }
     // El hambre sube sola; arriba del todo, Cotine se come el piso de arriba.
-    this.hambre += dt * (5 + this.servidas * 1.2);
+    this.hambre += dt * (5 + Math.min(this.servidas, 4) * 1.2); // con tope: a partir de 4 tartas no se ahoga
     if (this.hambre >= 100) this.bocado();
     this.barraHambre.width = 308 * Math.min(1, this.hambre / 100);
     this.cotine.setTint(this.hambre > 70 ? 0xffb0c8 : 0xffffff);
@@ -251,7 +255,7 @@ class Tarta extends Phaser.Scene {
     this.textoServidas.setText(`Tartas: ${this.servidas}`);
     sfx(this, 'campanita');
     sfx(this, 'aaah', { volume: 0.5 });
-    golpeTexto(this, 640, 250, this.sinBocados ? '¡ENTERA! Momento persona' : '¡SERVIDA!', COLOR.amarillo, 60);
+    golpeTexto(this, 640, 250, this.sinBocados ? '¡ENTERA! Cotine no se lo cree' : '¡SERVIDA!', COLOR.amarillo, 60);
     // La tarta sale volando hacia el bar y Cotine se queda con un plato nuevo.
     const tarta = this.pila;
     this.tweens.add({ targets: tarta, x: ANCHO + 300, y: tarta.y - 120, angle: 20, duration: 600, ease: 'Sine.in', onComplete: () => tarta.destroy() });

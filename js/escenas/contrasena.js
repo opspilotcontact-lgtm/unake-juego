@@ -184,7 +184,7 @@ class Contrasena extends Phaser.Scene {
     this.tweens.add({
       targets: blancaso, x: 520, duration: 600, ease: 'Back.out',
       onComplete: () => {
-        this.respuesta = bocadillo(this, 560, 300, 'Otra vez no…', { tam: 34 });
+        this.respuesta = bocadillo(this, 560, 300, 'La puerta. Abierta. Lo apunto.', { tam: 34 });
         cambiarPose(this, this.perico, 'perico-horror');
         this.time.delayedCall(1100, () => {
           sfx(this, 'puerta');

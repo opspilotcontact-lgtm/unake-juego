@@ -57,7 +57,7 @@ class Periquito extends Phaser.Scene {
     this.vidasG = [0, 1, 2].map(i => this.add.star(ANCHO - 180 + i * 50, 44, 5, 9, 20, HEX.amarillo).setStrokeStyle(4, HEX.tinta).setDepth(50));
     this.ayuda = texto(this, 720, 360, 'Grita «¡periquito!» SOLO si va a decir «Monchiman»', 24, COLOR.crema, 900).setDepth(50);
 
-    this.boton = boton(this, 720, 640, '¡PERIQUITO! (Espacio)', () => this.gritar(), { ancho: 460, alto: 96, tam: 32, color: HEX.amarillo }).setDepth(60);
+    this.boton = boton(this, 720, 640, MOVIL ? '¡PERIQUITO!' : '¡PERIQUITO! (Espacio)', () => this.gritar(), { ancho: 460, alto: 96, tam: 32, color: HEX.amarillo }).setDepth(60);
     this.input.keyboard.on('keydown-SPACE', e => { if (!e.repeat) this.gritar(); });
     this.input.on('pointerdown', (_p, sobre) => { if (!sobre.length) this.gritar(); });
 
@@ -77,7 +77,7 @@ class Periquito extends Phaser.Scene {
     const txt = Phaser.Utils.Array.GetRandom(FRASES_PERICO[tipo]);
     const mon = txt.indexOf('Monchiman');
     this.activa = { tipo, txt, k: 0, desde: mon >= 0 ? mon : -1 };
-    const paso = Math.max(32, 78 - this.frase * 3);
+    const paso = Math.max(45, 78 - this.frase * 3);
     this.textoFrase.setText('');
     this.caja.setScale(0.9);
     this.tweens.add({ targets: this.caja, scale: 1, duration: 160, ease: 'Back.out' });
@@ -108,10 +108,10 @@ class Periquito extends Phaser.Scene {
       this.cameras.main.shake(260, 0.01);
       const caras = { 'lasslow-digno': 'lasslow-horror', palicaso: 'palicaso-contando', blancaso: 'blancaso-mareado' };
       this.oyentes.forEach(o => o.setTexture(caras[o.base]).setScale(180 / o.height));
-      golpeTexto(this, 720, 360, '¡Lo ha oído todo el bar!', COLOR.rosa, 44);
+      golpeTexto(this, 720, 440, '¡Lo ha oído todo el bar!', COLOR.rosa, 44);
     } else {
       this.puntos += 30;
-      golpeTexto(this, 720, 360, 'Bien aguantado · +30', COLOR.verde, 32);
+      golpeTexto(this, 720, 440, 'Bien aguantado · +30', COLOR.verde, 32);
     }
     this.pintar();
     this.time.delayedCall(1300, () => this.siguiente());
@@ -133,7 +133,7 @@ class Periquito extends Phaser.Scene {
       this.perico.setTexture('perico-silbando').setScale(this.escP);
       this.textoFrase.setText(a.txt.slice(0, a.k) + '… ¡PIN PIN!');
       Comic.impacto(this, 230, 300, { tam: 90, profundidad: 45 });
-      golpeTexto(this, 720, 360, `+${gana}`, COLOR.amarillo, 48);
+      golpeTexto(this, 720, 440, `+${gana}`, COLOR.amarillo, 48);
     } else {
       // Le has cortado sin motivo (o antes de tiempo): se ofende.
       this.racha = 0;

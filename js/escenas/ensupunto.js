@@ -628,8 +628,7 @@ class EnSuPunto extends Phaser.Scene {
     this._acabado = true; this.fase = 'fin';
     this.cortarAire();
     sfx(this, 'plop', { volume: 0.7 });
-    this.cameras.main.shake(300, 0.012);
-    this.cameras.main.flash(180, 255, 255, 255);
+    this.cameras.main.shake(180, 0.007); // sin destello blanco: el reventón se ve en la Pompa
     const { px, py } = this;
     this.grietas.clear(); this.luzG.clear(); this.aros.clear();
     if (this.textures.exists('pompa-plop')) {
@@ -667,7 +666,7 @@ class EnSuPunto extends Phaser.Scene {
 
   cerrar(gana, motivo) {
     const textos = {
-      'plop-no': ['En su punto', 'La Pompa se ha quedado en su punto. Te da las gracias tres frases tarde.'],
+      'plop-no': ['En su punto', 'La Pompa se ha quedado en su punto. Te da las gracias. …Ahora. Un rato después.'],
       plop: ['¡PLOP!', 'Se ha pasado de su punto. Lasslow se ríe. Claro que se ríe.'],
       alfiler: ['Alfileres', 'Los alfileres de la pared tenían razón. Lo había avisado, eso sí. Después.'],
       pffff: ['Pffff', 'Se ha quedado sin aire. Dice que, bien mirado, tampoco se estaba mal.'],

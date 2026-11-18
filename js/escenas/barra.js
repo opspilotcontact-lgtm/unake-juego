@@ -60,7 +60,7 @@ class Barra extends Phaser.Scene {
       const c = this.add.container(ANCHO / 2, 300).setDepth(80);
       c.add(this.add.graphics().fillStyle(HEX.tinta, 0.88).fillRoundedRect(-480, -110, 960, 220, 24));
       c.add(texto(this, 0, -60, '¡Noche de barra!', 40, COLOR.amarillo));
-      c.add(texto(this, 0, 10, 'Sirve a cada uno lo que pide con 1-4 antes de que se canse.\nSi se cuela Puky, X para echarlo.', 24, COLOR.crema, 900));
+      c.add(texto(this, 0, 10, MOVIL ? 'Sirve a cada uno lo que pide antes de que se canse.\nSi se cuela Puky, échalo.' : 'Sirve a cada uno lo que pide con 1-4 antes de que se canse.\nSi se cuela Puky, X para echarlo.', 24, COLOR.crema, 900));
       this.time.delayedCall(3200, () => {
         c.destroy();
         this.activo = true;
@@ -104,7 +104,7 @@ class Barra extends Phaser.Scene {
     if (!this.activo) return;
     const quieren = this.sitios.filter(s => s.cliente && !s.cliente.puky && s.cliente.pedido === n);
     if (!quieren.length) {
-      this.combo = 0;
+      this.combo = Math.max(0, this.combo - 2); // una tecla equivocada resta, no lo borra todo
       this.textoCombo.setText('');
       sfx(this, 'bonk', { volume: 0.5 });
       golpeTexto(this, 640, 260, '¡Eso no lo ha pedido nadie!', COLOR.rosa, 32);

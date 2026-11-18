@@ -151,12 +151,14 @@ class Compostura extends Phaser.Scene {
     this.input.addPointer(2);
     const alto = 76, y = 674;
     this.btnIzq = boton(this, 165, y, '← TAPAR', () => this.taparse(-1), { ancho: 270, alto, tam: 28, color: HEX.verde }).setDepth(70);
-    this.btnMant = boton(this, 640, y, 'MANTÉN: COGER AIRE (ESPACIO)', () => { this.botonMantener = true; }, { ancho: 500, alto, tam: 26 }).setDepth(70);
+    this.btnMant = boton(this, 640, y, MOVIL ? 'MANTÉN: COGER AIRE' : 'MANTÉN: COGER AIRE (ESPACIO)', () => { this.botonMantener = true; }, { ancho: 500, alto, tam: 26 }).setDepth(70);
     this.btnDer = boton(this, 1115, y, 'TAPAR →', () => this.taparse(1), { ancho: 270, alto, tam: 28, color: HEX.verde }).setDepth(70);
     const soltar = () => { this.botonMantener = false; };
+    // Solo suelta el dedo que mantiene (antes, levantar el dedo de TAPAR soltaba también la respiración).
+    this.btnMant.on('pointerdown', p => { this.punteroMant = p.id; });
     this.btnMant.on('pointerup', soltar);
-    this.btnMant.on('pointerout', soltar);
-    this.input.on('pointerup', soltar);
+    this.btnMant.on('pointerout', p => { if (!p || p.id === this.punteroMant) soltar(); });
+    this.input.on('pointerup', p => { if (!p || p.id === this.punteroMant) soltar(); });
     this.input.keyboard.on('keydown-SPACE', () => { this.teclaEspacio = true; });
     this.input.keyboard.on('keyup-SPACE', () => { this.teclaEspacio = false; });
     this.input.keyboard.on('keydown-LEFT', e => { if (!e.repeat) this.taparse(-1); });
@@ -169,8 +171,8 @@ class Compostura extends Phaser.Scene {
     const c = this.add.container(ANCHO / 2, 300).setDepth(90);
     c.add(this.add.graphics().fillStyle(HEX.tinta, 0.9).fillRoundedRect(-520, -150, 1040, 300, 26));
     c.add(texto(this, 0, -108, 'Aguanta la risa. Un señor sabe estar.', 34, COLOR.amarillo));
-    c.add(texto(this, 0, -36, 'Aro que CRECE → MANTÉN ESPACIO · Aro que se ENCOGE → SUELTA', 26, COLOR.crema, 980));
-    c.add(texto(this, 0, 28, 'Cuando llegue un chiste → pulsa ← o → (el lado de donde viene)', 26, COLOR.verde, 980));
+    c.add(texto(this, 0, -36, MOVIL ? 'Aro que CRECE → MANTÉN el botón · Aro que se ENCOGE → SUELTA' : 'Aro que CRECE → MANTÉN ESPACIO · Aro que se ENCOGE → SUELTA', 26, COLOR.crema, 980));
+    c.add(texto(this, 0, 28, MOVIL ? 'Cuando llegue un chiste → TAPAR del lado de donde viene' : 'Cuando llegue un chiste → pulsa ← o → (el lado de donde viene)', 26, COLOR.verde, 980));
     c.add(texto(this, 0, 96, 'Si el medidor de risa se llena… JA.', 22, COLOR.rosa));
     this.time.delayedCall(4200, () => { c.destroy(); this.activo = true; });
   }
@@ -186,8 +188,16 @@ class Compostura extends Phaser.Scene {
       ['lasslow-aguanta2', 'lasslow-aguantando'], ['lasslow-revienta', 'lasslow-risa-floja'],
     ][n];
     this.lasslow.setTexture(this.tex(claves));
+    this.centrarLasslow();
     this.escL = 290 / this.lasslow.height;
     this.lasslow.setScale(this.escL);
+  }
+
+  // Los PNG de Lasslow traen margen transparente a la derecha: se ancla en el centro de su cuerpo (medido)
+  // para que el aro caiga sobre su cara.
+  centrarLasslow() {
+    const ox = { 'lasslow-serio': 0.363, 'lasslow-aguanta1': 0.402, 'lasslow-aguanta2': 0.436 }[this.lasslow.texture.key];
+    this.lasslow.setOrigin(ox || 0.5, 1);
   }
 
   // ---------- Mandos ----------
@@ -451,13 +461,15 @@ class Compostura extends Phaser.Scene {
       this.puntos += 200; // el bonus de llegar entero al final del elogio
       this.pintarPose(true);
       this.lasslow.setTexture(this.tex(['lasslow-serio', 'lasslow-digno'])).setScale(this.escL);
+      this.centrarLasslow();
       sfx(this, 'suspiro', { volume: 0.5 });
       bocadillo(this, this.cx, 230, 'Descanse en… JA… paz.', { tam: 24, ancho: 360 }).setDepth(47);
     } else {
       this.lasslow.setTexture(this.tex(['lasslow-revienta', 'lasslow-rodando', 'lasslow-risa-floja'])).setScale(250 / this.lasslow.height);
+      this.centrarLasslow();
       this.lasslow.y = 604;
       sfx(this, 'risa-lasslow');
-      this.cameras.main.shake(500, 0.015);
+      this.cameras.main.shake(200, 0.008);
       golpeTexto(this, this.cx, 260, '¡JAJAJAJAJA!', COLOR.rosa, 62);
     }
     this.textoPuntos.setText(`${Math.round(this.puntos)} puntos`);

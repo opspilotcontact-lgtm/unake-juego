@@ -63,7 +63,43 @@ const LOGROS = [
   { id: 'noches3', nombre: 'Vuelves siempre', texto: 'Juega 3 noches distintas', hecho: () => stat('noches') >= 3, premio: 100 },
   { id: 'noches7', nombre: 'Parte del mobiliario', texto: 'Juega 7 noches distintas', hecho: () => stat('noches') >= 7, premio: 200 },
   { id: 'historia', nombre: 'La noche más larga', texto: 'Acaba la historia', hecho: () => historiaAcabada(), premio: 250 },
+  // Los minijuegos de los actos II-IV (17/11, guinda §9). gana_X y jugada_X los suma apuntar() (comun.js).
+  { id: 'rendija', nombre: 'Por debajo, como siempre', texto: 'Cuélate con Puky por debajo de la puerta', hecho: () => stat('gana_Rendija') >= 1, premio: 60 },
+  { id: 'ensupunto', nombre: '…En su punto', texto: 'Gana En su punto con la Pompa', hecho: () => stat('gana_EnSuPunto') >= 1, premio: 60 },
+  { id: 'compostura', nombre: 'Un señor no se ríe', texto: 'Aguanta la compostura de Lasslow', hecho: () => stat('gana_Compostura') >= 1, premio: 60 },
+  { id: 'escucha', nombre: 'Te lo cuento otro día', texto: 'Gana Escucha a Palicaso', hecho: () => stat('gana_Escucha') >= 1, premio: 60 },
+  { id: 'furgo', nombre: 'Todos a bordo', texto: 'Gana un viaje en la furgo', hecho: () => stat('gana_Furgo') >= 1, premio: 80 },
+  { id: 'furgo5', nombre: 'Portes Palicaso', texto: 'Haz 5 encargos con la furgo', hecho: () => stat('furgo_encargos') >= 5, premio: 150 },
+  { id: 'control', nombre: 'Circulen, circulen', texto: 'Pasa el control de los agentes', hecho: () => stat('gana_Control') >= 1, premio: 80 },
+  { id: 'camaras', nombre: 'Te he visto', texto: 'Pilla al culpable en Las cámaras', hecho: () => stat('gana_Camaras') >= 1, premio: 60 },
+  { id: 'camaras-limpio', nombre: 'Ni un fallo', texto: 'Las cámaras sin fallar ni una', hecho: () => stat('camarasLimpio') >= 1, premio: 120 },
+  { id: 'patos100', nombre: 'Feriante honorario', texto: 'Derriba 100 patos de humo', hecho: () => stat('patosHumo') >= 100, premio: 120 },
+  { id: 'casetas', nombre: 'Las tres fichas', texto: 'Gana las casetas de la feria', hecho: () => stat('gana_Casetas') >= 1, premio: 80 },
+  { id: 'mirando', nombre: 'Con los ojos cerrados', texto: 'Cruza el barrio sin que El Mirón te pille', hecho: () => stat('gana_Mirando') >= 1, premio: 80 },
+  { id: 'tormenta', nombre: 'Corre, que viene', texto: 'Escapa de la tormenta de tu madre', hecho: () => stat('gana_Tormenta') >= 1, premio: 80 },
+  { id: 'recuerdo', nombre: 'Ya me acuerdo', texto: 'Sal de tu primer amarillo', hecho: () => stat('gana_Recuerdo') >= 1, premio: 80 },
+  { id: 'recreativa', nombre: 'Que no cunda', texto: 'Apaga 200 amarillos en la recreativa', hecho: () => stat('amarillosApagados') >= 200, premio: 150 },
+  { id: 'amarillo-jefe', nombre: 'Tu propio amarillo', texto: 'Gánale a tu propio amarillo', hecho: () => stat('gana_Amarillo') >= 1, premio: 300 },
+  // Ocultos: en la lista salen como «???» con una pista (si la hay) hasta que se consiguen.
+  { id: 'calada420', nombre: 'Cuatro, dos, cero', texto: 'Una calada 420 en el sofá', oculto: true, pista: '«Snoop Dogo te espera.»', hecho: () => stat('calada_420') >= 1, premio: 120 },
+  { id: 'pillado', nombre: 'Hola, mamá', texto: 'Que tu madre te pille', oculto: true, hecho: () => stat('madrePillado') >= 1 || Object.values(ESTADO.interrupciones || {}).includes('pillado'), premio: 40 },
+  { id: 'nopillado', nombre: 'Huele a ambientador', texto: 'Las tres visitas de tu madre sin que te pille', oculto: true, hecho: () => { const I = ESTADO.interrupciones || {}; return I.madre1 === 'hecha' && I.madre2 === 'hecha' && !!I.madre3 && !stat('madrePillado'); }, premio: 150 },
+  { id: 'todos-furgo', nombre: 'Invita la casa', texto: 'La furgo con tres acompañantes', oculto: true, pista: 'PALICASO: «¡Cabe uno más!»', hecho: () => stat('furgoLlena') >= 1, premio: 100 },
+  { id: 'control-limpio', nombre: 'Buenas noches, agente', texto: 'Pasa el control casi sin sospecha', oculto: true, hecho: () => stat('controlLimpio') >= 1, premio: 120 },
+  { id: 'mecheros', nombre: 'Por colores', texto: 'Encuentra la percha de los mecheros', oculto: true, pista: 'PERICO: «Pa que no se pierdan.»', hecho: () => tareaPasada('miron', 'mechero_percha'), premio: 60 },
+  { id: 'miron-perico', nombre: 'Nadie nos cree', texto: 'Perico y El Mirón se dan la razón', oculto: true, hecho: () => (ESTADO.capitulo || 0) > capIdx('miron'), premio: 60 },
+  { id: 'todos-palotes', nombre: 'Blancaso no da abasto', texto: 'Desmáyate 25 veces', oculto: true, pista: 'BLANCASO: «Necesito otra agenda.»', hecho: () => stat('desmayos') >= 25, premio: 100 },
+  { id: 'circulo', nombre: 'Has vuelto', texto: 'Cierra el círculo', oculto: true, hecho: () => !!ESTADO.circuloCerrado, premio: 200 },
 ];
+
+// ¿Ya pasó la tarea `tareaId` del capítulo `cap`? (o el capítulo entero)
+function tareaPasada(cap, tareaId) {
+  if ((ESTADO.capitulo || 0) > capIdx(cap)) return true;
+  const T = ESTADO.tarea, C = CAPITULOS[capIdx(cap)];
+  if (!T || T.cap !== cap || !C || !Array.isArray(C.tareas)) return false;
+  const i = C.tareas.findIndex(t => t.id === tareaId);
+  return i >= 0 && T.i > i;
+}
 
 // Devuelve los logros recién conseguidos (y los apunta y paga).
 function comprobarLogros() {

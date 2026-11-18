@@ -120,7 +120,9 @@ class Escucha extends Phaser.Scene {
     texto(this, 1010, 40, 'Ánimo', 24, COLOR.crema).setDepth(50);
     this.gAnimo = this.add.graphics().setDepth(50);
     this.pintarAnimo();
-    this.ayuda = texto(this, 640, 46, this.textoAyuda(), 20, COLOR.crema, 560).setDepth(50);
+    // Colgada desde arriba y con alto máximo: en el móvil (letra ×1,3) ocupaba 3 líneas, se cortaba y se metía en el bocadillo.
+    this.ayuda = texto(this, 640, 8, this.textoAyuda(), 20, COLOR.crema, 600).setOrigin(0.5, 0).setDepth(50);
+    if (this.ayuda.height > 62) this.ayuda.setScale(62 / this.ayuda.height);
     this.tweens.add({ targets: this.ayuda, alpha: 0, duration: 500, delay: 9000, onComplete: () => this.ayuda.destroy() });
 
     this.boton = boton(this, 640, 655, MOVIL ? 'SHHH' : 'SHHH (Espacio)', () => this.frenar(), { ancho: 280, alto: 84, tam: 30, color: HEX.amarillo }).setDepth(60);
@@ -162,7 +164,7 @@ class Escucha extends Phaser.Scene {
     const [a, b] = this.dif.pausa;
     this.durPausa = Phaser.Math.FloatBetween(a, b);
     this.falsaEn = null;
-    if (this.dif.falsas && this.falsasHechas < 3 && this.linea % 2 === 1 && this.durPausa > 1.5 && this.linea < ESC_LINEAS.length - 1) {
+    if (this.dif.falsas && this.falsasHechas < 3 && this.linea % 2 === 1 && this.durPausa > 0.8 && this.linea < ESC_LINEAS.length - 1) {
       this.falsaEn = Phaser.Math.FloatBetween(0.3, 0.7);
       this.falsasHechas++;
     }

@@ -14,6 +14,7 @@ const QUIEN = {
   perico: { nombre: 'Perico', sprite: 'perico', color: '#d0d4dc' },
   vuper: { nombre: 'Tú', sprite: 'vuper', color: '#7ee081' },
   puky: { nombre: 'Puky', sprite: 'puky', color: '#f5d23a' },
+  niebla: { nombre: 'Niebla', sprite: 'niebla', color: '#cfd8dc' }, // vive en la plaza desde el cap. 1
 };
 
 // ---------- Qué sale y cuándo: capítulo mínimo/máximo y memoria de vistos ----------
@@ -115,6 +116,8 @@ function elegirContenido(tipo) {
 }
 
 const TONTERIAS = {
+  // Niebla (frases de guiones/actos-3-4.js, en contenido/actos12.js): se le va el hilo.
+  niebla: typeof NIEBLA_FRASES !== 'undefined' ? NIEBLA_FRASES : ['¿Qué ha pasado?'],
   puky: [
     '¿Me llamabais? …¿No? Bueno, me quedo igual.',
     'Este baño es mi casa. Bueno, la de todos. Pero más mía.',
@@ -139,7 +142,7 @@ const TONTERIAS = {
     '…',
     'Perdona, te contesto lo de ayer: sí.',
     'Shhh. Estoy escuchando el silencio. Tiene buen ritmo.',
-    'Si me ves vibrar no es la música. Es que estoy a punto.',
+    'Si me ves vibrar, no es la música. Es que estoy a punto.',
     '¿Me has dicho algo? Da igual, la respuesta es «qué bonito».',
   ],
   lasslow: [
@@ -198,7 +201,7 @@ const MEMES = [
 const MULETILLAS = {
   perico: ['Pin pin.', 'Yo no he dicho nada.', '¿Pipas?'],
   palicaso: ['¡Escucha, escucha!', '¿Una qué? ¡Una aso!', 'Te cuento una cosa…'],
-  blancaso: ['Otra vez no…', 'Las cuentas no cuadran.', 'Hoy sí que disfruto.'],
+  blancaso: ['Lo apunto. Y lo subrayo.', 'Las cuentas no cuadran.', 'Hoy sí que disfruto.'],
   lasslow: ['¡Que se me ha escapao!', 'Soy un señor.', 'JAJA… perdón.'],
   pompa: ['…', 'Yo no, que exploto.', 'Te contesto mañana.'],
   cotine: ['¿Qué? Tenía hambre.', 'Solo lo pruebo.', 'Estaba así cuando llegué.'],
@@ -262,7 +265,7 @@ const NOTICIAS = [
 
 // El grupo de WhatsApp de la aso: mensajes que van saliendo.
 const CHATS = [
-  [['palicaso', '¿Quién se ha dejado un calcetín en la barra?'], ['lasslow', 'Un caballero nunca revela sus secretos'], ['lasslow', '…es mío'], ['blancaso', 'Otra vez no…']],
+  [['palicaso', '¿Quién se ha dejado un calcetín en la barra?'], ['lasslow', 'Un caballero nunca revela sus secretos'], ['lasslow', '…es mío'], ['blancaso', 'Lo apunto en objetos perdidos. Y en objetos que no quiero.']],
   [['cotine', 'Hay tarta en la cocina'], ['cotine', 'Había'], ['perico', 'pin pin'], ['pompa', '¿qué tarta?']],
   [['blancaso', 'Recordad pagar la cuota'], ['palicaso', '¿Una qué?'], ['blancaso', 'No empieces'], ['palicaso', '¡UNA ASO!']],
   [['perico', 'He visto a Monchiman'], ['vuper', '¿A quién?'], ['perico', 'Se parecía a ti'], ['vuper', 'Vale, vale…']],
@@ -307,7 +310,7 @@ const RESPUESTAS = ['¿Eso te ha dicho? Dile que vale.', 'Pff. Siempre igual.', 
 TONTERIAS.puky.push(
   'Hoy he limpiado el baño. Bueno, lo he mirado fuerte.',
   'Si oyes un «blurp» detrás de ti, no te gires. Es mejor así.',
-  'Me han dicho que soy un amarillo con personalidad. Me lo quedo.',
+  'Me han dicho que tengo mucho color. Y mucha personalidad. Me lo quedo todo.',
   'Huelo a limón. Es mentira, pero me gusta decirlo.',
 );
 TONTERIAS.palicaso.push(
@@ -423,7 +426,7 @@ CHATS.push(
   [['cotine', '¿Alguien ha visto mi tarta?'], ['perico', 'La tienes en la cara'], ['cotine', 'Ah. Gracias'], ['cotine', 'Estaba buena']],
   [['perico', 'Contraseña nueva para esta noche'], ['palicaso', '¿Cuál?'], ['perico', 'No la puedo decir por aquí'], ['perico', 'Es pipas'], ['blancaso', 'Perico…']],
   [['pompa', '.'], ['palicaso', '¿Estás bien?'], ['pompa', '..'], ['lasslow', 'Eso es un sí'], ['pompa', '...']],
-  [['blancaso', 'He cuadrado las cuentas'], ['palicaso', '¡No puede ser!'], ['blancaso', 'Me he equivocado de mes'], ['blancaso', 'Otra vez no…']],
+  [['blancaso', 'He cuadrado las cuentas'], ['palicaso', '¡No puede ser!'], ['blancaso', 'Me he equivocado de mes'], ['blancaso', 'Este mes no existe. Lo tacho.']],
   [['vuper', '¿Alguien tiene papel?'], ['palicaso', 'En la tienda'], ['cotine', 'Yo tengo de magdalena'], ['vuper', 'Vale, vale…']],
   [['puky', '¿Me habéis añadido al grupo?'], ['blancaso', '¿QUIÉN HA SIDO?'], ['perico', 'pin pin'], ['puky', 'Ya estoy aquí']],
   [['palicaso', 'Mañana karaoke'], ['pompa', 'Yo no canto, que exploto'], ['lasslow', 'Yo pongo los efectos de sonido'], ['blancaso', 'NO']],
@@ -441,7 +444,7 @@ TRIVIAL.push(
   { p: '¿Qué hace Cotine con las tartas?', r: ['Se las come', 'Las vende', 'Las tira'] },
   { p: '¿Cuál es la hora del móvil de todos?', r: ['4:20', '3:00', '12:00'] },
   { p: '¿Quién es la estrella fugaz de Unaké?', r: ['Palicaso', 'Perico', 'Puky'] },
-  { p: '¿Qué le da a Blancaso cuando fuma mucho?', r: ['Un blancaso', 'Hambre', 'Sueño'] },
+  { p: '¿Qué apunta Blancaso en la agenda?', r: ['Hasta la diversión', 'Las pipas de Perico', 'Nada: se le olvida'] },
   { p: '¿De qué color es Puky?', r: ['Amarillo', 'Verde', 'Morado'] },
   { p: '¿Qué necesitas para liarte uno?', r: ['Papel, boquilla, bolsita y mechero', 'Solo papel', 'Una tarta'] },
 );
@@ -476,7 +479,9 @@ function chatDinamico() {
   const opciones = [];
   if (typeof META_HUCHA !== 'undefined' && desdeCapId('cuota')) {
     const falta = Math.max(0, META_HUCHA - (ESTADO.hucha || 0));
-    opciones.push([['blancaso', `La hucha va por ${ESTADO.hucha || 0}`], ['blancaso', `Faltan ${falta} para el casero`], ['palicaso', '¡Eso está hecho!'], ['blancaso', 'Eso dices siempre']]);
+    // Con la hucha llena (o tras el final) ya no se habla de lo que falta.
+    if (falta === 0 || historiaAcabada()) opciones.push([['blancaso', 'La hucha, llena. La miro cada noche.'], ['palicaso', '¡Escucha! ¿Y si la rompemos para celebrarlo?'], ['blancaso', 'No.']]);
+    else opciones.push([['blancaso', `La hucha va por ${ESTADO.hucha || 0}`], ['blancaso', `Faltan ${falta} para el casero`], ['palicaso', '¡Eso está hecho!'], ['blancaso', 'Eso dices siempre']]);
   }
   const cn = typeof cuentasNegocio === 'function' ? cuentasNegocio() : null;
   if (cn && cn.total > 0) opciones.push([['palicaso', `Hoy Unaké está a tope: ${Math.floor(cn.clientes)} clientes`], ['perico', 'Y todos me han dicho la contraseña mal'], ['palicaso', `Somos «${cn.rango}»`], ['lasslow', 'Gracias a mi presencia, caballeros']]);

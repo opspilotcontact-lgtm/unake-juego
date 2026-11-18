@@ -8,7 +8,7 @@ const MUSICA_ESCENA = {
   Portada: 'portada', Intro: null, DJ: null,
   Contrasena: 'minijuego', Tarta: 'minijuego', Barra: 'minijuego', Pipas: 'minijuego', Cuentas: 'minijuego',
   Periquito: 'minijuego', Aires: 'minijuego', Lasslow: 'tension', Rescate: 'tension', Blancazo: 'jefe', Palo: 'jefe',
-  Inspeccion: 'sigilo', Sigilo: 'sigilo', Farol: 'apuestas', Tragaperras: 'apuestas', Carrera: 'apuestas',
+  Inspeccion: 'sigilo', Sigilo: 'sigilo', Camaras: 'sigilo', Farol: 'apuestas', Tragaperras: 'apuestas', Carrera: 'apuestas',
   Liar: 'sofa', Fumar: 'sofa', Final: 'final', Poscreditos: 'poscreditos',
 };
 // Respaldo para los huecos sin tema propio: la intro de la serie (la firma de UNAKÉ).

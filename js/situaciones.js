@@ -127,7 +127,7 @@ function textoPremio(p) {
   if (p.monchis) partes.push(`+${p.monchis} monchis`);
   if (p.hucha) partes.push(`+${p.hucha} a la hucha`);
   if (p.bolsita) partes.push(`+${p.bolsita} bolsita${p.bolsita > 1 ? 's' : ''}`);
-  if (p.papel) partes.push(`+${p.papel} papel`);
+  if (p.papel) partes.push(`+${p.papel} papel${p.papel > 1 ? 'es' : ''}`);
   if (p.boquilla) partes.push('+1 boquilla');
   if (p.pista) partes.push('una pista');
   if (p.colocon) partes.push('buen rollo (colocón)');

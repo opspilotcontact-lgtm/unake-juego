@@ -86,8 +86,8 @@ class Lasslow extends Phaser.Scene {
     this.g = this.add.graphics().setDepth(40);
 
     // Mandos: ESPACIO (o el botón de la izquierda) y P (o el de la derecha).
-    boton(this, 330, 670, 'Tragar risa (ESPACIO)', () => this.tragar(), { ancho: 340, alto: 64, tam: 22 }).setDepth(70);
-    boton(this, 950, 670, 'Soltarlo (P)', () => this.soltar(), { ancho: 300, alto: 64, tam: 22, color: HEX.verde }).setDepth(70);
+    boton(this, 330, 670, MOVIL ? 'Tragar risa' : 'Tragar risa (ESPACIO)', () => this.tragar(), { ancho: 340, alto: 64, tam: 22 }).setDepth(70);
+    boton(this, 950, 670, MOVIL ? 'Soltarlo' : 'Soltarlo (P)', () => this.soltar(), { ancho: 300, alto: 64, tam: 22, color: HEX.verde }).setDepth(70);
     this.input.keyboard.on('keydown-SPACE', e => { if (!e.repeat) this.tragar(); });
     this.input.keyboard.on('keydown-P', e => { if (!e.repeat) this.soltar(); });
 
@@ -107,13 +107,14 @@ class Lasslow extends Phaser.Scene {
     const c = this.add.container(ANCHO / 2, 330).setDepth(80);
     c.add(this.add.graphics().fillStyle(HEX.tinta, 0.88).fillRoundedRect(-500, -150, 1000, 300, 26));
     c.add(texto(this, 0, -110, 'Esta noche, Lasslow es un señor', 34, COLOR.amarillo));
-    c.add(texto(this, 0, -40, 'CHISTE → pulsa ESPACIO cuando el círculo toque el anillo', 26, COLOR.crema, 960));
-    c.add(texto(this, 0, 20, 'TRIPA → pulsa P solo cuando suene un RUIDO', 26, COLOR.verde, 960));
+    c.add(texto(this, 0, -40, MOVIL ? 'CHISTE → toca «Tragar risa» cuando el círculo toque el anillo' : 'CHISTE → pulsa ESPACIO cuando el círculo toque el anillo', 26, COLOR.crema, 960));
+    c.add(texto(this, 0, 20, MOVIL ? 'TRIPA → toca «Soltarlo» solo cuando suene un RUIDO' : 'TRIPA → pulsa P solo cuando suene un RUIDO', 26, COLOR.verde, 960));
     c.add(texto(this, 0, 90, 'Tres fallos y se acabó el señor', 22, COLOR.rosa));
     this.time.delayedCall(4200, () => { c.destroy(); this.siguiente(); });
   }
 
   siguiente() {
+    if (this._acabado) return;
     if (this.dignidad <= 0) return;
     this.poseL('lasslow-digno');
     this.palicaso.setTexture('palicaso');
@@ -138,7 +139,7 @@ class Lasslow extends Phaser.Scene {
       this.burbuja = bocadillo(this, 980, 230, remate, { tam: 30, ancho: 430 });
       this.palicaso.setTexture('palicaso-riendo');
       sfx(this, 'rimshot', { volume: 0.5 });
-      this.prueba = { tipo: 'chiste', t: 0, dur: Math.max(0.75, 1.3 / this.ritmo) };
+      this.prueba = { tipo: 'chiste', t: 0, dur: Math.max(0.93, 1.3 / this.ritmo) }; // ventana mínima ≈ 150 ms (antes bajaba a 121)
       this.poseL('lasslow-aguantando');
     });
   }
@@ -183,7 +184,7 @@ class Lasslow extends Phaser.Scene {
     }
     sfx(this, r.sonido, { volume: 0.8 });
     golpeTexto(this, r.x, 300, r.texto, COLOR.amarillo, 44);
-    this.cartel.setText('¡RUIDO! ¡AHORA! (P)').setColor(COLOR.amarillo);
+    this.cartel.setText(MOVIL ? '¡RUIDO! ¡AHORA!' : '¡RUIDO! ¡AHORA! (P)').setColor(COLOR.amarillo);
     this.cameras.main.shake(200, 0.006);
   }
 
@@ -203,6 +204,7 @@ class Lasslow extends Phaser.Scene {
   // ---------- Resultado de cada prueba ----------
 
   bien(texto_, base) {
+    if (this._acabado) return;
     this.prueba = null;
     this.combo++;
     this.ritmo = Math.min(2.2, this.ritmo + 0.08);
@@ -221,6 +223,7 @@ class Lasslow extends Phaser.Scene {
   }
 
   mal(tipo) {
+    if (this._acabado) return; // tras el final, nada suena encima del panel (el «¡JAJAJAJA!» lo tapaba)
     const p = this.prueba;
     this.prueba = null;
     this.combo = 0;
@@ -231,7 +234,7 @@ class Lasslow extends Phaser.Scene {
     if (tipo === 'risa') {
       this.poseL('lasslow-rodando');
       sfx(this, 'risa-lasslow');
-      golpeTexto(this, 640, 250, '¡JAJAJAJA!', COLOR.rosa, 56);
+      golpeTexto(this, 640, 250, '¡JAJAJAJA!', COLOR.rosa, 56).setDepth(590); // por debajo del panel final (600+)
     } else if (tipo === 'escapao') {
       this.poseL('lasslow-pedo');
       sfx(this, 'pedo', { volume: 0.8 });
@@ -241,7 +244,7 @@ class Lasslow extends Phaser.Scene {
     } else {
       this.poseL('lasslow-horror');
       sfx(this, 'pedo-tuba');
-      this.cameras.main.shake(500, 0.02);
+      this.cameras.main.shake(200, 0.008); // corto (antes 500 ms): el pedo se ve en la nube, no en la pantalla
       this.nube(1.8);
       golpeTexto(this, 640, 250, '¡PRRRRRT!', COLOR.rosa, 64);
     }
@@ -287,6 +290,7 @@ class Lasslow extends Phaser.Scene {
   }
 
   final() {
+    this._acabado = true;
     this.prueba = null;
     const puntos = Math.round(this.puntos);
     this.time.delayedCall(600, () => panelFinal(this, {

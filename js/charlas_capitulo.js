@@ -58,10 +58,18 @@ const CHARLAS_CAP = {
     perico: ['Pin pin. Apuesto mis pipas a que Cotine se come la tarta.'],
     lasslow: ['Para la fiesta llevo mi mejor pajarita. Y aire fresco.'],
   },
+  // Tras el final (modo libre): la hucha ya está llena; nada de «faltan» ni «si llegamos a mil».
+  'libre': {
+    blancaso: ['Mil. Ya están. Ahora cuento otra cosa: las noches que llevo sentado.', 'Me he sentado. Sigue siendo raro.'],
+    palicaso: ['¡Escucha! El bar se ha salvado y yo sigo teniendo historias. Qué suerte la tuya.'],
+    cotine: ['La tarta de la noche épica… quedaba un trocito. Quedaba.'],
+    perico: ['Pin pin. Ya no me apuesto las pipas. Pierdo.'],
+    lasslow: ['Un señor celebra con moderación. JA… perdón.'],
+  },
 };
 
 const DIALOGOS_CAP = {
-  'cuota': [[['blancaso', 'Mil monchis, Palicaso. Mil.'], ['palicaso', '¡Escucha! Eso son… muchos monchis.'], ['blancaso', 'Otra vez no…']]],
+  'cuota': [[['blancaso', 'Mil monchis, Palicaso. Mil.'], ['palicaso', '¡Escucha! Eso son… muchos monchis.'], ['blancaso', 'Son mil. Los he contado dos veces.']]],
   'senor': [[['lasslow', '¿Y si al casero le cuento un chiste?'], ['blancaso', 'Ni se te ocurra.'], ['lasslow', 'JA… vale.']]],
   'caja': [[['blancaso', 'Palicaso, ¿y la caja?'], ['palicaso', '¡Escucha! ¿Qué caja? ¿Esa caja? Ah, esa caja…'], ['blancaso', '…']]],
   'perico': [[['perico', '¡Vuper es Monchiman!'], ['palicaso', '¡Y yo soy la luna!'], ['perico', 'Pin pin. Tú eres una estrella.']]],
@@ -71,6 +79,6 @@ const DIALOGOS_CAP = {
 
 // Una frase del capítulo para alguien (o null si no tiene).
 function fraseCapitulo(id) {
-  const c = CHARLAS_CAP[capId() === 'libre' ? 'epica' : capId()]; // el modo libre sigue con las de la noche épica
+  const c = CHARLAS_CAP[capId()]; // el modo libre tiene las suyas (post-final)
   return c && c[id] && c[id].length ? Phaser.Utils.Array.GetRandom(c[id]) : null;
 }

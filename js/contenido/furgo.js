@@ -23,7 +23,7 @@ const CAPITULO_FURGO = {
   fijos: ['vuper', 'cotine'],
 
   intro: [
-    ['narrador', 'Ha llegado un cartel al barrio: feria de humo, solo esta noche, al otro lado de la circunvalación. A pie son cuarenta minutos y una mala decisión.'],
+    ['narrador', 'Ha llegado un cartel al barrio: feria de humo, dos noches nada más, al otro lado de la circunvalación. A pie son cuarenta minutos y una mala decisión.'],
     ['palicaso', '¡Escucha, escucha! Feria. Con noria, con casetas y con churros. ¡Invita la casa!'],
     ['blancaso', 'La casa tiene una furgo que lleva tres años sin arrancar.'],
     ['palicaso', 'Dormida. Está dormida. Se la despierta con cariño.'],
@@ -43,7 +43,7 @@ const CAPITULO_FURGO = {
   tareas: [
     {
       id: 'furgo_piezas',
-      texto: 'Reúne lo que necesita la furgo: las llaves (la percha de Perico), la batería (el trastero) y un ambientador de pino (la barra)',
+      texto: 'Reúne llaves, batería y ambientador para la furgo',
       tipo: 'recoger',
       antes: [
         ['narrador', 'La furgo lleva tres años en el garaje de Unaké, bajo una lona y un gato que no es de nadie.'],
@@ -53,27 +53,28 @@ const CAPITULO_FURGO = {
       ],
       despues: [
         ['perico', 'Pin pin. Llaves entregadas. Percha vacía. Percha vacía.'],
-        ['narrador', 'La furgo arranca al tercer intento. Al primero tose, al segundo se queja, al tercero suelta una nube negra que hace toser a Blancaso, que ni estaba cerca.'],
-        ['blancaso', 'Otra vez no… Y huele a pino.'],
+        ['narrador', 'La furgo arranca al tercer intento: tose, se queja y suelta una nube negra.'],
+        ['narrador', 'Tose Blancaso, que ni estaba cerca.'],
+        ['blancaso', 'Lo apunto: tos. Y huele a pino.'],
         ['palicaso', 'Es el ambientador. Va a ser importante, ya verás.'],
         ['narrador', 'En la guantera, algo se mueve. Y se queda muy quieto, como si no hubiera sido nada.'],
       ],
-      pista: '«Pin pin. Llaves, en mi percha. Mi percha, en lo alto. Batería, en el trastero. Ambientador, en la barra. En la barra. Yo no me llevo nada. Nada.»',
+      pista: '«Pin pin. Llaves, en mi percha, en la puerta. Batería, en la tienda. Ambientador, en la barra. Yo no me llevo nada. Nada.»',
     },
     {
       id: 'furgo_conducir',
-      texto: 'Elige a tus acompañantes y conduce la furgo hasta la circunvalación',
+      texto: 'Elige acompañantes y conduce la furgo',
       tipo: 'minijuego',
       minijuego: 'Furgo',
       antes: [
-        ['palicaso', 'Sitio para tres, contigo. Y Cotine, que ya se ha sentado.'],
+        ['blancaso', 'Caben tres, contigo. Y Cotine, que ya se ha sentado sin querer ir.'],
         ['puky', '¿Me invitáis? …¿De verdad se puede? ¿Puedo preguntar?'],
         ['lasslow', 'Un servidor, naturalmente. Con pajarita.'],
         ['pompa', 'Yo me apunto. Si no hay prisa.'],
         ['vuper', '(Cada uno cambiará el viaje a su manera. Elige con cabeza.)'],
       ],
       despues: [
-        ['narrador', 'Treinta kilómetros de curvas, conos y un sofá. La furgo llega entera. Casi.'],
+        ['narrador', 'Tres kilómetros de curvas, conos y un sofá. La furgo sigue entera. Casi.'],
         ['cotine', 'Hemos pasado ocho gasolineras.'],
         ['vuper', 'Y no hemos parado en ninguna.'],
         ['cotine', 'Lo sé. Las he contado.'],
@@ -82,20 +83,20 @@ const CAPITULO_FURGO = {
     },
     {
       id: 'furgo_control',
-      texto: 'Pasa el control sin que se note nada (gafas, ventanilla y cara de normal)',
+      texto: 'Pasa el control sin que se note nada',
       tipo: 'minijuego',
       minijuego: 'Control',
       antes: [
-        ['palicaso', 'Las gafas, Vuper. Las de la guantera. Y la ventanilla, que se airee.'],
+        ['cotine', 'Las gafas, Vuper. Las de la guantera. Y baja la ventanilla, que se airee.'],
         ['narrador', 'La guantera se abre un dedo. Dentro, dos ojillos. Se cierra otra vez.'],
-        ['palicaso', 'Es Don Eusebio. Lleva tres años ahí. Se le deja tranquilo.'],
+        ['cotine', 'Es Don Eusebio. Lleva tres años ahí. No se le toca. Lo he intentado.'],
         ['vuper', '(Luces azules. Respira. Respira.)'],
         ['agente', 'Buenas noches. Control de rutina. Ventanilla.'],
         ['narrador', 'La ventanilla baja. Sale una nube de humo que se queda un segundo parada delante de la gorra.'],
         ['agente', 'Hm.'],
           ['agente', '¿Llevan algo? Ya me entiende. Algo para fumar que no sea tabaco.'],
           ['vuper', '¿Cuál policía, señor porro?'],
-          ['narrador', 'Silencio. Dentro de la furgo, nadie respira. Lasslow se muerde la pajarita.'],
+          ['narrador', 'Silencio. Dentro de la furgo, nadie respira. Alguien, atrás, se muerde algo.'],
           ['agente', '…¿Cómo dice?'],
           ['vuper', 'Digo… ¿cuál porro, señor policía? Eso. Lo otro no. Eso.'],
           ['agente', 'Hm.'],
@@ -103,7 +104,8 @@ const CAPITULO_FURGO = {
       despues: [
         ['agente', 'Está todo en orden. Circulen.'],
         ['narrador', 'Nadie respira. Alguien, atrás, deja escapar el aire muy despacio.'],
-        ['narrador', 'Nadie lo sabe, pero cuando el agente abrió la guantera, Don Eusebio ya se había metido el estuche de Palicaso en el carrillo izquierdo. Y se había hecho el peluche. Con dignidad.'],
+        ['narrador', 'Nadie lo sabe: cuando el agente abrió la guantera, Don Eusebio ya tenía el estuche en el carrillo.'],
+        ['narrador', 'Y se hizo el peluche. Con dignidad.'],
         ['narrador', 'Se le han limpiado los ojos. Por primera vez en tres años, alguien necesitaba que guardara algo.'],
         ['agente', 'Una cosa más. ¿Van a la feria?'],
         ['vuper', '…Sí.'],
@@ -120,7 +122,7 @@ const CAPITULO_FURGO = {
     },
     {
       id: 'furgo_llegar',
-      texto: 'Aparca la furgo en el descampado de la feria, siguiendo las luces',
+      texto: 'Aparca en la feria siguiendo las luces',
       tipo: 'recado',
       antes: [
         ['narrador', 'El agente va detrás, con la gorra en las rodillas, apretado junto a Cotine. Nadie dice nada. Se oye el motor y a alguien que se aguanta algo.'],
@@ -130,13 +132,11 @@ const CAPITULO_FURGO = {
         ['narrador', 'Tras la última colina, el descampado se enciende: una noria, bombillas, casetas, música de feria.'],
         ['vuper', 'Ahí está.'],
         ['cotine', '…'],
-        ['narrador', 'Cotine ha dejado de refunfuñar. Tiene los ojos pegados a la ventanilla, donde las bombillas se le reflejan una a una. Lleva un rato sin pedir ninguna gasolinera.'],
+        ['narrador', 'Cotine ha dejado de refunfuñar. Tiene la cara pegada a la ventanilla, llena de bombillas.'],
+        ['narrador', 'Lleva un rato sin pedir ninguna gasolinera.'],
       ],
       despues: [
         ['narrador', 'La furgo aparca junto a la valla. Suena música de feria y huele a azúcar quemado.'],
-        ['vuper', '¿Cotine?'],
-        ['cotine', '…'],
-        ['narrador', 'No contesta. Mira las luces.'],
       ],
       pista: '«¡Escucha! Sigue las luces, Vuper. Las de colores, que las azules ya las hemos visto. Y no pares en la gasolinera, que Cotine se baja.»',
     },
@@ -152,7 +152,8 @@ const CAPITULO_FURGO = {
   ],
 
   cierre: [
-    ['narrador', 'Antes de bajar, una bolita de pelo sale de la guantera, deja un estuche sobre el salpicadero y vuelve a su sitio. Nadie dice nada. Perico lo mira con respeto.'],
+    ['narrador', 'Una bolita de pelo sale de la guantera, deja el estuche en el salpicadero y vuelve a su sitio.'],
+    ['narrador', 'Nadie dice nada.'],
     ['narrador', 'Todos bajan de la furgo. Todos menos Cotine, que sigue con la cara en la ventanilla.'],
     ['vuper', '¿Cotine?'],
     ['cotine', '…'],
@@ -281,7 +282,7 @@ const FRASES_FURGO = {
   ],
   blancaso: [
     'Yo ya sabía que esto iba a pasar. Todavía no ha pasado, pero lo sabía.',
-    'Otra vez no… Otra curva.',
+    'Otra curva. Lo apunto. Otra curva.',
     'Frena. Frena un poco. Frena. Me voy a casa.',
     'Lo he apuntado en la agenda: «Viaje en furgo, 21:40, sufrimiento».',
     'Si hay un bache, que sea pequeño. Un bache pequeño. Por favor.',
@@ -325,7 +326,7 @@ const PREGUNTAS_CONTROL = [
     pregunta: '¿Llevan algo? Ya me entiende. Algo para fumar que no sea tabaco.',
     normal: { texto: 'No, agente. Nada. Solo pipas de Perico.', agente: 'Hm. Las pipas, bien.' },
     sospechosa: { texto: '¿Algo? ¿Algo de algo? ¿Qué es algo?', agente: 'Algo es algo. No me haga repetirlo.' },
-    absurda: { texto: '¿Cuál policía, señor porro?', cuela: true, agente: '…¿Cómo dice? …Da igual. He tenido un turno muy largo. Circulen.' },
+    absurda: { texto: 'Solo lo de la guantera, agente. Pero la guantera es de un señor.', cuela: true, agente: '…No pienso abrir eso. Circulen.' },
   },
   {
     id: 'origen', si: null,
@@ -660,7 +661,7 @@ const ENCARGOS_FURGO = [
       desastre: [
         ['narrador', 'Blancaso baja con un color que ya no es el suyo y se sienta en el bordillo. Puky aparece de la nada.'],
         ['puky', '¿Me llamabais? ¡Qué pinta! ¡Qué bien!'],
-        ['blancaso', 'Otra vez no…'],
+        ['blancaso', 'Yo ya sabía que esto iba a pasar.'],
       ],
     },
   },
@@ -816,7 +817,7 @@ if (typeof module !== 'undefined') {
 // después de la declaración). Cada encargo lleva como `frase` su primera línea al pedirlo.
 (function adaptarEntrega1() {
   if (typeof ENCARGOS_FURGO === 'undefined') return;
-  const desde = { cajas_blancaso: 'cuota', blancaso_casa: 'blancazo', invitacion_puky: 'senor', mar_perico: 'perico', discos_pompa: 'inspeccion' };
+  const desde = { cajas_blancaso: 'feria', blancaso_casa: 'feria', invitacion_puky: 'feria', mar_perico: 'feria', discos_pompa: 'pesado', tarta_niebla: 'senal', niebla_destino: 'feria', cita_lasslow: 'inspeccion' };
   for (let i = ENCARGOS_FURGO.length - 1; i >= 0; i--) {
     const e = ENCARGOS_FURGO[i];
     if (!(e.id in desde)) { ENCARGOS_FURGO.splice(i, 1); continue; }

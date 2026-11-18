@@ -178,7 +178,7 @@ class DJ extends Phaser.Scene {
     this.pompa.setTexture(this.presion >= 5 ? 'pompa-horror' : 'pompa');
     this.pompa.setScale(230 / this.pompa.height * hincha * (1 + latido * 0.06), 230 / this.pompa.height * hincha * (1 - latido * 0.04));
     this.pompa.x = 1090 + (this.presion >= 5 ? Math.sin(this.time.now / 30) * 4 : 0);
-    this.pulso.fillAlpha = latido * 0.12;
+    this.pulso.fillAlpha = latido * 0.04; // antes 0,12: un destello morado a pantalla completa en cada golpe; el latido ya se ve en la Pompa
     this.barraPresion.width = 196 * Math.min(1, this.presion / 8);
   }
 

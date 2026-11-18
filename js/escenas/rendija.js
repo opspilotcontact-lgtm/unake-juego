@@ -510,6 +510,7 @@ class Rendija extends Phaser.Scene {
     this.retornos++;
     if (this.retornos >= 3) return this.terminar(false, 'masa');
     this.masa = 60;
+    this.gotas -= this.gotasTramo; // las gotas del tramo vuelven a salir: no se cuentan dos veces
     this.cargarTramo(this.tramoN);
     golpeTexto(this, ANCHO / 2, 300, `Sin masa… vuelves a la entrada (${this.retornos}/3)`, COLOR.rosa, 34).setScrollFactor(0);
   }

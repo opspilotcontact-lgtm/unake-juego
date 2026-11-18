@@ -33,7 +33,8 @@ class Pipas extends Phaser.Scene {
     this.textoRacha = texto(this, ANCHO - 150, 80, '', 22, COLOR.verde).setDepth(50);
     this.ayuda = texto(this, ANCHO / 2, 130, '', 24, COLOR.amarillo).setDepth(50);
 
-    this.botonTirar = boton(this, ANCHO / 2, 670, 'ESPACIO (o toca)', () => this.pulsar(), { ancho: 340, alto: 64, tam: 24 }).setDepth(60);
+    // Abajo a la izquierda, bajo Perico: en el centro tapaba la papelera (que va de x 600 a 1170).
+    this.botonTirar = boton(this, 200, 680, 'ESPACIO (o toca)', () => this.pulsar(), { ancho: 320, alto: 56, tam: 22 }).setDepth(60);
     this.input.keyboard.on('keydown-SPACE', e => { if (!e.repeat) this.pulsar(); });
     this.input.on('pointerdown', (_p, sobre) => { if (!sobre.length) this.pulsar(); });
 

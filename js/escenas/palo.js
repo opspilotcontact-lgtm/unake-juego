@@ -20,13 +20,17 @@ class Palo extends Phaser.Scene {
     this.picando = false; // si la anterior acabó en pleno picado, Perico no volvía a disparar
     this.proximo = 1.2;
 
-    fondo(this, 'bg-cielo');
+    // bg-cielo está hecho en espejo (dos lunas y la costura en el centro): solo se enseña su mitad izquierda.
+    const cielo = this.add.image(0, ALTO / 2, 'bg-cielo').setOrigin(0, 0.5);
+    const escCielo = ALTO / cielo.height;
+    cielo.setCrop(0, 0, Math.min(cielo.width, Math.ceil(ANCHO / escCielo) + 4), cielo.height).setScale(Math.max(escCielo, ANCHO / (cielo.width / 2)));
     this.add.rectangle(ANCHO / 2, ALTO / 2, ANCHO, ALTO, HEX.tinta, 0.15);
     // Cotine, hinchada, con la tarta en la cabeza.
     this.cotine = this.add.container(260, 380).setDepth(10);
-    const cuerpo = this.add.image(0, 0, 'cotine-plop');
-    cuerpo.setScale(150 / cuerpo.height);
-    const tarta = this.add.image(0, -86, 'tarta');
+    // Su dibujo hinchada si está; si no, la de siempre.
+    const cuerpo = this.add.image(0, 0, this.textures.exists('obj-cotine-hinchada') ? 'obj-cotine-hinchada' : 'cotine-plop');
+    cuerpo.setScale((this.textures.exists('obj-cotine-hinchada') ? 190 : 150) / cuerpo.height);
+    const tarta = this.add.image(0, this.textures.exists('obj-cotine-hinchada') ? -104 : -86, 'tarta');
     tarta.setScale(60 / tarta.height);
     this.cotine.add([cuerpo, tarta]);
     this.tweens.add({ targets: this.cotine, scaleX: 1.05, scaleY: 0.96, duration: 500, yoyo: true, repeat: -1 });
@@ -164,7 +168,8 @@ class Palo extends Phaser.Scene {
     const puntos = Math.round((VIDA_PERICO - this.hp) * 10 + (gana ? this.vidas * 250 + Math.max(0, 90 - this.t) * 5 : 0));
     if (gana) {
       // KO a lo Cuphead: congelado, rótulo y el palo vuelve a su dueña.
-      this.cameras.main.flash(200);
+      // Sin destello a pantalla completa: el rótulo y un salpicón de pipas sobre Perico.
+      if (this.perico) { const ch = this.add.particles(this.perico.x, this.perico.y - 120, 'miga', { speed: { min: 140, max: 360 }, gravityY: 700, scale: { start: 0.9, end: 0.2 }, lifespan: 650, tint: [0xffd23f, 0xfff6a8, 0xd9a441], emitting: false }).setDepth(59); ch.explode(24); this.time.delayedCall(700, () => ch.destroy()); }
       const t = texto(this, ANCHO / 2, ALTO / 2, '¡PALO RECUPERADO!', 86, COLOR.amarillo).setDepth(60).setScale(0).setAngle(-6);
       this.tweens.add({ targets: t, scale: 1, duration: 300, ease: 'Back.out' });
       sfx(this, 'platillo', { volume: 0.6 });

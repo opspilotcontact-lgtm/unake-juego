@@ -142,7 +142,7 @@ class Aires extends Phaser.Scene {
     if (this._acabado) return;
     this._acabado = true;
     this.activo = false;
-    this.puntos += Math.round(this.mejor * 600) + (llega ? 300 + Math.round(this.restante * 10) : 0);
+    this.puntos += Math.round(this.mejor * 600) + (llega ? 300 + Math.round(this.restante * 20) : 0);
     if (llega) {
       this.lasslow.setTexture('lasslow-digno').setScale(130 / this.lasslow.height);
       bocadillo(this, ANCHO / 2, 330, 'Señorita… buenas noches.', { tam: 24 }).setDepth(40);

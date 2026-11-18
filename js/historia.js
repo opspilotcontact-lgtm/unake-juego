@@ -17,6 +17,7 @@ function sumarStat(k, n = 1) {
 function desdeCap(k) { return stat(k) - ((ESTADO.baseCap && ESTADO.baseCap[k]) || 0); }
 function estrellasDeMision(k) { return ESTADO.estrellas[k] || 0; }
 
+// Los capítulos nuevos de los actos I y II vienen de contenido/actos12.js (carga antes que este archivo).
 const CAPITULOS = [
   // ---------- Acto I · La aso ----------
   {
@@ -24,36 +25,45 @@ const CAPITULOS = [
     titulo: '¿Una qué?',
     arte: 'cap-cap1',
     intro: [
-      // La idea del juego, antes que nada: los dos mundos.
-      ['narrador', 'Esto es el barrio. De día es un barrio normal: la tienda, la plaza, gente con prisa.'],
-      ['narrador', 'Pero cuando fumas y te hace efecto, pasas al MUNDO HUMO: el mismo barrio, de noche, con neones, nubes… y Unaké abierto.'],
-      ['vuper', 'Anoche estuve allí. Quiero volver. Dicen que en Unaké, la aso del barrio, se está de lujo. Solo entra quien se sabe la contraseña.'],
-      // El bucle de la contraseña, tal cual el E00 (guion-v1-canon.md).
-      ['perico', '¿Contraseña? ¿Contraseña?'],
-      ['vuper', 'Unaké.'],
-      ['perico', '¿Una qué?'],
-      ['vuper', 'Una aso.'],
-      ['perico', '¿De quién?'],
-      ['vuper', 'De los hermanos Aso, Palicaso y Blancaso, que tienen Unaké.'],
-      ['perico', '¿Una qué?'],
-      ['narrador', 'Vuper abre la boca… y la cierra. Está en un bucle.'],
-      ['narrador', 'Para fumar hace falta papel, boquilla, mechero y la bolsita de la aso. Y para todo eso, monchis. Vamos paso a paso.'],
+      // El piloto de la serie (guion-v3): la entrada en frío ya se ha jugado en viñetas (escenas/intro.js).
+      ['vuper', 'Otra vez ese sueño. Una puerta, un pájaro y media contraseña.'],
+      ['narrador', 'De día, el barrio es normal: curras y nadie te mira. Con humo, es el MUNDO HUMO: el mismo barrio, de noche… y Unaké abierto.'],
+      ['vuper', 'Esta noche llego hasta el final. Primero, a currar.'],
     ],
     objetivos: [
       { texto: 'Gana monchis: haz un encargo de la tienda de 24 h', hecho: () => stat('entregas') >= 1 },
-      { texto: 'Entra en Unaké: Perico pide la contraseña', hecho: () => ESTADO.dentro },
-      { texto: 'Lía y fuma en el sofá: vuelve al mundo humo', hecho: () => stat('fumadas') >= 1 },
+      { texto: 'Entra en Unaké: llega hasta el final de la contraseña', hecho: () => ESTADO.dentro },
+      { texto: 'Lía y fuma en el sofá: así se vuelve al humo cada noche', hecho: () => stat('fumadas') >= 1 },
     ],
-    // Momento persona de Perico (y siembra del cap. 6).
+    // Blancaso llevaba la cuenta de las noches (los palotes del piloto). Hoy no apunta ninguno.
+    // Lo de las barras (colocón, hambre, vida) ya no va aquí: lo cuentan los consejos de guia.js cuando hace falta.
     cierre: [
-      ['perico', 'Pasa, pasa. Pero que conste que te he visto, rider.'],
-      ['vuper', '¿Visto el qué?'],
-      ['perico', 'Pin pin.'],
-      ['narrador', 'Bienvenido al mundo humo. Aquí están las misiones (los «!» sobre la gente) y todo paga más.'],
-      ['narrador', 'Mira las barras de arriba: el COLOCÓN baja solo, y cuando se acaba vuelves al día. El HAMBRE sube: come en la tienda o perderás VIDA.'],
-      ['vuper', 'Vale, vale… ¿Y ahora qué?'],
-      ['narrador', 'Ahora el barrio es tuyo. Tus objetivos, arriba a la derecha. Tus logros, en «Logros». Y la historia acaba de empezar.'],
+      ['blancaso', 'Otra vez t… No. Espera. Hoy has entrado por la puerta.'],
+      ['narrador', 'Abre su agenda: páginas y páginas de palotes, de cinco en cinco. Hoy no apunta ninguno.'],
+      ['blancaso', 'Siempre llegabas hasta aquí. Y luego venía ese.'],
+      ['narrador', 'Si te quedas sin vida, viene «ese»: un amarillo, y despiertas en tu cuarto. Otro palote. Desde hoy, el barrio es tuyo.'],
+      ['vuper', '¿Quién es «ese»?'],
+      ['puky', '¿Me llamabais?'],
+      ['blancaso', 'Puky, no. Hoy no te toca.'],
     ],
+    // Los poscréditos del piloto, en cómic: la puerta no tiene cerradura, y acaba como empieza.
+    posCierre: {
+      opciones: { fondo: 'fuera', mundo: 'humo' },
+      lineas: [
+        ['titulo', 'Poscréditos · Esa misma noche, en la puerta'],
+        ['perico', 'Contraseña. Contraseña.'],
+        ['narrador', 'La puerta se abre de un empujón. Sale Lasslow, de culo, con una bolsa de basura. Por dentro, la puerta está llena de palotes.'],
+        ['lasslow', 'Buenas noches, Perico. ¿Otra vez le has hecho lo de la contraseña al chaval?'],
+        ['perico', 'Nuevo. Nuevo.'],
+        ['lasslow', 'Perico. Que la puerta no tiene cerradura.'],
+        ['perico', 'Si entra, no vuelve. No vuelve.'],
+        ['narrador', 'Lasslow le mira. Es la única vez en toda la noche que no se ríe.'],
+        ['lasslow', '…Buenas noches, Perico.'],
+        ['perico', 'Contraseña. Contraseña.'],
+        ['pompa', '…De los hermanos Aso.'],
+        ['perico', '¡Chsss!'],
+      ],
+    },
     premio: 30,
   },
   {
@@ -83,12 +93,13 @@ const CAPITULOS = [
     cierre: [
       ['blancaso', 'Algún día me sentaré ahí, en mi sofá, a disfrutar de mi propio bar. Solo eso.'],
       ['palicaso', '¡Escucha! Hoy mismo, si quieres. Y mientras te cuento una cosa…'],
-      ['blancaso', 'Otra vez no…'],
+      ['blancaso', 'Mejor algún día.'],
     ],
     premio: 40,
   },
 
   // ---------- Acto II · Todo se tuerce ----------
+  CAPITULOS_ACTOS12.pompa, // contenido/actos12.js
   {
     id: 'blancazo',
     titulo: 'El blancazo',
@@ -99,7 +110,7 @@ const CAPITULOS = [
       ['narrador', 'Nadie olvida la noche que estuvo de Blancaso.'],
     ],
     objetivos: [
-      { texto: 'En el sofá, pásale el porro a Blancaso (P)', hecho: () => stat('blancasoFumo') >= 1 },
+      { texto: 'En el sofá, pásale el porro a Blancaso', hecho: () => stat('blancasoFumo') >= 1 },
       { texto: 'Salva a Blancaso de Puky', hecho: () => stat('blancazos') >= 1 },
     ],
     // Momento persona de Puky: lo único que quiere.
@@ -107,16 +118,17 @@ const CAPITULOS = [
       ['puky', 'Yo solo quería que me invitarais…'],
       ['blancaso', '¿A ti? …Bueno. Algún día.'],
       ['puky', '¿Me llamabais? ¿Ya? ¿Ahora?'],
-      ['blancaso', 'Otra vez no…'],
+      ['blancaso', 'Algún día, he dicho. Lo apunto para dentro de mucho.'],
     ],
     premio: 60,
   },
+  CAPITULOS_ACTOS12['mejor-amigo'], // contenido/actos12.js
   {
     id: 'senor',
     titulo: 'Un señor ante el casero',
     arte: 'cap-cap4',
     intro: [
-      ['blancaso', 'Gracias… otra vez. Pero el casero viene a cenar para inspeccionar, y se me han volado sus facturas.'],
+      ['blancaso', 'Ya estoy entero. Más o menos. Pero el casero viene a cenar para inspeccionar, y se me han volado sus facturas.'],
       ['casero', 'Buenas. Soy el casero. El jueves ceno aquí y veo el local. Y las cuentas.'],
       ['lasslow', 'Para una cena con el casero hace falta un señor. Y el señor soy yo. Si encuentro mi pajarita.'],
       ['perico', 'Pin pin. He oído que en tu cuarto inventas cosas, rider. Cosas de héroe.'],
@@ -128,18 +140,22 @@ const CAPITULOS = [
       { texto: 'Blancaso: las facturas del casero', hecho: () => stat('sit_facturas') >= 1 },
       { texto: 'Compra un invento en el taller de tu cuarto', hecho: () => Object.keys(ESTADO.inventos).length >= 1 },
       { texto: 'Sube Unaké a «Bareto» (nivel 5 del negocio)', hecho: () => cuentasNegocio().total >= 5, progreso: () => `${cuentasNegocio().total}/5` },
-      { texto: 'Hucha de la aso: 400 monchis', hecho: () => ESTADO.hucha >= 400, progreso: () => `${ESTADO.hucha}/400` },
+      { texto: 'Hucha de la aso: 300 monchis', hecho: () => ESTADO.hucha >= 300, progreso: () => `${ESTADO.hucha}/300` },
     ],
     // Momento persona de Lasslow (un señor de verdad)… y el estado se queda el último chiste.
     cierre: [
-      ['casero', 'La cena, correcta. El caballero, muy caballero. Ese olor, no tanto.'],
+      ['casero', 'La cena, correcta. El caballero, muy caballero.'],
+      ['narrador', 'A Lasslow se le limpian los ojos. Alguien que no le conoce le ha llamado caballero.'],
+      ['casero', 'Volveré. De noche. A ver qué es esto de una aso de verdad. …Y ese olor.'],
       ['lasslow', 'Ha sido el periquito.'],
-      ['casero', 'Volveré. De noche. A ver qué es esto de una aso de verdad.'],
+      ['perico', 'Pin pin. Yo no he sido.'],
     ],
     premio: 80,
   },
+  CAPITULOS_ACTOS12.nuevo, // contenido/actos12.js
   {
     id: 'caja',
+    arte: 'cap-caja',
     titulo: 'La caja',
     intro: [
       ['blancaso', 'La hucha no cuadra. Faltan monchis. Muchos.'],
@@ -168,13 +184,15 @@ const CAPITULOS = [
       ['palicaso', 'Lo de la máquina era para salvar el bar. Lo dije. Nadie me escuchó.'],
       ['vuper', 'Yo te escucho.'],
       ['palicaso', '¿Sí? …Pues escucha, escucha, que esto tiene historia…'],
-      ['blancaso', 'Otra vez no…'],
+      ['blancaso', 'Yo me voy a cuadrar la caja. Es más corto.'],
     ],
     premio: 90,
   },
+  CAPITULOS_ACTOS12.escucha, // contenido/actos12.js
   {
     id: 'perico',
     titulo: 'Perico lo sabe',
+    arte: 'cap-perico',
     intro: [
       ['perico', '¡VUPER ES MONCHIMAN! ¡VUPER ES MONCHIMAN!'],
       ['lasslow', 'JA… JAJAJA. Perdón. JAJAJA.'],
@@ -188,7 +206,7 @@ const CAPITULOS = [
       { texto: 'Calla a Perico: gánale a ¡Periquito! (en la puerta, de noche)', hecho: () => stat('gana_Periquito') >= 1 },
       { texto: 'Gánale la apuesta de pipas a Perico', hecho: () => stat('sit_apuesta') >= 1 || desdeCap('gana_Pipas') >= 1 },
       { texto: 'De día, habla con Perico a solas', hecho: () => stat('secretoPerico') >= 1 },
-      { texto: 'Hucha de la aso: 550 monchis', hecho: () => ESTADO.hucha >= 550, progreso: () => `${ESTADO.hucha}/550` },
+      { texto: 'Hucha de la aso: 500 monchis', hecho: () => ESTADO.hucha >= 500, progreso: () => `${ESTADO.hucha}/500` },
     ],
     cierre: [
       ['perico', 'Oye, rider. ¿Pipa?'],
@@ -198,13 +216,25 @@ const CAPITULOS = [
     premio: 100,
   },
 
-  // ---------- Acto III · La noche más larga ----------
+  // ---------- Acto III · Lo que no se cuenta ----------
+  CAPITULOS_ACTOS34.furgo, // contenido/actos34.js
+  CAPITULOS_ACTOS34.feria, // contenido/actos34.js
+  CAPITULOS_ACTOS34.senal, // contenido/actos34.js
+  CAPITULOS_ACTOS34.miron, // contenido/actos34.js (fusión «Te están mirando» + «¿Quién tiene mi mechero?»)
+
+  // ---------- Acto IV · La noche más larga ----------
   {
     id: 'inspeccion',
     titulo: 'La inspección',
+    arte: 'cap-inspeccion',
     intro: [
+      ['titulo', 'Acto IV · La noche más larga'],
       ['narrador', 'La noche de la inspección, a medio barrio le da un amarillo. La M de tu cuarto parpadea.'],
       ['casero', 'Buenas noches. Vengo a ver esta aso. Por dentro. Y a fondo.'],
+      ['casero', 'Ya os dije que había leído los carteles del barrio. «Monchiman vive cerca». Y digo yo: ¿qué más vive cerca?'],
+      ['miron', 'Yo se lo dije.'],
+      ['blancaso', 'Mirón, ¿quién te ha avisado de que hoy venía?'],
+      ['miron', 'Nadie. Yo ya estaba mirando.'],
       ['pompa', '…Y yo pincho esta noche. Si alguien recupera mis discos. El casero se los quedó de fianza.'],
       ['vuper', 'Vale, vale… Nadie sabe que soy yo. Que siga así.'],
     ],
@@ -212,29 +242,32 @@ const CAPITULOS = [
       { texto: 'Recupera los discos de la Pompa: cuélate de día en casa del casero (habla con la Pompa)', hecho: () => stat('gana_Sigilo') >= 1 },
       { texto: 'Pasa la inspección del casero (está en Unaké, de noche)', hecho: () => stat('gana_Inspeccion') >= 1 },
       { texto: 'Al casero le ha dado un amarillo: la M de tu cuarto (rescate)', hecho: () => desdeCap('gana_Rescate') >= 1 },
-      { texto: 'Unaké tiene que aguantar una inspección: «Bareto» (nivel 5)', hecho: () => cuentasNegocio().total >= 5, progreso: () => `${cuentasNegocio().total}/5` },
+      { texto: 'Unaké tiene que impresionar al casero: «Local de moda» (nivel 20)', hecho: () => cuentasNegocio().total >= 20, progreso: () => `${cuentasNegocio().total}/20` },
       { texto: 'Hucha de la aso: 750 monchis', hecho: () => ESTADO.hucha >= 750, progreso: () => `${ESTADO.hucha}/750` },
     ],
     cierre: [
       ['casero', '¿Qué… qué ha pasado? Estaba en el sofá, todo daba vueltas, y luego… patatas.'],
       ['blancaso', 'Ha venido Monchiman. Viene cuando hace falta.'],
-      ['casero', 'Pues este sitio cuida de la gente. El alquiler, lo que tengáis en la hucha. Y no se lo contéis a nadie.'],
+      ['narrador', 'Al casero se le limpian los ojos. Hacía años que nadie cuidaba de él.'],
+      ['casero', 'Pues este sitio cuida de la gente. La subida, olvidada. Mil, como dije, y en paz. Y no se lo contéis a nadie.'],
       ['palicaso', '¡Escucha, escucha! ¿Eso es un sí?'],
       ['casero', 'Es un «no me hagáis volver».'],
     ],
     premio: 120,
   },
+  CAPITULOS_ACTOS34.pesado, // contenido/actos34.js
   {
     id: 'epica',
     titulo: 'La noche épica',
+    arte: 'cap-epica',
     intro: [
-      ['blancaso', 'Faltan los últimos. Si llegamos a mil, esta noche… me siento.'],
+      ['blancaso', 'Faltan los últimos. Si no llegamos a mil, el casero cierra. Si llegamos… me siento.'],
       ['cotine', 'Y yo hago una tarta. Entera. Para ti. Te lo juro.'],
       ['perico', 'Pin pin. Me apuesto mis pipas a que se la come.'],
       ['palicaso', '¡Escucha! Si se salva el bar, fiesta. Y si no, también. Pero menos.'],
     ],
     objetivos: [
-      { texto: 'Cotine sirve una tarta entera (Tarta, 2 estrellas)', hecho: () => estrellasDeMision('Tarta') >= 2 },
+      { texto: 'Ayuda a Cotine a servir su tarta (gana la Tarta esta noche)', hecho: () => desdeCap('gana_Tarta') >= 1 },
       { texto: `Completa la hucha: ${META_HUCHA} monchis`, hecho: () => ESTADO.hucha >= META_HUCHA, progreso: () => `${ESTADO.hucha}/${META_HUCHA}` },
     ],
     // El final: la noche que estuvo de Blancaso, esta vez por buena. Momento persona de Vuper.
@@ -244,8 +277,9 @@ const CAPITULOS = [
       ['palicaso', '¡Escucha, escucha! ¡Un brindis! ¡Por Monchiman, que le salvó la vida al casero!'],
       ['lasslow', '¡Por Monchiman! JAJAJA.'],
       ['blancaso', 'Y por Vuper. Que siempre está, aunque nadie le vea.'],
+      ['narrador', 'A Vuper se le limpian los ojos. Por una vez, alguien le ha visto.'],
       ['narrador', 'Nadie olvida la noche que estuvo de Blancaso. Esta vez, por buena.'],
-      ['lasslow', '¡Que se me ha escapao!'],
+      ['blancaso', 'Lo apunto.'],
     ],
     premio: 0,
     final: true,
@@ -258,7 +292,7 @@ const CAPITULOS = [
 // capítulos entre los actuales sin desplazar nada. El orden definitivo previsto, para cuando se
 // inserten (los que aún no están en CAPITULOS cuentan como «futuro» en las ayudas de abajo):
 //   una-que, cuota, pompa, blancazo, mejor-amigo, senor, nuevo, caja, escucha, perico, furgo,
-//   feria, senal, miron, breathe, mechero, inspeccion, pesado, epica
+//   feria, senal, miron, breathe, mechero, inspeccion, pesado, epica  (16 finales: una-que … furgo, feria, senal, miron, inspeccion, pesado, epica)
 // Un id nuevo se coloca en su sitio dentro de CAPITULOS y listo; ningún `desde` hay que tocarlo.
 const MODO_DEV = ['localhost', '127.0.0.1', 'unake.test', ''].includes(location.hostname) || /[?&]dev\b/.test(location.search);
 
@@ -346,6 +380,9 @@ migrarCapitulos();
 migrarTarea();
 // Al guardar: los ids reflejan el índice en curso (lo que viaja en la partida es el id).
 function sincronizarCapId() {
+  // Partida nueva de esta sesión: aún sin arco/capVersion (toda partida cargada pasa por la migración, que los pone).
+  // Sin esto se guardaba sin versión y, al recargar, la migración la leía como índice viejo y la devolvía a «La caja».
+  if (ESTADO.arco === undefined) { ESTADO.arco = 2; ESTADO.capVersion = 2; }
   if (ESTADO.capVersion !== 2) return;
   ESTADO.capId = capId();
   const c = (ESTADO.introCap ?? -1) >= 0 ? CAPITULOS[ESTADO.introCap] : null;
@@ -368,13 +405,28 @@ const PERSONAJES_TAREA = [['pompa', /\bPompa\b/], ['puky', /\bPuky\b/], ['lasslo
 // Quién da cada minijuego cuando el texto no deja claro (si no, el primero que nombra el texto).
 const MINIJUEGO_CON = { EnSuPunto: 'pompa', DJ: 'pompa', PorDebajo: 'puky', Rendija: 'puky', Cuentas: 'blancaso', Compostura: 'lasslow', Escucha: 'palicaso', Barra: 'palicaso' };
 // Cosas que se compran para un recado (tienda de 24 h); `arte` se resuelve al pintar (arteO en barrio.js).
-const OBJETOS_RECADO = { cerrojo: { nombre: 'Cerrojo grande', precio: 25, efecto: 'Recado de Blancaso', arte: 'obj-cerrojo' } };
+const OBJETOS_RECADO = {
+  cerrojo: { nombre: 'Cerrojo grande', precio: 25, efecto: 'Recado de Blancaso', arte: 'obj-cerrojo' },
+  mascara: { nombre: 'Tela roja y una M', precio: 15, efecto: 'Para tu primera máscara', arte: 'obj-mascara-primera' }, // 12 · La señal amarilla
+  pruebas: { nombre: 'Huella, antifaz y recibo', precio: 15, efecto: 'Pruebas falsas para el Mirón', arte: 'obj-acc-antifaz' }, // 13 · Te están mirando
+};
 // Cosas nuevas para recoger (las de situaciones.js se usan tal cual).
 const RECOGIBLES_TAREA = {
   agua: { sprite: 'obj-botella-agua', respaldo: 'lata', nombre: 'agua', escala: 0.5 },
   sal: { sprite: 'obj-bolsa-salado', respaldo: 'patatas', nombre: 'algo salado', escala: 0.5 },
   flor: { sprite: 'obj-flor-humo', respaldo: 'caramelo', nombre: 'flor', escala: 0.5 },
   paquete: { sprite: 'obj-caja', respaldo: 'caja', nombre: 'paquete', escala: 0.6 },
+  // La furgo (11): piezas con dibujo prestado hasta que haya sprite propio.
+  llaves: { sprite: 'obj-llave', respaldo: 'lata', nombre: 'llaves', escala: 0.5 },
+  bateria: { sprite: 'obj-bateria', respaldo: 'caja', nombre: 'batería', escala: 0.4 },
+  ambientador: { sprite: 'obj-ambientador', respaldo: 'caramelo', nombre: 'ambientador de pino', escala: 0.4 },
+  // La feria (11 y 12): dibujos prestados hasta que haya sprite propio.
+  cartel: { sprite: 'obj-cartel-roto', respaldo: 'caja', nombre: 'trozos del cartel', escala: 0.4 },
+  mota: { sprite: 'obj-mota-rosa', respaldo: 'caramelo', nombre: 'mota rosa', escala: 0.3 },
+  hilo: { sprite: 'obj-palo-pringado', respaldo: 'caramelo', nombre: 'hilo de almíbar', escala: 0.4 },
+  huella: { sprite: 'obj-cono', respaldo: 'lata', nombre: 'agujeritos', escala: 0.4 },
+  // El Mirón (13): los mecheros de la percha de Perico.
+  mechero: { sprite: 'obj-mechero-grande', respaldo: 'caramelo', nombre: 'mecheros de colores', escala: 0.4 },
 };
 function recogibleDe(tipo) {
   return (typeof RECOGIBLES !== 'undefined' && RECOGIBLES[tipo]) || RECOGIBLES_TAREA[tipo];
@@ -466,7 +518,13 @@ function desdeTarea(k) { return stat(k) - ((ESTADO.tarea && ESTADO.tarea.base &&
 function tareaCumplida(t, T) {
   if (T.cumplida) return true;
   switch (t.tipo) {
-    case 'minijuego': return desdeTarea('gana_' + t.minijuego) >= 1;
+    // `cumple`: contador que la da por hecha (p. ej. jugada_Control: jugarlo basta, también si te pillan; nada bloquea la historia).
+    // `multa`: si se cumple sin ganar, se cobra una sola vez (T.multado), sin bajar de cero.
+    case 'minijuego': {
+      const hecha = desdeTarea(t.cumple || 'gana_' + t.minijuego) >= 1;
+      if (hecha && t.multa && !T.multado && desdeTarea('gana_' + t.minijuego) < 1) { T.multado = true; ESTADO.monchis = Math.max(0, ESTADO.monchis - t.multa); }
+      return hecha;
+    }
     case 'recoger': return T.total > 0 && T.hechos >= T.total;
     case 'recado': return !!T.objeto;
     case 'flashback': return t.minijuego ? desdeTarea('gana_' + t.minijuego) >= 1 : false;

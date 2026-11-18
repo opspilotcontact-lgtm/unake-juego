@@ -245,6 +245,7 @@ const ESTADO_INICIAL = {
   ocultarObjetivos: false,
   // Rendimiento por repetición: el último minijuego jugado, cuántas veces seguidas y cuándo (ms).
   repeticion: null,
+  msJugados: 0,     // tiempo jugado (escenas/cuenta.js); las partidas viejas empiezan a contar en 0
 };
 const UMBRAL_HUMO = 30;
 function enMundoHumo() { return ESTADO.colocon >= UMBRAL_HUMO; }
@@ -287,22 +288,22 @@ const MISIONES = {
   },
   Lasslow: {
     nombre: 'Un señor', sprite: 'lasslow-digno', umbrales: [400, 1000, 1800],
-    texto: '«Esta noche ceno con el casero y soy un señor.» Chiste: ESPACIO cuando el círculo toque el anillo. Tripa: P solo cuando suene un ruido.',
+    texto: '«Esta noche ceno con el casero y soy un señor.» Chiste: pulsa cuando el círculo toque el anillo. Tripa: aprieta solo cuando suene un ruido.',
   },
   Rescate: {
-    nombre: '¡Que no cunda el amarillo!', sprite: 'monchiman', umbrales: [400, 900, 1500],
+    nombre: '¡Que no cunda el amarillo!', sprite: 'monchiman', umbrales: [300, 800, 1250], escala: true,
     texto: 'Dulce, salado y un resucitador. Llega a Blancaso antes que Puky.',
   },
   Blancazo: {
-    nombre: 'El blancazo', sprite: 'puky-eructo', umbrales: [400, 800, 1200],
-    texto: 'A Blancaso le ha dado un blancaso y Puky viene a por él. Monchiman contra Puky: esquiva la pota, dispara caramelos y lánzale un resucitador.',
+    nombre: 'El blancazo', sprite: 'puky-eructo', umbrales: [400, 800, 1200], escala: true,
+    texto: 'A Blancaso le ha dado un blancazo y Puky viene a por él. Monchiman contra Puky: esquiva la pota, dispara caramelos y lánzale un resucitador.',
   },
   Barra: {
     nombre: 'Noche de barra', sprite: 'palicaso', umbrales: [1500, 3000, 4500],
-    texto: 'Los de la aso piden a la barra. Sirve a cada uno lo suyo (1-4) antes de que se cansen. Si se cuela Puky, échalo (X).',
+    texto: 'Los de la aso piden a la barra. Sirve a cada uno lo suyo antes de que se cansen. Si se cuela Puky, échalo.',
   },
   Pipas: {
-    nombre: 'La apuesta de pipas', sprite: 'perico-pipas', umbrales: [300, 700, 1200],
+    nombre: 'La apuesta de pipas', sprite: 'perico-pipas', umbrales: [500, 1000, 1800],
     texto: 'Mete pipas en la papelera: fija el ángulo y la fuerza con ESPACIO. Ojo al viento.',
   },
   DJ: {
@@ -310,11 +311,11 @@ const MISIONES = {
     texto: 'Las burbujas caen al ritmo: pulsa ← ↓ → (o A S D) cuando lleguen a la línea. Si fallas mucho, la Pompa revienta.',
   },
   Cuentas: {
-    nombre: 'La caja no cuadra', sprite: 'blancaso', umbrales: [300, 700, 1200],
-    texto: 'Clasifica lo que cae: monedas ←, billetes →, facturas ↓. Tres fallos y a Blancaso le da el bajón.',
+    nombre: 'La caja no cuadra', sprite: 'blancaso', umbrales: [1200, 3000, 5000],
+    texto: 'Clasifica lo que cae: monedas ←, billetes →, facturas ↓. Cinco fallos y a Blancaso le da el bajón.',
   },
   Farol: {
-    nombre: 'El farol', sprite: 'palicaso-contando', umbrales: [600, 1300, 2200],
+    nombre: 'El farol', sprite: 'palicaso-contando', umbrales: [900, 2200, 3600],
     texto: 'Dados con Palicaso. Él canta lo que ha sacado: ¿te lo crees o es un farol? Cuando miente, se enrolla (y a veces suda).',
   },
   Periquito: {
@@ -322,21 +323,32 @@ const MISIONES = {
     texto: 'Perico quiere gritar que Vuper es Monchiman. Grítale «¡periquito!» justo cuando empiece con «Mon…». Ojo con las fintas.',
   },
   Inspeccion: {
-    nombre: 'La inspección', sprite: 'obj-llave', umbrales: [500, 1100, 1800],
+    nombre: 'La inspección', sprite: 'obj-llave', umbrales: [500, 1100, 1800], escala: true,
     texto: 'El casero recorre Unaké. Cuando NO mire, mantén pulsado lo que no debe ver hasta esconderlo. Si se gira y te pilla, sospecha. La llave tintinea antes de girarse.',
   },
   Aires: {
-    nombre: 'Por los aires', sprite: 'lasslow-pedo', umbrales: [700, 1000, 1300],
+    nombre: 'Por los aires', sprite: 'lasslow-pedo', umbrales: [1000, 1250, 1500], escala: true,
     texto: 'Lasslow sube hasta la Pompa a base de pedo. MANTÉN para soltar gas (sube), suelta para caer, ← → para moverte. La comida recarga el gas; las lámparas te tiran.',
   },
   Palo: {
-    nombre: 'El palo', sprite: 'cotine-plop', umbrales: [1000, 1350, 1700],
+    nombre: 'El palo', sprite: 'cotine-plop', umbrales: [1300, 1600, 1950], escala: true,
     texto: 'Perico tiene el palo de Cotine. Muévete, MANTÉN para disparar virutas de azúcar y esquiva sus pipas. Tres fases, como un jefe de verdad.',
   },
   Sigilo: {
-    nombre: 'Los discos de la Pompa', sprite: 'pompa-mira', umbrales: [900, 1500, 2100],
+    nombre: 'Los discos de la Pompa', sprite: 'pompa-mira', umbrales: [1300, 1800, 2300], escala: true,
     texto: 'De día, cuélate en casa del casero y recupera los 3 discos. Evita los conos de visión, MANTÉN Mayús para no hacer ruido y escóndete en las macetas.',
   },
+  Camaras: {
+    nombre: 'Las cámaras de Unaké', sprite: 'obj-lupa', umbrales: [450, 950, 1200], escala: true,
+    texto: 'Alguien se lleva cosas del bar. Cambia de cámara (1-6), usa la visión NOCTURNA en lo oscuro y la TÉRMICA tras las cajas, y toca al culpable mientras lo hace. La pila se gasta.',
+  },
+  Tormenta: { nombre: 'La tormenta', sprite: 'n-madre-enfadada', umbrales: [800, 1300, 1750], escala: true, texto: 'Tu madre ha visto que llevas el humo puesto y viene hecha tormenta. Huye por el barrio: salta, agáchate, corre con aguante y escóndete tras las cosas. Hasta tu cuarto, y que no te alcance.' },
+  TiroPato: { nombre: 'Tiro al pato de humo', sprite: 'feriante', umbrales: [600, 2200, 2800], texto: 'La caseta de la feria: apunta y dispara corchos a los patos de humo. Los del fondo valen más, el dorado mucho más y los aciertos seguidos multiplican. Recarga a tiempo y no le des a quien no es pato.' },
+  Mirando: { nombre: 'Te están mirando', sprite: 'miron', umbrales: [350, 800, 1050], escala: true, texto: 'El Mirón ve el barrio entero con sus ojos a destiempo. Cruza tres tramos: anda con los ojos cerrados, quédate quieto cuando miren y escóndete tras los cubos. Tres avistamientos y se acabó.' },
+  Casetas: { nombre: 'Las casetas de la feria', sprite: 'feriante', umbrales: [2200, 2550, 2800], escala: true, texto: 'Tres casetas, tres fichas: tiro al pato, la noria (que no se vuelque nadie) y el martillo (ritmo y campana). Se juegan en cualquier orden y las fichas se guardan.' },
+  Recuerdo: { nombre: 'El recuerdo', sprite: 'vuper-colocado', umbrales: [400, 800, 900], escala: true, texto: 'Tu primer amarillo: llega a la luz de la salida. Los mandos pesan y a ratos se dan la vuelta. Si el hilo amarillo te alcanza, retrocedes. Sin prisa.' },
+  Recreativa: { nombre: '¡Que no cunda el amarillo! · La recreativa', sprite: 'monchiman', umbrales: [1500, 6000, 12000], texto: 'La recreativa de tu cuarto: vista desde arriba, muévete y apunta (en móvil, joystick y disparo automático). Dulce rápido, salado en área y resucitador para curar a un cliente tocado. Los clientes sueltan potenciadores al salvarlos. Cada 5 oleadas, jefe. Se acaba al perder a tres.' },
+  Amarillo: { nombre: 'Tu propio amarillo', sprite: 'monchiman', umbrales: [500, 1000, 1400], escala: true, texto: 'El jefe final: tu propio amarillo, enorme y deformado. Cuatro fases, y en cada una te echa una mano alguien de la aso. Esquiva lo que avisa, salta y devuelve lo rosa con la contra.' },
   Reparto: {
     nombre: 'Encargos de la tienda', sprite: 'vuper-reparto', umbrales: [2, 4, 7],
     texto: 'Lleva monchis por el barrio antes de que se enfríen. Cada entrega seguida multiplica lo que cobras.',
@@ -370,14 +382,20 @@ function estrellas(scene, x, y, n, tam = 22) {
 // La escalera de cada minijuego: las tres estrellas son los niveles 1-3 y después siempre hay uno más,
 // que pide un 20 % más y paga más. Así cada minijuego tiene algo que perseguir aunque ya tengas las estrellas.
 function nivelDe(clave) { return (ESTADO.niveles && ESTADO.niveles[clave]) || 1; }
+// Los juegos de puntuación con techo (`escala: true`) no piden más puntos desde el nivel 4: la meta se queda en el 3★
+// y es el propio juego el que se endurece con el nivel. Si no, la escalera se acababa en silencio (revisión 17/11, §1.4).
+// Los que definen su misión en su escena (EnSuPunto, Rendija, Control, Compostura) van en ESCALA_EN_ESCENA.
+const ESCALA_EN_ESCENA = ['EnSuPunto', 'Rendija', 'Control', 'Compostura'];
+function escalaNivel(clave) { return !!(MISIONES[clave] && MISIONES[clave].escala) || ESCALA_EN_ESCENA.includes(clave); }
 function metaNivel(clave, n = nivelDe(clave)) {
   const u = MISIONES[clave].umbrales;
   if (n <= 3) return u[n - 1];
+  if (escalaNivel(clave)) return u[2];
   const m = u[2] * (1 + 0.2 * (n - 3));
   return u[2] >= 100 ? Math.round(m / 50) * 50 : Math.ceil(m);
 }
-// Los tres primeros niveles pagan lo de siempre; desde el 4.º el premio se recorta (sumidero).
-function premioNivel(n) { return n <= 3 ? 20 + 15 * n : 40 + 10 * (n - 3); }
+// Cada nivel paga más que el anterior: 35, 50, 65, 75, 85…
+function premioNivel(n) { return n <= 3 ? 20 + 15 * n : 65 + 10 * (n - 3); }
 
 // ---- Rendimiento por repetición: el mismo minijuego seguido paga cada vez menos ----
 const PAGO_REPETIDO = [1, 0.75, 0.5, 0.3]; // 1.ª, 2.ª, 3.ª y de la 4.ª en adelante
@@ -407,7 +425,9 @@ function apuntar(clave, puntos, monchis, gana = true) {
   // Perdiendo no se ganan estrellas, aunque los puntos lleguen al umbral.
   const ahora = gana ? Math.max(antes, estrellasDe(clave, puntos)) : antes;
   ESTADO.estrellas[clave] = ahora;
-  ESTADO.monchis += monchis;
+  // Premio único por cada estrella nueva: premia probar juegos distintos, no repetir.
+  const bonoEstrellas = BONO_ESTRELLA_NUEVA * (ahora - antes);
+  ESTADO.monchis += monchis + bonoEstrellas;
   sumarStat('partidas');
   sumarStat(`jugada_${clave}`);
   sumarStat('monchisGanados', monchis);
@@ -423,10 +443,11 @@ function apuntar(clave, puntos, monchis, gana = true) {
     ESTADO.monchis += subido;
     sumarStat('nivelesSubidos');
   }
-  return { nuevoRecord, estrellasNuevas: ahora - antes, ganadas: gana ? estrellasDe(clave, puntos) : 0, nivel, meta, subido };
+  return { nuevoRecord, estrellasNuevas: ahora - antes, bonoEstrellas, ganadas: gana ? estrellasDe(clave, puntos) : 0, nivel, meta, subido };
 }
 
-const PAGO_ESTRELLAS = [15, 35, 60, 90];
+const PAGO_ESTRELLAS = [15, 35, 60, 100];
+const BONO_ESTRELLA_NUEVA = 20;
 
 // Panel de final de misión, común a todas.
 // Antes del panel, el remate de cómic: perder es una pantalla de reacción; las tres estrellas, viñetas del bar.
@@ -480,7 +501,7 @@ function mostrarPanelFinal(scene, { titulo, linea, puntos, clave, gana = true, e
   c.add(texto(scene, 0, -205, titulo, 54, gana ? COLOR.amarillo : COLOR.rosa, 740));
   c.add(texto(scene, 0, -122, linea, 26, COLOR.crema, 700));
   c.add(estrellas(scene, 0, -40, r.ganadas, 30));
-  c.add(texto(scene, 0, 26, `${puntos} puntos  ·  +${monchis + r.subido} monchis`, 36, COLOR.azul));
+  c.add(texto(scene, 0, 26, `${puntos} puntos  ·  +${monchis + r.subido + r.bonoEstrellas} monchis`, 36, COLOR.azul));
   const umbrales = MISIONES[clave].umbrales;
   const siguiente = umbrales.find(u => puntos < u);
   const pista = r.nuevoRecord && puntos > 0 ? '¡Nuevo récord!'
@@ -492,10 +513,10 @@ function mostrarPanelFinal(scene, { titulo, linea, puntos, clave, gana = true, e
   c.add(texto(scene, 0, 110, lineaNivel, r.subido ? 26 : 21, r.subido ? COLOR.amarillo : COLOR.azul, 740));
   if (r.subido) {
     scene.tweens.add({ targets: c.list[c.list.length - 1], scale: 1.08, duration: 300, yoyo: true, repeat: 3, delay: 600 });
-    if (typeof Comic !== 'undefined') scene.time.delayedCall(650, () => { Comic.impacto(scene, ANCHO / 2 - 300, ALTO / 2 + 110, { profundidad: 610 }); Comic.confeti(scene, { profundidad: 600 }); sfx(scene, 'platillo', { volume: 0.5 }); });
+    if (typeof Comic !== 'undefined') scene.time.delayedCall(650, () => { Comic.impacto(scene, ANCHO / 2 - 380, ALTO / 2 + 110, { tam: 56, profundidad: 610 }); /* al borde: que no tape la línea del nivel */ Comic.confeti(scene, { profundidad: 600 }); sfx(scene, 'platillo', { volume: 0.5 }); });
   }
   if (lineaSituacion) c.add(texto(scene, 0, 144, lineaSituacion, 20, COLOR.verde, 740));
-  else if (r.estrellasNuevas > 0) c.add(texto(scene, 0, 144, `+${r.estrellasNuevas} estrella${r.estrellasNuevas > 1 ? 's' : ''} · llevas ${totalEstrellas()}`, 22, COLOR.verde));
+  else if (r.estrellasNuevas > 0) c.add(texto(scene, 0, 144, `+${r.estrellasNuevas} estrella${r.estrellasNuevas > 1 ? 's' : ''} · +${r.bonoEstrellas} por estrella nueva · llevas ${totalEstrellas()}`, 22, COLOR.verde));
   if (multRep < 1 && base > 0) c.add(texto(scene, 0, 174, lineaRepeticion(veces, multRep), 20, COLOR.rosa, 740));
   if (mod.linea) c.add(texto(scene, 0, multRep < 1 && base > 0 ? 198 : 174, mod.linea, 19, COLOR.verde, 740));
   c.add(boton(scene, -185, 225, 'Otra vez (Enter)', () => irA(scene, scene.scene.key), { ancho: 330, tam: 26 }));

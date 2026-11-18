@@ -6,19 +6,34 @@
 
 // Claves de SALAS (el sofá es «reservado»). Si alguna faltara, la escena usa el bar.
 // Por id de capítulo (historia.js); los que no aparezcan (y el modo libre) usan el bar.
-const FONDO_CAPITULO = { 'una-que': 'fuera', cuota: 'dentro', blancazo: 'reservado', senor: 'dentro', caja: 'dentro', perico: 'dentro', inspeccion: 'dentro', epica: 'reservado' };
+const FONDO_CAPITULO = { pompa: 'dentro', 'mejor-amigo': 'dentro', nuevo: 'plaza', escucha: 'dentro', 'una-que': 'fuera', cuota: 'dentro', blancazo: 'reservado', senor: 'dentro', caja: 'dentro', perico: 'dentro', furgo: 'carretera', feria: 'feria', senal: 'feria', miron: 'dentro', inspeccion: 'dentro', pesado: 'dentro', epica: 'reservado' };
+
+// Fondos de escena de cómic que no son una sala del barrio (la carretera de la furgo, igual de día que de noche).
+const FONDOS_PROPIOS = { carretera: { fondo: 'bg-carretera', fondoN: 'bg-carretera' }, recuerdo: { fondo: 'bg-recuerdo', fondoN: 'bg-recuerdo' } };
+// Una escena de tarea puede pedir su propio mundo (`mundo`) y su fondo (`fondo`): el recuerdo de «La señal amarilla» es de día y en una casa.
 
 const CARTELAS = {
   vuper: ['VUPER', 'el rider', COLOR.crema], palicaso: ['PALICASO', 'el que habla', COLOR.amarillo],
   blancaso: ['BLANCASO', 'el que lleva las cuentas', '#bfe8ff'], perico: ['PERICO', 'el portero', '#d0d4dc'],
   lasslow: ['LASSLOW', 'un señor', '#ffb38a'], cotine: ['COTINE', 'la repostera', '#ff8fc0'], pompa: ['LA POMPA', 'la DJ', '#9fe7ff'],
-  puky: ['PUKY', 'el que nunca está invitado', '#f2d23c'], casero: ['EL CASERO', 'el que tiene la llave', '#d9b77a'],
+  niebla: ['NIEBLA', 'la que se olvida', '#cfd8dc'], puky: ['PUKY', 'el que nunca está invitado', '#f2d23c'], casero: ['EL CASERO', 'el que tiene la llave', '#d9b77a'],
+  miron: ['EL MIRÓN', 'el que lo ve todo', '#c9b8ff'],
+  agente: ['AGENTE DEL HUMO', 'turno de noche', '#9fb8d9'],
+  // Interrupciones (interrupciones.js): lore nuevo, PROPUESTA.
+  madre: ['LA MADRE', 'de Vuper', '#ffc6a8'], monchiman: ['MONCHIMAN', 'viene cuando hace falta', '#ffd23f'],
 };
 
 // Poses por mundo: [de pie, hablando, sorprendido].
 function posesDe(id, humo) {
   // Puky solo existe en el humo; el casero, hasta tener su dibujo, es su llave («el que tiene la llave»).
   if (id === 'puky') return ['puky', 'puky-que-rico', 'puky-horror'];
+  // El agente del humo (figurante del control): un solo dibujo para las tres poses, igual de día que de noche.
+  if (id === 'agente') return ['obj-agente', 'obj-agente', 'obj-agente'];
+  // La madre de Vuper (interrupciones.js): de pie, con el táper, o hecha una tormenta; y Monchiman, igual de día que de noche.
+  if (id === 'madre') return ['n-madre', 'n-madre', 'n-madre-sorprendida'];
+  if (id === 'madre-taper') return ['n-madre-taper', 'n-madre-taper', 'n-madre-sorprendida'];
+  if (id === 'madre-bronca') return ['n-madre-enfadada', 'n-madre-enfadada', 'n-madre-enfadada'];
+  if (id === 'monchiman') return ['monchiman', 'monchiman', 'monchiman-picado'];
   if (id === 'casero') {
     return humo ? [arteO('casero', 'obj-llave'), arteO('casero-mira', arteO('casero', 'obj-llave')), arteO('casero-mareado', arteO('casero', 'obj-llave'))]
       : [arteO('n-casero', 'obj-llave'), arteO('n-casero-hablando', arteO('n-casero', 'obj-llave')), arteO('n-casero-sorprendido', arteO('n-casero', 'obj-llave'))];
@@ -27,7 +42,7 @@ function posesDe(id, humo) {
     return {
       vuper: ['vuper', 'vuper', 'vuper-colocado'], palicaso: ['palicaso', 'palicaso-contando', 'palicaso-riendo'],
       blancaso: ['blancaso', 'blancaso-esperanza', 'blancaso-mareado'], lasslow: ['lasslow-digno', 'lasslow-digno', 'lasslow-horror'],
-      perico: ['perico', 'perico-cotilleando', 'perico-horror'], cotine: ['cotine', 'cotine', 'cotine-plop'], pompa: ['pompa-mira', 'pompa-mira', 'pompa-horror'],
+      perico: ['perico', 'perico-cotilleando', 'perico-horror'], miron: ['miron', 'miron-hablando', 'miron-alterado'], niebla: ['niebla', 'niebla-hablando', 'niebla-olvido'], cotine: ['cotine', 'cotine', 'cotine-plop'], pompa: ['pompa-mira', 'pompa-mira', 'pompa-horror'],
     }[id];
   }
   if (id === 'vuper') return ['vuper-normal', 'vn-hablando', 'vn-sorprendido'];
@@ -35,7 +50,7 @@ function posesDe(id, humo) {
 }
 
 // Quién es quién en el texto (para centrar el momento persona en el nombrado).
-const NOMBRES_EN_TEXTO = { blancaso: /Blancaso/, palicaso: /Palicaso/, lasslow: /Lasslow/, perico: /Perico/, cotine: /Cotine/, pompa: /Pompa/, puky: /Puky/, vuper: /Vuper/ };
+const NOMBRES_EN_TEXTO = { blancaso: /Blancaso/, palicaso: /Palicaso/, lasslow: /Lasslow/, perico: /Perico/, cotine: /Cotine/, pompa: /Pompa/, puky: /Puky/, niebla: /Niebla/, vuper: /Vuper/ };
 
 // Onomatopeyas del juego (en minúsculas, sin signos).
 const ONOMATOPEYAS = 'plof|plink|plaf|plop|blurp|glups|ñam|slurp|pum|zas|crac|boing|prrr+t|pff+|pof|chof|splash|puaj|glub|bzzz+|ring';
@@ -72,9 +87,9 @@ Comic.enfasisAuto = function (quien, txt, { esUltimaDeCierre = false, esPrimera 
 };
 
 Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
-  const humo = scene.mundo === 'humo';
-  const sala = FONDO_CAPITULO[opciones.cap ?? capId()] || (capId() === 'libre' ? FONDO_CAPITULO.epica : 'dentro');
-  const datosSala = SALAS[sala] || SALAS.dentro;
+  const humo = (opciones.mundo || scene.mundo) === 'humo';
+  const sala = opciones.fondo || FONDO_CAPITULO[opciones.cap ?? capId()] || (capId() === 'libre' ? FONDO_CAPITULO.epica : 'dentro');
+  const datosSala = SALAS[sala] || FONDOS_PROPIOS[sala] || SALAS.dentro;
   const fondoClave = humo ? datosSala.fondo : datosSala.fondoN;
 
   scene.objetivo = null;
@@ -113,9 +128,12 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
   ids.forEach((id, i) => {
     const poses = posesDe(id, humo).map(k => (scene.textures.exists(k) ? k : null));
     if (!poses[0]) return;
-    const x = ids.length === 1 ? ANCHO / 2 : 260 + (i * (ANCHO - 520)) / (ids.length - 1);
+    // Con mucho reparto, más abiertos y algo más pequeños: en los planos de grupo se tapaban la cara.
+    const margen = ids.length >= 5 ? 190 : 260;
+    const x = ids.length === 1 ? ANCHO / 2 : margen + (i * (ANCHO - 2 * margen)) / (ids.length - 1);
     const img = scene.add.image(x, 690, poses[0]).setOrigin(0.5, 1);
-    const alto = id === 'pompa' && humo ? 230 : 340;
+    const kGrupo = ids.length >= 6 ? 0.82 : ids.length >= 5 ? 0.9 : 1;
+    const alto = Math.round(((id === 'pompa' && humo) || id === 'monchiman' ? 230 : 340) * kGrupo);
     img.setScale(alto / img.height);
     img.setFlipX(x > ANCHO / 2 && id !== 'pompa');
     escenario.add(img);
@@ -164,9 +182,9 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
   const escribir = (txtObj, txt, alFin) => {
     let k = 0;
     txtObj.setText('');
-    escribiendo = { fin: () => { if (escribiendo) { escribiendo.ev.remove(); escribiendo = null; txtObj.setText(txt); if (alFin) alFin(); } } };
+    escribiendo = { fin: () => { if (escribiendo) { escribiendo.ev.remove(); escribiendo = null; if (txtObj.scene) txtObj.setText(txt); if (alFin) alFin(); } } };
     const ritmo = Math.round({ lenta: 44, normal: 24, rapida: 9 }[(ESTADO.opciones || {}).texto || 'normal'] * ritmoK);
-    escribiendo.ev = scene.time.addEvent({ delay: ritmo, repeat: txt.length - 1, callback: () => { k++; txtObj.setText(txt.slice(0, k)); if (k >= txt.length && escribiendo) { escribiendo = null; if (alFin) alFin(); } } });
+    escribiendo.ev = scene.time.addEvent({ delay: ritmo, repeat: txt.length - 1, callback: () => { if (!txtObj.scene) { if (escribiendo && escribiendo.ev) escribiendo.ev.remove(); escribiendo = null; return; } k++; txtObj.setText(txt.slice(0, k)); if (k >= txt.length && escribiendo) { escribiendo = null; if (alFin) alFin(); } } });
   };
   const vistas = (ESTADO.cartelasVistas = ESTADO.cartelasVistas || {});
   let ultimo = null;
@@ -259,7 +277,10 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
         scene.tweens.add({ targets: rayos, angle: 360, duration: 40000, repeat: -1 });
         ui.add([fondoT, rayos]); piezas.push(fondoT, rayos);
       }
-      const [capN, nombre] = txt.split(' · ');
+      // «Capítulo 12 · I · La feria»: la parte del capítulo doble (etiquetaCap, numeracion.js) va con el número.
+      const trozos = txt.split(' · ');
+      if (trozos.length > 2 && /^[IVX]+(?: completado)?$/.test(trozos[1])) trozos.splice(0, 2, `${trozos[0]} · ${trozos[1]}`);
+      const capN = trozos[0], nombre = trozos.slice(1).join(' · ');
       const t1 = texto(scene, ANCHO / 2, 250, capN, 40, COLOR.crema).setScale(0);
       const t2 = texto(scene, ANCHO / 2, -120, nombre || txt, 84, COLOR.amarillo, 1100);
       ui.add([t1, t2]); piezas.push(t1, t2);
@@ -316,6 +337,7 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
 
     // Alguien habla: corte seco a su plano, pose de hablar, los demás a la escucha.
     const a = actores[quien];
+    escenario.bringToTop(a.img); // quien habla, delante
     Object.entries(actores).forEach(([id, o]) => pose(o, id === quien ? 1 : 0));
     const z = Object.keys(actores).length > 1 ? 1.55 : 1.3;
     encuadre(a.x, 690 - a.alto * 0.62, z, 0);
@@ -348,7 +370,9 @@ Comic.escena = function (scene, lineas, alAcabar, opciones = {}) {
       vistas[quien] = true;
       guardarPartida();
       const [nom, sub, col] = CARTELAS[quien];
-      const cart = Comic.cartela(scene, nom, sub, col, { x: 60, y: ALTO - 190, ms: 2600 });
+      // Debajo de quien habla (su x en pantalla con la cámara de la línea), no siempre abajo a la izquierda.
+      const xPantalla = camActual.cx + camActual.z * a.x;
+      const cart = Comic.cartela(scene, nom, sub, col, { x: Phaser.Math.Clamp(xPantalla - 170, 40, ANCHO - 480), y: ALTO - 190, ms: 2600 });
       cart.setDepth(0);
       ui.add(cart);
       piezas.push(cart); // se va con la línea

@@ -22,6 +22,9 @@ const SALAS = {
     cosas: [{
       id: 'blancaso', tipo: 'blancaso', sprite: 'blancaso', x: 900, y: 565, escala: 0.4, nombre: 'Blancaso',
       n: { sprite: 'n-blancaso', x: 820, y: 640, escala: 0.62 },
+    }, {
+      id: 'niebla', tipo: 'charla', sprite: 'niebla', x: 600, y: 610, escala: 0.36, nombre: 'Niebla',
+      n: { sprite: 'n-niebla', x: 600, y: 650, escala: 0.5 },
     }, { id: 'carrera', tipo: 'carrera', sprite: arteO('obj-pizarra-carrera', 'pizarra-carrera'), x: 420, y: 600, escala: 0.6, nombre: 'Carreras de humo (apuestas)' }],
   },
   fuera: {
@@ -64,6 +67,8 @@ SALAS.reservado = {
   cosas: [
     { id: 'sofa2', tipo: 'sofa', x: 640, y: 610, nombre: 'Sofá del reservado: liar y fumar' },
     { id: 'escalera', tipo: 'subir', x: 170, y: 600, nombre: 'Escalera al techo' },
+    // Fortunato, el pez de la aso: solo está en el reservado durante «Nuevo en la ciudad».
+    { id: 'fortunato', tipo: 'charla', sprite: 'fortunato', x: 420, y: 640, escala: 0.2, nombre: 'Fortunato (el pez)', cuando: () => enCap('nuevo') },
   ],
 };
 SALAS.bano = {
@@ -78,14 +83,27 @@ SALAS.techo = {
   ],
 };
 
+// La feria: el descampado tras la tienda. La puerta aparece cuando la historia llega a la feria (o,
+// en una partida antigua, si ya has ganado alguno de sus minijuegos). Sus sitios viven en lugares.js.
+SALAS.feria = {
+  nombre: 'La feria (el descampado)', fondo: 'bg-feria', fondoN: 'bgn-feria', izq: 'tienda', suelo: [570, 690],
+  cosas: [],
+};
+function feriaAbierta() {
+  return desdeCapId('feria') || stat('gana_TiroPato') >= 1 || stat('gana_Casetas') >= 1 || stat('gana_Recuerdo') >= 1;
+}
+Object.defineProperty(SALAS.tienda, 'der', { get: () => (feriaAbierta() ? 'feria' : undefined), enumerable: true });
+
 const CHARLAS = {
   humo: {
-    blancaso: ['Otra vez no…', 'Hoy sí que iba a disfrutar de mi bar. Hoy sí.', 'Las cuentas no cuadran. Nunca cuadran.'],
+    blancaso: ['Lo apunto en rojo.', 'Hoy sí que iba a disfrutar de mi bar. Hoy sí.', 'Las cuentas no cuadran. Nunca cuadran.'],
     palicaso: ['¡Escucha, escucha! Esto es Unaké, la aso.', '¿Una qué? ¡Una aso! Nunca falla.'],
+    niebla: ['¿Qué ha pasado?', 'Se me ha ido lo que iba a decir. Era importante. O no.'],
     pompa: ['…', '…¿Eh? Ah, hola. Te contesto luego.', 'Yo no, que exploto.'],
     perico: ['¿Contraseña? …Ah, eres tú. Pasa.', 'Pin… no, nada.'],
   },
   normal: {
+    niebla: ['¿Qué decía? Ah, sí… no, no era eso.', 'Hoy estoy muy despierta. Creo.'],
     blancaso: ['De día se está bien. Hasta que se hace de noche.', 'Las cuentas del café cuadran. De día, cuadran.'],
     palicaso: ['¡Buenos días! ¿Un café? Lo otro, ya sabes, de la aso.', '¡Escucha! De día esto es un café. Un café muy tranquilo.'],
     pompa: ['De día pongo la música bajita. Bajita.', 'Estoy tranquila. Muy tranquila.'],
@@ -116,7 +134,8 @@ const SALUDOS = {
   pompa: { humo: ['…hola.', '♪…', '…no me toques, que exploto.'], normal: ['Hola. Bajito.', '…'] },
   lasslow: { humo: ['Buenas noches, caballero.', 'Hoy no se me escapa nada. Nada.', '¿Ha oído usted algo? Yo tampoco.'], normal: ['Buenos días, joven.', 'Un señor siempre saluda.'] },
   cotine: { humo: ['¿Traes algo de comer?', 'No hay tarta. Ya no.', '¡Huele a monchis! ¿Eres tú?'], normal: ['Hoy hago tarta. Para todos. De verdad.', '¿Has desayunado? Yo dos veces.'] },
-  puky: { humo: ['Hola amigooo… *blurp*', '¿Me das un abrazo? Es que estoy pegajoso.'] },
+  niebla: { humo: ['¿Esto es la plaza? Creo que ya he estado.', 'Me ha parecido que alguien me decía algo. ¿Eras tú?'], normal: ['Hola. ¿Quién eras?', 'Qué bonito sitio. ¿Es nuevo?'] },
+  puky: { humo: ['Hola, amigooo… *blurp*', '¿Me das un abrazo? Es que estoy pegajoso.'] },
 };
 
 // Encargos: a quién se le puede llevar algo.
@@ -144,6 +163,8 @@ class Barrio extends Phaser.Scene {
   constructor() { super('Barrio'); }
 
   create(datos) {
+    // scene.start reutiliza la instancia: si una interrupción quedó «lanzándose» al salir, el capítulo no seguía nunca.
+    this._intListo = false; this._intLanzando = false;
     this.objSala = [];
     this.modal = null;
     this.objetivo = null;
@@ -234,14 +255,15 @@ class Barrio extends Phaser.Scene {
     boton(this, ANCHO - 84, 40, 'Menú', () => irA(this, 'Portada'), { ancho: 130, alto: 48, tam: 20, color: HEX.crema }).setDepth(D + 1);
     this.botonLogros = boton(this, ANCHO - 226, 40, 'Logros', () => { if (!this.modal) this.logros(); }, { ancho: 140, alto: 48, tam: 20, color: HEX.amarillo }).setDepth(D + 1);
 
-    // Lo que llevas para liar.
+    // Lo que llevas para liar. En el móvil, a la derecha del joystick (antes lo tapaba).
+    const xL = window.TACTIL_UI ? 150 : 0;
     const gi = this.add.graphics().setDepth(D);
-    gi.fillStyle(HEX.tinta, 0.78).fillRoundedRect(12, ALTO - 92, 330, 80, 18);
-    this.add.text(24, ALTO - 84, 'Para liar', { fontFamily: FUENTE, fontSize: '14px', color: COLOR.crema }).setDepth(D + 1);
+    gi.fillStyle(HEX.tinta, 0.78).fillRoundedRect(12 + xL, ALTO - 92, 330, 80, 18);
+    this.add.text(24 + xL, ALTO - 84, 'Para liar', { fontFamily: FUENTE, fontSize: '14px', color: COLOR.crema }).setDepth(D + 1);
     this.ranuras = ['papel', 'boquilla', 'bolsita', 'mechero'].map((k, i) => {
-      const img = this.add.image(62 + i * 76, ALTO - 44, `obj-${k}`).setDepth(D + 1);
+      const img = this.add.image(62 + xL + i * 76, ALTO - 44, `obj-${k}`).setDepth(D + 1);
       img.setScale(44 / Math.max(img.width, img.height));
-      const n = texto(this, 86 + i * 76, ALTO - 26, '', 16, COLOR.amarillo).setDepth(D + 2);
+      const n = texto(this, 86 + xL + i * 76, ALTO - 26, '', 16, COLOR.amarillo).setDepth(D + 2);
       return { k, img, n };
     });
 
@@ -255,7 +277,7 @@ class Barrio extends Phaser.Scene {
     this.firmaObjetivos = '';
     this.aviso = texto(this, 0, 0, '', 22, COLOR.amarillo).setDepth(902).setVisible(false);
     // En el móvil todo se ve a la mitad: objetivos y avisos, más grandes.
-    if (window.TACTIL_UI) { this.panelObjetivos.setScale(1.4); this.aviso.setFontSize(32); }
+    if (window.TACTIL_UI) { this.panelObjetivos.setScale(1.2); this.aviso.setFontSize(32); } // a 1,4 pisaba el rótulo de la sala
     // En el móvil: botón grande para hablar con lo que tengas cerca (sustituye a la E).
     this.tactil = this.sys.game.device.input.touch;
     this.botonHablar = boton(this, ANCHO - 110, ALTO - 120, 'Hablar', () => {
@@ -314,6 +336,8 @@ class Barrio extends Phaser.Scene {
   // ---------- Salas y mundos ----------
 
   cargarSala(nombre, entrada) {
+    // El techo solo existe de noche (no hay fondo de día y el neón no casa con Vuper de día): si se pasa el humo allí arriba, se baja.
+    if (nombre === 'techo' && !enMundoHumo()) { nombre = 'reservado'; entrada = 'escalera'; }
     this.objSala.forEach(o => { this.tweens.killTweensOf(o); o.destroy(); });
     this.objSala = [];
     (this.objSuceso || []).forEach(o => o.active && o.destroy());
@@ -333,8 +357,10 @@ class Barrio extends Phaser.Scene {
     this.textoMundo.setText(humo ? 'Mundo humo · las misiones pagan x1,5' : 'Mundo normal · de día').setColor(humo ? COLOR.rosa : COLOR.azul);
 
     this.textoCaja = null;
-    this.cosas = s.cosas.filter(cosa => !QUIEN[cosa.id] || estaEn(cosa.id, nombre)).map(cosa => this.montarCosa(humo ? cosa : { ...cosa, ...(cosa.n || {}) }));
+    this.cosas = s.cosas.filter(cosa => (!cosa.cuando || cosa.cuando()) && (!QUIEN[cosa.id] || estaEn(cosa.id, nombre))).map(cosa => this.montarCosa(humo ? cosa : { ...cosa, ...(cosa.n || {}) }));
     this.cosas.push(...visitasDeSala(this, nombre));
+    // Interrupciones (interrupciones.js): las zonas del cuarto mientras viene la madre.
+    if (typeof Interrupciones !== 'undefined') this.cosas.push(...Interrupciones.cosas(this, nombre).map(o => this.montarCosa(o)));
     // Lo que engancha se queda: los objetos que alojan minijuegos ya abiertos (la llave del casero, la furgo).
     this.cosas.push(...objetosLugar(this, nombre, this.mundo).map(o => this.montarCosa(o)));
     if (nombre === 'dentro' && humo && enCap('inspeccion') && this.textures.exists('obj-llave')) {
@@ -361,6 +387,7 @@ class Barrio extends Phaser.Scene {
     Object.assign(ESTADO, { sala: nombre, x: this.px, y: this.py });
     guardarPartida();
     if (typeof Musica !== 'undefined' && this.sys.isActive()) Musica.alEntrar(this);
+    if (typeof reaccionArmario === 'function') reaccionArmario(this); // te ven la ropa (armario.js)
   }
 
   montarCosa(cosa) {
@@ -764,6 +791,7 @@ class Barrio extends Phaser.Scene {
       actualizarNegocio();
       if (this.textoCaja) this.textoCaja.setText(negocio().caja >= 1 ? `+${Math.floor(negocio().caja)}` : '');
     }
+    if (typeof Interrupciones !== 'undefined') Interrupciones.tick(this, dt); // antes que la historia: retiene la entrada del capítulo siguiente
     this.tHistoria = (this.tHistoria || 0) - dt;
     if (this.tHistoria <= 0) { this.tHistoria = 0.4; this.historia(); }
     if (!this.reparto && !this.modal && !guiaActiva()) {
@@ -805,7 +833,7 @@ class Barrio extends Phaser.Scene {
   lineaAviso() {
     let t = '';
     let color = COLOR.amarillo;
-    if (ESTADO.blancazo) t = `¡A Blancaso le ha dado un blancaso! Está en la plaza · ${this.ruta('plaza')} · ${Math.ceil(ESTADO.blancazo.restante)} s`;
+    if (ESTADO.blancazo) t = `¡A Blancaso le ha dado un blancazo! Está en la plaza · ${this.ruta('plaza')} · ${Math.ceil(ESTADO.blancazo.restante)} s`;
     else if (this.senal) t = `¡Señal amarilla! Ve a la M del cuarto de Vuper · ${this.ruta('cuarto')} · ${Math.ceil(this.senal.restante)} s · monchis x2`;
     else if (ESTADO.vida < 35) { t = `¡Te quedas sin vida! Come algo o tómate un resucitador · ${this.ruta('tienda')}`; color = COLOR.rosa; }
     else if (ESTADO.hambre > 70) { t = `¡Monchis! Tienes hambre · ${this.ruta('tienda')}`; color = COLOR.rosa; }
@@ -849,7 +877,7 @@ class Barrio extends Phaser.Scene {
     sfx(this, 'zumbido-m');
     this.cameras.main.flash(400, 255, 255, 255);
     this.cameras.main.shake(500, 0.01);
-    golpeTexto(this, ANCHO / 2, 280, '¡A Blancaso le ha dado un blancaso!', COLOR.amarillo, 46);
+    golpeTexto(this, ANCHO / 2, 280, '¡A Blancaso le ha dado un blancazo!', COLOR.amarillo, 46);
     if (this.sala === 'plaza') this.cargarSala('plaza');
   }
 
@@ -872,6 +900,9 @@ class Barrio extends Phaser.Scene {
       this.refrescarHud();
       this.cambiando = false;
       golpeTexto(this, ANCHO / 2, 300, `Despiertas en tu cuarto. Se te cayeron ${perdidos} monchis.`, COLOR.crema, 32);
+      // Los palotes del piloto: Blancaso lleva la cuenta de las noches que acaban así.
+      const palotes = stat('desmayos');
+      this.time.delayedCall(2600, () => this.cuandoLibre(() => this.toast(palotes === 1 ? 'Blancaso apunta un palote' : `Otro palote: van ${palotes}`, '«Siempre llegas hasta aquí. Y luego viene ese.»')));
     }));
   }
 
@@ -904,11 +935,14 @@ class Barrio extends Phaser.Scene {
   // ---------- Interacciones ----------
 
   interactuar(c) {
+    if (typeof Interrupciones !== 'undefined' && Interrupciones.interactuar(this, c)) return; // tareas de la madre en el cuarto
     this.lugarActual = c.id; // las tarjetas de este rato ofrecen «Volver a jugar» con lo que vive aquí
     if (c.img) this.tweens.add({ targets: c.img, y: c.img.y - 14, duration: 110, yoyo: true, ease: 'Sine.out' });
     // Un recado para esta persona va antes que nada.
     const r = ESTADO.recado;
     if (r && r.a === c.id && (r.tipo === 'mensaje' || r.llevo)) return this.cumplirRecado(c);
+    // «Esto ya lo has vivido»: su recuerdo del piloto en viñetas, la primera vez que le hablas dentro (guia.js).
+    if (typeof Guia !== 'undefined' && Guia.recuerdo(this, c, () => this.time.delayedCall(250, () => this.interactuar(c)))) return;
     if (this.tareaInteractuar(c)) return;
     if (this.escenaHistoria(c)) return;
     // Desde la inspección (cap. 7), la Pompa te pide sus discos: misión de sigilo (de día o de noche).
@@ -972,7 +1006,12 @@ class Barrio extends Phaser.Scene {
         return this.tarjeta('Reparto', () => this.empezarReparto(0));
       case 'senal':
         if (this.mundo === 'normal') return this.charla(c, 'De día la M no se enciende. Es solo un cartel.');
-        if (!mEncendida()) return this.charla(c, `La M está apagada. Se enciende cuando tengas 3 estrellas (llevas ${totalEstrellas()}).`);
+        if (!mEncendida()) {
+          // Apagada para el rescate, pero la recreativa y el jefe viven aquí aunque no la hayas encendido.
+          const otros = lugaresDe('m', this.mundo);
+          if (otros.length) return this.tarjeta(otros[0]);
+          return this.charla(c, `La M está apagada. Se enciende cuando tengas 3 estrellas (llevas ${totalEstrellas()}).`);
+        }
         return this.tarjeta('Rescate', null, this.senal ? '¡Señal encendida: monchis x2!' : null);
       case 'puerta':
         if (this.reparto) {
@@ -985,6 +1024,8 @@ class Barrio extends Phaser.Scene {
             ? { etiqueta: '¡Periquito!', clave: 'Periquito', accion: () => this.lanzar('Periquito'), color: HEX.rosa } : charlar;
           return this.tarjeta('Contrasena', null, null, [{ etiqueta: 'Pasar', accion: () => { this.cerrarModal(); this.cambiarSala('dentro', 'puerta'); } }, otro]);
         }
+        // Capítulo 1: la puerta del piloto (llegar hasta el final de la contraseña).
+        if (enCap('una-que')) return Guia.puerta(this);
         return this.tarjeta('Contrasena', null, null, [charlar]);
       default: return null;
     }
@@ -1003,18 +1044,18 @@ class Barrio extends Phaser.Scene {
   historia() {
     this.pintarObjetivos();
     // Las noches de cada personaje: cuando su minijuego llega al nivel, su escena (fuera de las de capítulo).
-    if (!this.modal && !this.cambiando && !this.reparto && this.time.now >= (this.pausaHistoria || 0)
+    if (!this.modal && !this.cambiando && !this._saliendo && !this.reparto && this.time.now >= (this.pausaHistoria || 0)
       && (historiaAcabada() || introVistaDeCap())) {
       const np = nochePendiente();
       if (np) return this.abrirNoche(np);
     }
-    if (historiaAcabada() || this.modal || this.cambiando) return;
+    if (historiaAcabada() || this.modal || this.cambiando || this._saliendo) return;
     // Tras cerrar un capítulo, un respiro para leer el «completado» antes de la escena siguiente.
     if (this.time.now < (this.pausaHistoria || 0)) return;
     const n = ESTADO.capitulo || 0;
     const cap = capituloActual();
     if (!introVistaDeCap()) {
-      return this.abrirEscena([['titulo', `Capítulo ${n + 1} · ${cap.titulo}`, cap.arte], ...cap.intro, ...(enCap('una-que') ? [] : [['objetivos', '']])], () => {
+      return this.abrirEscena([['titulo', `Capítulo ${etiquetaCap(n)} · ${cap.titulo}`, cap.arte], ...cap.intro, ...(enCap('una-que') ? [] : [['objetivos', '']])], () => {
         marcarIntroVista();
         // Foto de los contadores: los objetivos «de este capítulo» cuentan desde aquí.
         ESTADO.baseCap = { ...(ESTADO.stats || {}) };
@@ -1058,13 +1099,22 @@ class Barrio extends Phaser.Scene {
         golpeTexto(this, ANCHO / 2, 300, '¡Unaké se queda!', COLOR.amarillo, 64);
         return this.time.delayedCall(1500, () => irA(this, 'Final'));
       }
-      golpeTexto(this, ANCHO / 2, 280, `Capítulo ${n + 1} completado`, COLOR.amarillo, 56);
+      golpeTexto(this, ANCHO / 2, 280, `Capítulo ${etiquetaCap(n)} completado`, COLOR.amarillo, 56);
       if (cap.premio) this.time.delayedCall(700, () => golpeTexto(this, ANCHO / 2, 360, `+${cap.premio} monchis`, COLOR.verde, 40));
     };
     // El cierre del capítulo: su momento persona, en cómic.
     if (!cap.cierre) return seguir();
-    this.seguirPendiente = seguir;
-    this.time.delayedCall(700, () => this.cuandoLibre(() => this.abrirEscena([['titulo', `Capítulo ${n + 1} completado · ${cap.titulo}`], ...cap.cierre], () => { this.seguirPendiente = null; seguir(); }, { cap: cap.id, momento: true })));
+    // Se guarda la APERTURA del cierre (no solo «seguir»): si la escena muere durante la cortina, el vigilante
+    // vuelve a abrir el cierre y el momento persona (y los poscréditos) no se pierden.
+    const abrirCierre = () => this.abrirEscena([['titulo', `Capítulo ${etiquetaCap(n)} completado · ${cap.titulo}`], ...cap.cierre], () => {
+      this.seguirPendiente = null;
+      if (!cap.posCierre) return seguir();
+      const abrirPos = () => this.abrirEscena(cap.posCierre.lineas, () => { this.seguirPendiente = null; seguir(); }, { cap: cap.id, momento: true, ...cap.posCierre.opciones });
+      this.seguirPendiente = abrirPos; // los poscréditos tampoco se pierden
+      this.time.delayedCall(60, abrirPos);
+    }, { cap: cap.id, momento: true });
+    this.seguirPendiente = abrirCierre;
+    this.time.delayedCall(700, () => this.cuandoLibre(abrirCierre));
   }
 
   // ---------- Motor de tareas (los capítulos nuevos; ver historia.js) ----------
@@ -1087,6 +1137,8 @@ class Barrio extends Phaser.Scene {
     if (T.i >= cap.tareas.length) return this.completarCapitulo(cap, n);
     const t = cap.tareas[T.i];
     const opc = { cap: cap.id };
+    if (t.mundoEscena) opc.mundo = t.mundoEscena; // recuerdos: su propio mundo y fondo
+    if (t.fondoEscena) opc.fondo = t.fondoEscena;
     const firma = `${T.i}|${T.fase}|${T.hechos}|${(T.hablados || []).length}|${T.objeto}`;
     if (firma !== this.firmaTarea) { this.firmaTarea = firma; this.tareaDesde = this.time.now; this.marcarSituaciones(); }
     if (T.fase === 'antes') {
@@ -1167,8 +1219,13 @@ class Barrio extends Phaser.Scene {
     const con = conDeTarea(a.t).filter(id => a.t.tipo === 'minijuego' || !(a.T.hablados || []).includes(id));
     (this.cosas || []).forEach(c => {
       if (!con.includes(c.id) || c.oculta) return;
+      // Una sola marca por sitio (como en marcarSituaciones): el «!» de la tarea sustituye a la etiqueta
+      // («Jugar», «E · La M»…) y a la marca de situación que hubiera, para que no salga «Ju!ar».
+      if (c.marca && c.marca.scene) c.marca.setVisible(false);
+      if (c.marcaSit && c.marcaSit.scene) c.marcaSit.destroy();
       const y = c.y - c.alto - 40;
       const m = texto(this, c.x, y, '!', 66, COLOR.amarillo).setDepth(801);
+      c.marcaSit = m;
       this.tweens.add({ targets: m, y: y - 14, angle: { from: -8, to: 8 }, duration: 450, yoyo: true, repeat: -1 });
       this.marcasSit.push(m);
     });
@@ -1230,9 +1287,9 @@ class Barrio extends Phaser.Scene {
   abrirNoche([id, i, paso]) {
     const n = NOCHES[id];
     this.pausaHistoria = this.time.now + 600000;
-    ESTADO.noches[`${id}-${i}`] = true;
-    guardarPartida();
     this.abrirEscena([['titulo', `${n.nombre} · ${i + 1} de ${n.pasos.length}`], ...paso.lineas], () => {
+      // Vista de verdad: se marca al cerrarla (si la escena muere a medias, la noche vuelve a salir).
+      ESTADO.noches[`${id}-${i}`] = true;
       this.pausaHistoria = this.time.now + 2500;
       ESTADO.monchis += paso.premio;
       sumarStat('nochesVistas');
@@ -1256,6 +1313,7 @@ class Barrio extends Phaser.Scene {
     const lista = ARMARIO.filter(p => prendaDisponible(p, this));
     const elegir = p => {
       if (!a.tiene[p.id]) {
+        if (!prendaAbierta(p)) return;
         if (!this.pagar(p.precio)) return;
         a.tiene[p.id] = true;
         a.puesto[p.hueco] = p.id;
@@ -1277,14 +1335,15 @@ class Barrio extends Phaser.Scene {
         const col = i % 4;
         const fila = Math.floor(i / 4);
         const x = -300 + col * 200;
-        const y = -100 + fila * 112;
+        const y = -102 + fila * 120; // tarjetas de 116 px: nombre, efecto y precio sin pisarse
         const puesto = a.puesto[p.hueco] === p.id;
         const tiene = !!a.tiene[p.id];
-        const puede = tiene || ESTADO.monchis >= p.precio;
+        const cerrada = !tiene && !prendaAbierta(p);
+        const puede = tiene || (!cerrada && ESTADO.monchis >= p.precio);
         const k = this.add.container(x, y);
         const g = this.add.graphics();
-        g.fillStyle(puesto ? 0x2f6b3f : 0x2a1a3a, 1).fillRoundedRect(-92, -50, 184, 104, 16);
-        g.lineStyle(4, puesto ? HEX.verde : tiene ? HEX.azul : (puede ? HEX.amarillo : 0x6a5a80), 1).strokeRoundedRect(-92, -50, 184, 104, 16);
+        g.fillStyle(puesto ? 0x2f6b3f : 0x2a1a3a, 1).fillRoundedRect(-92, -58, 184, 116, 16);
+        g.lineStyle(4, puesto ? HEX.verde : tiene ? HEX.azul : (puede ? HEX.amarillo : 0x6a5a80), 1).strokeRoundedRect(-92, -58, 184, 116, 16);
         k.add(g);
         if (p.hueco === 'piel') {
           const muestra = this.add.image(-54, -6, 'vuper');
@@ -1297,10 +1356,15 @@ class Barrio extends Phaser.Scene {
           ic.setScale(Math.min(60 / ic.width, 60 / ic.height));
           k.add(ic);
         }
-        k.add(this.add.text(-18, -42, p.nombre, { fontFamily: FUENTE, fontSize: '15px', color: COLOR.crema, wordWrap: { width: 104 } }));
-        k.add(this.add.text(-18, 2, p.efecto, { fontFamily: FUENTE, fontSize: '11px', color: COLOR.azul, wordWrap: { width: 104 } }));
-        k.add(texto(this, 0, 40, puesto ? 'Puesto' : tiene ? 'Ponértelo' : `${p.precio} monchis`, 16, puesto ? COLOR.verde : tiene ? COLOR.azul : (puede ? COLOR.amarillo : '#8a7fa0')));
-        k.setSize(184, 104).setInteractive({ useHandCursor: true }).on('pointerdown', () => elegir(p));
+        // El nombre manda: si ocupa 3 líneas, encoge; el efecto va debajo de su alto real y se corta antes del precio.
+        const tNombre = this.add.text(-18, -50, p.nombre, { fontFamily: FUENTE, fontSize: '15px', color: COLOR.crema, wordWrap: { width: 104 } });
+        if (tNombre.height > 42) tNombre.setFontSize(13);
+        const yEfecto = -50 + tNombre.height + 2;
+        const lineasEfecto = Math.max(1, Math.floor((30 - yEfecto) / 14));
+        k.add(tNombre);
+        k.add(this.add.text(-18, yEfecto, p.efecto, { fontFamily: FUENTE, fontSize: '11px', color: COLOR.azul, wordWrap: { width: 104 }, maxLines: lineasEfecto }));
+        k.add(texto(this, 0, 44, puesto ? 'Puesto' : tiene ? 'Ponértelo' : cerrada ? (p.desde === 'libre' ? actoDePrenda(p) : `Acto ${actoDePrenda(p)}`) : `${p.precio} monchis`, 16, puesto ? COLOR.verde : tiene ? COLOR.azul : (puede ? COLOR.amarillo : '#8a7fa0')));
+        k.setSize(184, 116).setInteractive({ useHandCursor: true }).on('pointerdown', () => elegir(p));
         c.add(k);
       });
       c.add(boton(this, 0, 222, 'Cerrar (Esc)', () => this.cerrarModal(), { ancho: 220, alto: 44, tam: 20, color: HEX.crema }));
@@ -1371,32 +1435,36 @@ class Barrio extends Phaser.Scene {
     const c = this.panelObjetivos;
     c.removeAll(true);
     const ancho = 340;
-    const filas = acabada ? 1 : lineas.length;
-    const alto = 42 + filas * 30 + (desdeCapId('cuota') ? 28 : 0) + sits.length * 24 + (nOpc ? 22 : 0) + (sits.length ? 8 : 0);
+    // Las filas se miden: un objetivo de 2 líneas empuja al siguiente (antes iban fijas a 30 px y se pegaban).
+    const piezas = [];
+    let y = 50;
+    if (acabada) { piezas.push(this.add.text(-ancho + 14, 40, 'Unaké se ha salvado. ¡A por los récords!', { fontFamily: FUENTE, fontSize: '14px', color: COLOR.crema })); y = 80; }
+    else lineas.forEach(([hecho, txt, actual]) => {
+      const t = this.add.text(-ancho + 38, y - 9, txt, { fontFamily: FUENTE, fontSize: '14px', color: hecho ? '#9be7a0' : actual ? '#ffe08a' : COLOR.crema, wordWrap: { width: ancho - 50 } });
+      const bola = this.add.circle(-ancho + 22, y, 8, hecho ? 0x7ee081 : actual ? 0xffd23f : 0x000000, hecho || actual ? 1 : 0.3).setStrokeStyle(2, HEX.crema);
+      if (hecho) t.setAlpha(0.75);
+      piezas.push(bola, t);
+      y += Math.max(30, t.height + 12);
+    });
+    sits.forEach(t => {
+      const h = deHistoria.has(t);
+      piezas.push(this.add.text(-ancho + 14, y, h ? '!' : '?', { fontFamily: FUENTE, fontSize: '18px', color: h ? COLOR.amarillo : COLOR.rosa }).setOrigin(0, 0.5));
+      piezas.push(this.add.text(-ancho + 38, y, t, { fontFamily: FUENTE, fontSize: '14px', color: h ? '#ffe08a' : '#ffb3d1' }).setOrigin(0, 0.5));
+      y += 24;
+    });
+    if (nOpc) { piezas.push(this.add.text(-ancho + 14, y, `Encargos opcionales: ${nOpc}`, { fontFamily: FUENTE, fontSize: '13px', color: COLOR.crema }).setOrigin(0, 0.5).setAlpha(0.5)); y += 22; }
+    const alto = y - 8 + (desdeCapId('cuota') ? 28 : 0) + (sits.length ? 8 : 0);
     this.panelObjetivos.medida = { ancho, alto }; // el fondo es un dibujo: Phaser no le mide el tamaño
     c.add(this.add.graphics().fillStyle(HEX.tinta, 0.78).fillRoundedRect(-ancho, 0, ancho, alto, 16));
-    c.add(this.add.text(-ancho + 14, 10, acabada ? 'Modo libre' : `Cap. ${n + 1} · ${cap.titulo}`, { fontFamily: FUENTE, fontSize: '17px', color: COLOR.amarillo }));
-    if (acabada) c.add(this.add.text(-ancho + 14, 40, 'Unaké se ha salvado. ¡A por los récords!', { fontFamily: FUENTE, fontSize: '14px', color: COLOR.crema }));
-    lineas.forEach(([hecho, txt, actual], i) => {
-      const y = 50 + i * 30;
-      const bola = this.add.circle(-ancho + 22, y, 8, hecho ? 0x7ee081 : actual ? 0xffd23f : 0x000000, hecho || actual ? 1 : 0.3).setStrokeStyle(2, HEX.crema);
-      const t = this.add.text(-ancho + 38, y, txt, { fontFamily: FUENTE, fontSize: '14px', color: hecho ? '#9be7a0' : actual ? '#ffe08a' : COLOR.crema, wordWrap: { width: ancho - 50 } }).setOrigin(0, 0.5);
-      if (hecho) t.setAlpha(0.75);
-      c.add([bola, t]);
-    });
-    sits.forEach((t, i) => {
-      const y = 50 + filas * 30 + i * 24;
-      const h = deHistoria.has(t);
-      c.add(this.add.text(-ancho + 14, y, h ? '!' : '?', { fontFamily: FUENTE, fontSize: '18px', color: h ? COLOR.amarillo : COLOR.rosa }).setOrigin(0, 0.5));
-      c.add(this.add.text(-ancho + 38, y, t, { fontFamily: FUENTE, fontSize: '14px', color: h ? '#ffe08a' : '#ffb3d1' }).setOrigin(0, 0.5));
-    });
-    if (nOpc) c.add(this.add.text(-ancho + 14, 50 + filas * 30 + sits.length * 24, `Encargos opcionales: ${nOpc}`, { fontFamily: FUENTE, fontSize: '13px', color: COLOR.crema }).setOrigin(0, 0.5).setAlpha(0.5));
+    c.add(this.add.text(-ancho + 14, 10, acabada ? 'Modo libre' : `Cap. ${etiquetaCap(n)} · ${cap.titulo}`, { fontFamily: FUENTE, fontSize: '17px', color: COLOR.amarillo }));
+    c.add(piezas);
     if (desdeCapId('cuota')) {
       const y = alto - 22;
       const f = Math.min(1, ESTADO.hucha / META_HUCHA);
+      // Barra de 170 px: la cifra («750/1000») cabe a su derecha sin pisarla.
       c.add(this.add.text(-ancho + 14, y, 'Hucha', { fontFamily: FUENTE, fontSize: '14px', color: COLOR.crema }).setOrigin(0, 0.5));
-      c.add(this.add.rectangle(-ancho + 70, y, 200, 12, 0x000000, 0.5).setOrigin(0, 0.5).setStrokeStyle(2, HEX.crema));
-      c.add(this.add.rectangle(-ancho + 70, y, 200 * f, 12, HEX.amarillo).setOrigin(0, 0.5));
+      c.add(this.add.rectangle(-ancho + 70, y, 170, 12, 0x000000, 0.5).setOrigin(0, 0.5).setStrokeStyle(2, HEX.crema));
+      c.add(this.add.rectangle(-ancho + 70, y, 170 * f, 12, HEX.amarillo).setOrigin(0, 0.5));
       c.add(this.add.text(-14, y, `${ESTADO.hucha}/${META_HUCHA}`, { fontFamily: FUENTE, fontSize: '13px', color: COLOR.amarillo }).setOrigin(1, 0.5));
     }
     if (nuevo) this.tweens.add({ targets: c, scale: 1.06, duration: 120, yoyo: true });
@@ -1603,8 +1671,11 @@ class Barrio extends Phaser.Scene {
     };
     this.abrirModal(m => {
       // Columna izquierda: cómo va el local.
-      m.add(texto(this, -250, -210, 'El negocio de Unaké', 30, COLOR.amarillo));
-      m.add(texto(this, -250, -176, `Rango: ${c.rango}${rangoSiguiente(c.total) ? `\nsiguiente: ${rangoSiguiente(c.total)}` : ''}`, 15, COLOR.rosa, 300));
+      // En el móvil la letra crece: el título se encoge hasta caber en su columna y el rango va debajo de su alto real.
+      const tituloN = texto(this, -250, -210, 'El negocio de Unaké', 30, COLOR.amarillo);
+      if (tituloN.width > 320) tituloN.setScale(320 / tituloN.width);
+      m.add(tituloN);
+      m.add(texto(this, -250, 0, `Rango: ${c.rango}${rangoSiguiente(c.total) ? `\nsiguiente: ${rangoSiguiente(c.total)}` : ''}`, 15, COLOR.rosa, 300).setOrigin(0.5, 0).setY(-210 + tituloN.height * tituloN.scaleY / 2));
       const datos = [
         `Clientes: ${Math.floor(c.clientes)} (caben ${c.aforo})`,
         `Cada cliente deja ${c.porCliente.toFixed(1)}/min`,
@@ -1617,9 +1688,11 @@ class Barrio extends Phaser.Scene {
       m.add(this.add.rectangle(-390, 40, 280 * Math.min(1, n.caja / c.tope), 14, HEX.amarillo).setOrigin(0, 0.5));
       m.add(boton(this, -250, 100, `Cobrar la caja (E)`, cobrar, { ancho: 300, alto: 60, tam: 22, color: HEX.verde }));
       const meta = METAS_NEGOCIO[n.metas];
-      m.add(texto(this, -250, 170, meta ? `Meta: ${meta.texto} (+${meta.premio})` : '¡Todas las metas cumplidas!', 16, COLOR.azul, 360));
-      m.add(boton(this, -330, 214, 'Obras (8)', () => this.obras(), { ancho: 150, alto: 44, tam: 18, color: HEX.rosa }));
-      m.add(boton(this, -165, 214, 'Decoración (9)', () => this.deco(), { ancho: 170, alto: 44, tam: 18, color: HEX.azul }));
+      const tMeta = texto(this, -250, 166, meta ? `Meta: ${meta.texto} (+${meta.premio})` : '¡Todas las metas cumplidas!', 16, COLOR.azul);
+      if (tMeta.width > 380) tMeta.setScale(380 / tMeta.width); // una línea: en dos pisaba los botones
+      m.add(tMeta);
+      m.add(boton(this, -332, 214, 'Obras (8)', () => this.obras(), { ancho: 146, alto: 44, tam: 18, color: HEX.rosa }));
+      m.add(boton(this, -152, 214, 'Decoración (9)', () => this.deco(), { ancho: 200, alto: 44, tam: 18, color: HEX.azul }));
       // Columna derecha: mejoras.
       MEJORAS_NEGOCIO.forEach((mj, i) => {
         const y = -205 + i * 58;
@@ -1627,7 +1700,7 @@ class Barrio extends Phaser.Scene {
         m.add(this.add.text(-40, y - 16, `${i + 1} · ${mj.nombre}`, { fontFamily: FUENTE, fontSize: '18px', color: COLOR.crema }));
         m.add(this.add.text(-40, y + 6, mj.desc, { fontFamily: FUENTE, fontSize: '13px', color: COLOR.azul }));
         for (let k = 0; k < nivelMaxPorCapitulo(ESTADO.capitulo); k++) m.add(this.add.circle(210 + k * 13, y + 14, 5, k < nv ? HEX.amarillo : 0x000000, k < nv ? 1 : 0.4).setStrokeStyle(2, HEX.crema));
-        if (nv >= nivelMaxPorCapitulo(ESTADO.capitulo)) m.add(texto(this, 330, y, 'Al máximo', 16, COLOR.verde));
+        if (nv >= nivelMaxPorCapitulo(ESTADO.capitulo)) m.add(texto(this, 330, y, nv >= NIVEL_MAX ? 'Al máximo' : 'Más adelante', 16, nv >= NIVEL_MAX ? COLOR.verde : COLOR.azul));
         else {
           const precio = precioMejora(mj);
           m.add(boton(this, 330, y, `${precio}`, () => comprar(mj), { ancho: 110, alto: 42, tam: 18, color: ESTADO.monchis >= precio ? HEX.amarillo : 0x8a7fa0 }));
@@ -1785,9 +1858,10 @@ class Barrio extends Phaser.Scene {
         const x = i % 2 ? 20 : -390;
         const y = -38 + Math.floor(i / 2) * 50;
         const si = !!ESTADO.logros[l.id];
+        const oculto = l.oculto && !si; // los ocultos: «???» y, si la hay, una pista con la voz de alguien
         c.add(this.add.star(x + 16, y + 6, 5, 7, 15, si ? HEX.amarillo : 0x4a3d5c).setStrokeStyle(3, HEX.tinta));
-        c.add(this.add.text(x + 40, y - 10, l.nombre, { fontFamily: FUENTE, fontSize: '17px', color: si ? COLOR.amarillo : '#b9aecb' }));
-        c.add(this.add.text(x + 40, y + 12, `${l.texto} · ${si ? 'conseguido' : `+${l.premio}`}`, { fontFamily: FUENTE, fontSize: '13px', color: si ? '#9be7a0' : COLOR.crema }));
+        c.add(this.add.text(x + 40, y - 10, oculto ? '???' : l.nombre, { fontFamily: FUENTE, fontSize: '17px', color: si ? COLOR.amarillo : '#b9aecb' }));
+        c.add(this.add.text(x + 40, y + 12, oculto ? `${l.pista || 'Pasa sin buscarlo'} · +${l.premio}` : `${l.texto} · ${si ? 'conseguido' : `+${l.premio}`}`, { fontFamily: FUENTE, fontSize: '13px', color: si ? '#9be7a0' : COLOR.crema }));
       });
       c.add(boton(this, -250, 215, '← (1)', () => this.logros(pagina - 1), { ancho: 130, alto: 46, tam: 18, color: HEX.azul }));
       c.add(texto(this, -100, 215, `${pagina + 1}/${paginas}`, 18, COLOR.crema));
@@ -1862,6 +1936,8 @@ class Barrio extends Phaser.Scene {
     if (this.guia && this.guia.c.visible) z.push(this.guia.c.getBounds());
     (this.toasts || []).forEach(t => { if (t.active) z.push(new Phaser.Geom.Rectangle(250 - 230, t.y - 40, 460, 80)); }); // su sitio final, aunque aún esté entrando
     if (this.notif) z.push(new Phaser.Geom.Rectangle(20, ALTO - 190, 460, 80));
+    // Las marcas «!» / «?» de la sala: un bocadillo del ambiente no las tapa (el banco bajo el de Niebla).
+    (this.marcasSit || []).forEach(m => { if (m.active && m.visible) { const r = m.getBounds(); z.push(new Phaser.Geom.Rectangle(r.x - 6, r.y - 18, r.width + 12, r.height + 24)); } });
     return z;
   }
 
@@ -1944,6 +2020,7 @@ class Barrio extends Phaser.Scene {
         ? texto(this, c.x, y, '!', 66, COLOR.amarillo)
         : texto(this, c.x - 64, y, '?', 30, COLOR.rosa).setAlpha(0.55);
       m.setDepth(801);
+      c.marcaSit = m;
       this.tweens.add({ targets: m, y: y - (historia ? 14 : 6), angle: { from: -8, to: 8 }, duration: historia ? 450 : 800, yoyo: true, repeat: -1 });
       this.marcasSit.push(m);
     });
@@ -2124,6 +2201,7 @@ class Barrio extends Phaser.Scene {
   // ---------- Encuentros en modo libre: cada vez, algo distinto según la situación ----------
 
   encuentro(c) {
+    if (c.id === 'fortunato') return this.charla(c, Phaser.Utils.Array.GetRandom(['Blub.', '…Blub.', '(Fortunato te mira con calma, como siempre.)']));
     if (!TONTERIAS[c.id]) return this.charla(c, '…');
     const faltan = this.faltanLiar();
     const puedeRegalo = Date.now() - (ESTADO.ultimoRegalo || 0) > 45000;
@@ -2525,10 +2603,9 @@ te ha mandado esto`, 24, COLOR.amarillo));
     // La historia en pausa larga sin ninguna escena abierta (un cierre que no llegó a mostrarse).
     this.libreDesde = this.modal ? 0 : (this.libreDesde || ahora);
     if (!this.modal && ahora - this.libreDesde > 3000 && this.pausaHistoria && this.pausaHistoria - ahora > 20000) {
-      const seguir = this.seguirPendiente;
-      this.seguirPendiente = null;
-      this.pausaHistoria = ahora + 1000;
-      if (seguir) seguir();
+      // Un cierre de capítulo pendiente se vuelve a abrir (y él mismo suelta la pausa al acabar).
+      const pendiente = this.seguirPendiente;
+      if (pendiente) { this.libreDesde = ahora; this.cuandoLibre(pendiente); } else this.pausaHistoria = ahora + 1000;
     }
   }
 
@@ -2549,7 +2626,9 @@ te ha mandado esto`, 24, COLOR.amarillo));
       const accion = () => this.tarjeta(k, null, null, [], { sitio, sinFila: true });
       const b = boton(this, x0 + hueco * (i + 0.5), y, MISIONES[k].nombre, accion, { ancho, alto, tam, color: HEX.rosa });
       c.add(b);
-      b.etiqueta.setY(-9);
+      // El nombre en una sola línea (encoge si no cabe): en dos líneas pisaba las estrellas y el récord.
+      b.etiqueta.setWordWrapWidth(null).setY(-9);
+      if (b.etiqueta.width > ancho - 20) b.etiqueta.setScale((ancho - 20) / b.etiqueta.width);
       const n = ESTADO.estrellas[k] || 0;
       for (let e = 0; e < 3; e++) b.add(this.add.star(-34 + e * 14, 10, 5, 3, 7, e < n ? HEX.amarillo : 0x7a3a8c));
       const rec = leerRecord(k);
@@ -2582,26 +2661,42 @@ te ha mandado esto`, 24, COLOR.amarillo));
       flotar(this, img, { amplitud: 6 });
       c.add(img);
       c.add(texto(this, 110, -180, m.nombre, 40, COLOR.amarillo, 560));
-      c.add(this.add.text(110, -70, m.texto, {
+      const desc = this.add.text(110, -70, m.texto, {
         fontFamily: FUENTE, fontSize: '22px', color: COLOR.crema, align: 'center', wordWrap: { width: 500 },
-      }).setOrigin(0.5));
+      }).setOrigin(0.5);
+      c.add(desc);
       // Con fila o con noche especial hace falta sitio: lo de arriba sube un poco.
       const dy = compacto ? -14 : 0;
-      c.add(estrellas(this, 110, 40 + dy, ESTADO.estrellas[clave] || 0, 20));
       const rec = leerRecord(clave);
       const unidad = clave === 'Reparto' ? 'entregas seguidas' : 'puntos';
-      c.add(texto(this, 110, 82 + dy, `Nivel ${nivelDe(clave)}: llega a ${metaNivel(clave)} ${unidad} para subir (+${premioNivel(nivelDe(clave))} monchis)`, 20, COLOR.azul, 560));
-      c.add(texto(this, 110, 108 + dy, `${rec ? `Récord: ${rec}  ·  ` : ''}Estrellas: ${m.umbrales.join(' · ')}`, 16, COLOR.crema, 540));
-      const yTextos = compacto ? 126 : 138;
-      if (nota) c.add(texto(this, 110, textoMod ? yTextos - 10 : yTextos, nota, textoMod ? 17 : 20, COLOR.amarillo, 540));
-      if (textoMod) c.add(texto(this, 110, nota ? yTextos + 18 : yTextos + (compacto ? 0 : 6), `${textoMod.titulo}\n«${textoMod.voz}»`, 15, COLOR.verde, 700));
+      // Lo de debajo de la descripción se apila por su alto real (en el móvil la letra crece ×1,3 y antes se pisaba).
+      const unaLinea = (t, max = 560) => { if (t.width > max) t.setScale(max / t.width); return t; };
+      const pila = [];
+      const poner = (o, alto, hueco) => { c.add(o); pila.push({ o, alto, hueco }); };
+      poner(estrellas(this, 110, 0, ESTADO.estrellas[clave] || 0, 20), 36, 0);
+      const tNivel = unaLinea(texto(this, 110, 0, `Nivel ${nivelDe(clave)}: llega a ${metaNivel(clave)} ${unidad} para subir (+${premioNivel(nivelDe(clave))} monchis)`, 20, COLOR.azul));
+      poner(tNivel, tNivel.height * tNivel.scaleY, 11);
+      const tEst = unaLinea(texto(this, 110, 0, `${rec ? `Récord: ${rec}  ·  ` : ''}Estrellas: ${m.umbrales.join(' · ')}`, 16, COLOR.crema));
+      poner(tEst, tEst.height * tEst.scaleY, 3);
+      if (nota) { const t = texto(this, 110, 0, nota, textoMod ? 17 : 20, COLOR.amarillo, 540); poner(t, t.height, 7); }
+      if (textoMod) { const t = texto(this, 110, 0, `${textoMod.titulo}
+«${textoMod.voz}»`, 15, COLOR.verde, 700); poner(t, t.height, 4); }
+      const yBot = compacto ? 222 : textoMod ? 206 : 190;
+      const altoBot = compacto ? 44 : textoMod ? 58 : 76;
+      const limite = (compacto ? 172 - 23 : yBot - altoBot / 2) - 6;
+      const bajoDesc = () => desc.y + desc.height / 2 + 8;
+      let y0 = Math.max(40 + dy - 18, bajoDesc());
+      const total = pila.reduce((s2, p2) => s2 + p2.hueco + p2.alto, 0);
+      let sobra = y0 + total - limite;
+      if (sobra > 0) { const sube = Math.min(sobra, y0 - bajoDesc()); y0 -= sube; sobra -= sube; }
+      if (sobra > 0) { const sube = Math.min(sobra, Math.max(0, (desc.y - desc.height / 2) - (-150))); desc.y -= sube; y0 -= sube; }
+      let yy = y0;
+      pila.forEach(p2 => { yy += p2.hueco; p2.o.y = yy + p2.alto / 2; yy += p2.alto; });
       const botones = [
         { etiqueta: 'Jugar (E)', accion: jugar, color: HEX.amarillo },
         ...extras,
         { etiqueta: 'Ahora no (Esc)', accion: cerrar, color: HEX.crema },
       ];
-      const yBot = compacto ? 222 : textoMod ? 206 : 190;
-      const altoBot = compacto ? 44 : textoMod ? 58 : 76;
       const ancho = Math.min(250, 780 / botones.length - 14);
       botones.forEach((b, i) => {
         const x = -390 + (780 / botones.length) * (i + 0.5);
@@ -2830,7 +2925,7 @@ te ha mandado esto`, 24, COLOR.amarillo));
     const filas = [
       { k: 'papel', nombre: 'Papel de liar', tengo: inv.papel > 0, donde: 'En la tienda de 24 h' },
       { k: 'boquilla', nombre: 'Boquilla', tengo: inv.boquilla > 0, donde: b ? `Brilla en: ${SALAS[b.sala].nombre}` : 'Brilla en algún sitio del barrio' },
-      { k: 'bolsita', nombre: 'La bolsita', tengo: inv.bolsita > 0, donde: negocio().bolsitas >= 1 ? 'Tu máquina tiene: recógela en el negocio' : 'Pídesela a Palicaso en la barra' },
+      { k: 'bolsita', nombre: 'La bolsita', tengo: inv.bolsita > 0, donde: negocio().bolsitas >= 1 ? 'Tu máquina tiene bolsitas: recógelas en el negocio' : 'Pídesela a Palicaso en la barra' },
       { k: 'mechero', nombre: 'Mechero', tengo: inv.mechero, donde: 'En la tienda de 24 h' },
     ];
     const todo = filas.every(f => f.tengo);
@@ -2852,6 +2947,8 @@ te ha mandado esto`, 24, COLOR.amarillo));
         c.add(this.add.text(-280, y + 6, f.donde, { fontFamily: FUENTE, fontSize: '17px', color: COLOR.azul }));
         c.add(texto(this, 300, y, f.tengo ? 'Lo tienes' : 'Falta', 24, f.tengo ? COLOR.verde : COLOR.rosa));
       });
+      // A partir de la segunda fumada, al sentarte eliges con quién y cómo lo lías (se ve en la pantalla de liar).
+      if (todo && stat('fumadas') >= 1) c.add(texto(this, 0, 152, 'Al sentarte eliges con quién y cómo lo lías', 20, COLOR.azul));
       if (todo) c.add(boton(this, -150, 200, '¡A liar! (E)', liar, { ancho: 280, tam: 28, color: HEX.verde }));
       c.add(boton(this, todo ? 170 : 0, 200, 'Cerrar (Esc)', () => this.cerrarModal(), { ancho: 240, alto: 60, tam: 22, color: HEX.crema }));
     }, () => this.cerrarModal(), liar);

@@ -12,7 +12,7 @@
 
 MISIONES.Control = {
   nombre: 'El control', sprite: 'vuper', umbrales: [600, 1100, 1700],
-  texto: 'Un control de los agentes del humo. Tapa lo que te delata a tiempo (V ventanilla, G gafas, L, P, C) y contesta con cabeza: 1, 2 o 3. Que la sospecha no llegue arriba.',
+  texto: 'Un control de los agentes del humo. Tapa a tiempo lo que te delata: V ventanilla, G gafas, y la inicial de quien se vaya a escapar (L Lasslow, P Perico, C Cotine). Contesta con 1, 2 o 3. Que la sospecha no llegue arriba.',
 };
 if (typeof MUSICA_ESCENA !== 'undefined') MUSICA_ESCENA.Control = 'sigilo';
 if (typeof CORTINA_DE !== 'undefined') CORTINA_DE.Control = 'iris';
@@ -32,7 +32,7 @@ const TELL_ORDEN = ['humo', 'ojos', 'risa', 'pinpin', 'comer'];
 
 // Preguntas: n = normal, s = sospechosa, a = absurda (a veces cuela). `quien`: solo si va ese acompañante.
 const PREGUNTAS_LOCALES = [
-  { q: '¿De dónde venís?', n: 'De cenar con unos amigos, agente.', s: 'De… una reunión. De humo. De trabajo.', a: 'De una feria. De la del año 3000.' },
+  { q: '¿De dónde vienen?', n: 'De cenar con unos amigos, agente.', s: 'De… una reunión. De humo. De trabajo.', a: 'De una feria. De la del año 3000.' },
   { q: '¿Han tomado algo?', n: 'Un café. Y yo, unas pipas.', s: 'Depende de qué entienda usted por «algo».', a: 'Yo, un bocata. Los de atrás, de todo un poco.' },
   { q: '¿Qué es ese olor?', n: 'Ambientador de pino, agente. Nuevo.', s: '¿Qué olor? ¿Usted huele algo? ¿Yo huelo?', a: 'Es el perfume de la furgo: «Neblina nocturna».' },
   { q: '¿Adónde se dirigen?', n: 'A una feria, agente. Con la familia.', s: 'A un sitio donde no hay controles.', a: 'A ver una vaca con patines.' },
@@ -122,7 +122,7 @@ class Control extends Phaser.Scene {
     this.puntos = 0;
     this.preg = 0;
     this.nivel = nivelDe('Control');
-    this.total = Math.min(9, 5 + this.nivel);
+    this.total = 5 + this.nivel; // sin tope de 9: los niveles 6-7 eran imposibles
     this.tiempoQ = Math.max(5.5, 9.5 - 0.5 * (this.nivel - 1));
     this.plazo = Math.max(1.3, 2.5 - 0.15 * (this.nivel - 1));
     this.activos = [];
@@ -317,9 +317,9 @@ class Control extends Phaser.Scene {
     this.txtAgente = this.add.text(ANCHO / 2, 467, '', { fontFamily: FUENTE, fontSize: `${MOVIL ? 32 : 32}px`, color: COLOR.tinta, align: 'center', wordWrap: { width: 1170 } }).setOrigin(0.5).setDepth(61);
     // Tiempo para contestar.
     this.barraT = this.add.rectangle(24, 511, 1232, 8, 0xffd23f).setOrigin(0, 0.5).setDepth(61).setAlpha(0);
-    // Respuestas (1, 2, 3).
+    // Respuestas (1, 2, 3): más bajas y algo más arriba, que tocaban las insignias V/G/L/P.
     this.btnR = [0, 1, 2].map(i => {
-      const b = boton(this, 220 + i * 420, 560, '', () => this.responder(i), { ancho: 396, alto: 80, tam: 21, color: [HEX.amarillo, HEX.azul, HEX.rosa][i] }).setDepth(61);
+      const b = boton(this, 220 + i * 420, 553, '', () => this.responder(i), { ancho: 396, alto: 72, tam: 21, color: [HEX.amarillo, HEX.azul, HEX.rosa][i] }).setDepth(61);
       b.setVisible(false);
       return b;
     });
@@ -329,7 +329,7 @@ class Control extends Phaser.Scene {
     this.btnT = {};
     lista.forEach((t, i) => {
       const x = ANCHO / 2 + (i - (lista.length - 1) / 2) * sep;
-      const c = this.add.container(x, 646).setDepth(61);
+      const c = this.add.container(x, 652).setDepth(61);
       const g = this.add.graphics();
       g.fillStyle(HEX.tinta, 1).fillCircle(3, 5, 36).fillStyle(TELLS[t].color, 1).fillCircle(0, 0, 36).lineStyle(6, HEX.tinta, 1).strokeCircle(0, 0, 36);
       c.add(g);
@@ -337,6 +337,7 @@ class Control extends Phaser.Scene {
       iconoTell(ic, t);
       c.add(ic);
       const k = this.add.text(-30, -34, TELLS[t].tecla.toUpperCase(), { fontFamily: FUENTE, fontSize: '22px', color: COLOR.tinta, backgroundColor: COLOR.crema, padding: { x: 7, y: 1 } }).setOrigin(0.5);
+      if (MOVIL) k.setVisible(false); // en el móvil no hay teclas
       c.add(k);
       c.add(this.add.text(0, 52, TELLS[t].nombre, { fontFamily: FUENTE, fontSize: `${MOVIL ? 20 : 18}px`, color: COLOR.crema, stroke: COLOR.tinta, strokeThickness: 4 }).setOrigin(0.5));
       c.setSize(90, 90).setInteractive({ useHandCursor: true });
@@ -351,6 +352,7 @@ class Control extends Phaser.Scene {
       const a = this.add.graphics();
       const l = this.add.text(0, 0, TELLS[t].tecla.toUpperCase(), { fontFamily: FUENTE, fontSize: '40px', color: COLOR.tinta }).setOrigin(0.5);
       c.add([g, a, l]);
+      if (MOVIL) { l.setVisible(false); const ic = this.add.graphics().setScale(0.6); iconoTell(ic, t); c.add(ic); }
       g.fillStyle(0xfff6e8, 1).fillCircle(0, 0, 38).lineStyle(6, HEX.tinta, 1).strokeCircle(0, 0, 38);
       c.arco = a;
       this.insig[t] = c;
@@ -753,6 +755,7 @@ class Control extends Phaser.Scene {
     let linea;
     if (gana) {
       this.puntos += 400 + Math.round((100 - this.sosp) * 4);
+      if (this.sosp < 10) sumarStat('controlLimpio'); // logro oculto «Buenas noches, agente»
       sfx(this, 'platillo', { volume: 0.5 });
       Comic.confeti(this, { n: 24, profundidad: 70 });
       if (typeof enfasisSeguro === 'function') enfasisSeguro(this, 'alegria', { camara: false });
@@ -762,7 +765,7 @@ class Control extends Phaser.Scene {
     } else {
       this.txtAgente.setFontSize(28);
       this.txtAgente.setColor('#a8142a').setText(frAgente('pillarles', 'Bajen del vehículo, por favor…', 0));
-      this.cameras.main.shake(500, 0.012);
+      this.cameras.main.shake(200, 0.007);
       sfx(this, 'puerta', { volume: 0.6 });
       if (typeof enfasisSeguro === 'function') enfasisSeguro(this, 'bronca', {});
       this.tweens.add({ targets: this.agente, scale: 1.45, x: 250, duration: 600, ease: 'Back.out' });

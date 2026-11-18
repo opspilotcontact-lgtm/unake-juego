@@ -245,7 +245,7 @@ class Tragaperras extends Phaser.Scene {
       avisoApuesta(this, tipo === 'gordo' ? `¡¡EL GORDO!! +${cobro}` : `+${cobro} monchis`);
       lluviaDeMonchis(this, tipo === 'gordo' ? 40 : Math.max(6, mult * 3), ANCHO / 2, 260);
       sfx(this, tipo === 'tres' || tipo === 'gordo' ? 'platillo' : 'pop', { volume: 0.5 });
-      this.cameras.main.shake(tipo === 'gordo' ? 700 : 200, tipo === 'gordo' ? 0.012 : 0.004);
+      this.cameras.main.shake(tipo === 'gordo' ? 250 : 200, tipo === 'gordo' ? 0.012 : 0.004);
       this.decir(Phaser.Utils.Array.GetRandom(tipo === 'gordo' ? FRASES_TRAGAPERRAS.gordo : FRASES_TRAGAPERRAS.gana));
       if (mult >= 5 && this.textures.exists('obj-monton-monchis')) {
         const m = this.add.image(ANCHO / 2, 470, 'obj-monton-monchis').setDepth(80).setScale(0);
@@ -258,7 +258,6 @@ class Tragaperras extends Phaser.Scene {
     } else if (tipo === 'puky') {
       this.palicaso.setTexture('palicaso-contando');
       avisoApuesta(this, `Puky se come ${apuesta}`, COLOR.rosa);
-      this.cameras.main.flash(250, 220, 200, 40);
       sfx(this, 'blurp', { volume: 0.5 });
       if (this.textures.exists('fx-charco-amarillo')) {
         const c = this.add.image(ANCHO / 2 + Phaser.Math.Between(-150, 150), 260, 'fx-charco-amarillo').setDepth(80).setAlpha(0.95).setScale(0);
@@ -352,7 +351,7 @@ class Carrera extends Phaser.Scene {
     // El ganador se sortea con las probabilidades de las cuotas; la carrera se anima para llegar a él.
     let r = Math.random();
     this.ganador = this.carriles.find(c => (r -= c.p) < 0) || this.carriles[0];
-    const base = 6200;
+    const base = 4200;
     this.carriles.forEach(c => {
       c.dura = c === this.ganador ? base : base + Phaser.Math.Between(250, 1600);
       // Curva de avance con tirones y frenazos: puntos de control crecientes, normalizados a 1.
@@ -389,8 +388,8 @@ class Carrera extends Phaser.Scene {
       c.img.setAngle(Math.sin(ahora / 90 + c.y) * 6);
       if (k === c.momento && !c.avisado) {
         c.avisado = true;
-        const tx = texto(this, c.img.x, c.y - 44, c.truco, 18, COLOR.rosa).setDepth(40);
-        this.tweens.add({ targets: tx, y: tx.y - 30, alpha: 0, duration: 1400, onComplete: () => tx.destroy() });
+        const tx = texto(this, Math.min(c.img.x + 60, 1150), c.y + 4, c.truco, 18, COLOR.crema).setOrigin(0, 0.5).setDepth(40); tx.x = Math.min(tx.x, ANCHO - 16 - tx.width); // en su carril y en crema (en y - 44 caía en el de arriba, rosa sobre morado)
+        this.tweens.add({ targets: tx, y: tx.y - 8, alpha: 0, duration: 1400, delay: 400, onComplete: () => tx.destroy() });
       }
       if (f >= 1 && !c.llego) { c.llego = true; if (c === this.ganador) this.meta(); }
     });

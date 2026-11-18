@@ -12,6 +12,7 @@ const ACTIVIDADES = {
   cotine: { humo: 'cotine-plop', fx: 'migas', sonido: 'nam', dice: ['Ñam.', 'Solo una miguita.', 'Esto era para la tarta. Era.'] },
   palicaso: { humo: 'palicaso-riendo', dice: ['¡JAJAJA! ¡Qué bueno!', '¡Escucha esto, que es buenísimo!'] },
   pompa: { humo: 'pompa-mira', fx: 'notas', dice: ['♪', '♪ ♫ ♪'] },
+  niebla: { humo: 'niebla-olvido', dice: ['¿Qué iba a decir?', 'Ah, sí… no.', '¿Quién eras tú?'] },
   puky: { humo: 'puky-eructo', sonido: 'blurp', dice: ['*BURP*', 'Perdón. No, en verdad no.'] },
 };
 

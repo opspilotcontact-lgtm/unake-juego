@@ -124,7 +124,7 @@ class Poscreditos extends Phaser.Scene {
             // Iris que se cierra sobre Puky, como en el E00.
             Comic.cubrir.iris(this, () => {
               this.add.rectangle(ANCHO / 2, ALTO / 2, ANCHO, ALTO, UNAKE.noche).setDepth(999);
-              this.time.delayedCall(600, () => irA(this, 'Barrio', { aviso: 'Modo libre: a por los récords' }));
+              this.time.delayedCall(600, () => irA(this, 'Circulo'));
             }, { x: this.puky.x, y: this.puky.y - 130 });
           });
         });

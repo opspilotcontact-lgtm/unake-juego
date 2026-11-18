@@ -84,7 +84,9 @@ class Sigilo extends Phaser.Scene {
     entrar(this, datos);
     this.time.delayedCall(datos && datos.rotulo ? 1900 : 400, () => {
       const t = texto(this, ANCHO / 2, ALTO / 2, 'Coge los 3 discos sin que te vean.\nMANTÉN Mayús (o «Sigilo») para no hacer ruido. Las macetas esconden.', 28, COLOR.amarillo, 1000).setDepth(60);
-      this.time.delayedCall(3000, () => { t.destroy(); this.activo = true; });
+      // Caja oscura detrás: amarillo sobre el suelo beige no se leía.
+      const caja = this.add.rectangle(ANCHO / 2, ALTO / 2, Math.min(ANCHO - 40, t.width + 60), t.height + 40, HEX.tinta, 0.85).setStrokeStyle(4, HEX.amarillo).setDepth(59);
+      this.time.delayedCall(3000, () => { t.destroy(); caja.destroy(); this.activo = true; });
     });
   }
 
@@ -192,7 +194,9 @@ class Sigilo extends Phaser.Scene {
     if (this.vidasG[this.vidas]) this.vidasG[this.vidas].setFillStyle(HEX.rojo);
     this.sospecha = 0;
     sfx(this, 'oooh', { volume: 0.5 });
-    this.cameras.main.flash(200, 255, 90, 79);
+    // Rojo solo sobre Vuper (antes, destello rojo a pantalla completa).
+    this.vuper.setTint(0xff5a4f);
+    this.time.delayedCall(220, () => this.vuper.active && this.vuper.clearTint());
     const b = bocadillo(this, Phaser.Math.Clamp(this.vuper.x, 220, ANCHO - 220), Math.max(160, this.vuper.y - 90), Phaser.Utils.Array.GetRandom(['¡Eh! ¿Tú quién eres?', '¡Fuera de mi casa, rider!', '¿Otra vez el de los monchis?']), { tam: 22, ancho: 320 }).setDepth(40);
     this.time.delayedCall(1500, () => b.destroy());
     if (this.vidas <= 0) return this.final(false);

@@ -4,21 +4,22 @@
 // si alguna no está, no sale en el armario. Las pieles son efectos de color, no necesitan dibujo.
 
 const ARMARIO = [
-  { id: 'gorra', nombre: 'Gorra del revés', hueco: 'cabeza', sprite: 'obj-acc-gorra', precio: 300, efecto: '+5 % de monchis', bono: { pago: 0.05 } },
-  { id: 'cascos', nombre: 'Cascos de la Pompa (al cuello)', hueco: 'cabeza', sprite: 'obj-acc-cascos', precio: 450, efecto: '+8 % de monchis', bono: { pago: 0.08 } },
-  { id: 'chistera', nombre: 'Chistera de señor', hueco: 'cabeza', sprite: 'obj-acc-chistera', precio: 550, efecto: 'Un señor cobra mejor: +10 %', bono: { pago: 0.1 } },
-  { id: 'corona', nombre: 'Corona de humo', hueco: 'cabeza', sprite: 'obj-acc-corona', precio: 1200, efecto: 'Rey de la aso: +18 % de monchis', bono: { pago: 0.18 } },
-  { id: 'gafas', nombre: 'Gafas de neón', hueco: 'ojos', sprite: 'obj-acc-gafas', precio: 400, efecto: 'El colocón dura más', bono: { colocon: -0.15 } },
-  { id: 'antifaz', nombre: 'Antifaz de incógnito', hueco: 'ojos', sprite: 'obj-acc-antifaz', precio: 700, efecto: 'Monchiman de paisano: colocón y hambre, mejor', bono: { colocon: -0.1, hambre: -0.1 } },
-  { id: 'bufanda', nombre: 'Bufanda de punto', hueco: 'cuello', sprite: 'obj-acc-bufanda', precio: 350, efecto: 'El hambre sube más despacio', bono: { hambre: -0.15 } },
-  { id: 'cadena', nombre: 'Cadena con la M', hueco: 'cuello', sprite: 'obj-acc-cadena', precio: 800, efecto: '+12 % de monchis', bono: { pago: 0.12 } },
-  { id: 'dorado', nombre: 'Piel dorada', hueco: 'piel', tinte: 0xffd36b, precio: 600, efecto: 'Brillas: +5 % de monchis', bono: { pago: 0.05 } },
-  { id: 'neon', nombre: 'Piel de neón', hueco: 'piel', tinte: 'neon', precio: 500, efecto: 'Te ven de lejos. El colocón dura algo más', bono: { colocon: -0.05 } },
-  { id: 'arcoiris', nombre: 'Piel arcoíris', hueco: 'piel', tinte: 'arcoiris', precio: 1000, efecto: 'Leyenda del barrio: +10 % de monchis', bono: { pago: 0.1 } },
+  { id: 'gorra', nombre: 'Gorra del revés', hueco: 'cabeza', sprite: 'obj-acc-gorra', precio: 450, efecto: '+5 % de monchis', bono: { pago: 0.05 } },
+  { id: 'cascos', nombre: 'Cascos de la Pompa (al cuello)', hueco: 'cabeza', sprite: 'obj-acc-cascos', desde: 'mejor-amigo', precio: 675, efecto: '+8 % de monchis', bono: { pago: 0.08 } },
+  { id: 'chistera', nombre: 'Chistera de señor', hueco: 'cabeza', sprite: 'obj-acc-chistera', desde: 'mejor-amigo', precio: 825, efecto: 'Un señor cobra mejor: +10 %', bono: { pago: 0.1 } },
+  { id: 'corona', nombre: 'Corona de humo', hueco: 'cabeza', sprite: 'obj-acc-corona', desde: 'inspeccion', precio: 1200, efecto: 'Rey de la aso: +15 % de monchis', bono: { pago: 0.15 } },
+  { id: 'gafas', nombre: 'Gafas de neón', hueco: 'ojos', sprite: 'obj-acc-gafas', precio: 600, efecto: 'El colocón dura más', bono: { colocon: -0.15 } },
+  { id: 'antifaz', nombre: 'Antifaz de incógnito', hueco: 'ojos', sprite: 'obj-acc-antifaz', desde: 'furgo', precio: 1050, efecto: 'Monchiman de paisano: colocón y hambre, mejor', bono: { colocon: -0.1, hambre: -0.1 } },
+  { id: 'bufanda', nombre: 'Bufanda de punto', hueco: 'cuello', sprite: 'obj-acc-bufanda', precio: 525, efecto: 'El hambre sube más despacio', bono: { hambre: -0.15 } },
+  { id: 'cadena', nombre: 'Cadena con la M', hueco: 'cuello', sprite: 'obj-acc-cadena', desde: 'furgo', precio: 1200, efecto: '+12 % de monchis', bono: { pago: 0.12 } },
+  { id: 'dorado', nombre: 'Piel dorada', hueco: 'piel', tinte: 0xffd36b, desde: 'mejor-amigo', precio: 900, efecto: 'Brillas: +5 % de monchis', bono: { pago: 0.05 } },
+  { id: 'neon', nombre: 'Piel de neón', hueco: 'piel', tinte: 'neon', desde: 'mejor-amigo', precio: 750, efecto: 'Te ven de lejos. El colocón dura algo más', bono: { colocon: -0.05 } },
+  { id: 'arcoiris', nombre: 'Piel arcoíris', hueco: 'piel', tinte: 'arcoiris', desde: 'libre', precio: 2000, efecto: 'Leyenda del barrio: +10 % de monchis', bono: { pago: 0.1 } },
 ];
 
 function armario() {
   ESTADO.armario = ESTADO.armario || { tiene: {}, puesto: {} };
+  ESTADO.armario.vista = ESTADO.armario.vista || {}; // partidas viejas: sin reacciones vistas
   return ESTADO.armario;
 }
 function prendaPuesta(hueco) {
@@ -29,6 +30,10 @@ function prendaPuesta(hueco) {
 function bonoArmario(k) {
   return ['cabeza', 'ojos', 'cuello', 'piel'].reduce((a, h) => { const p = prendaPuesta(h); return a + ((p && p.bono[k]) || 0); }, 0);
 }
+// Puerta por acto (17/11): lo básico desde el principio, lo llamativo en el II, antifaz y cadena en el III,
+// corona y piel arcoíris en el IV. `desde` es un id de capítulo.
+function prendaAbierta(p) { return !p.desde || desdeCapId(p.desde); }
+function actoDePrenda(p) { return p.desde === 'libre' ? 'Tras el final' : !p.desde ? 'I' : p.desde === 'mejor-amigo' ? 'II' : p.desde === 'furgo' ? 'III' : 'IV'; }
 function prendaDisponible(p, scene) { return p.hueco === 'piel' || scene.textures.exists(p.sprite); }
 
 // Color de la piel puesta (o null).
@@ -79,4 +84,52 @@ function vestirVuper(s) {
   });
   const tinte = tintePiel(s.time.now);
   if (tinte) j.setTint(tinte); else j.clearTint();
+}
+
+// Te ven la ropa (guinda §5): la primera vez que entras en una sala con una prenda puesta, UNA persona de
+// esa sala la comenta. Una vez por prenda y para siempre (armario().vista). Quién: el primero de la lista
+// que esté en la sala. Las líneas son [quién, frase]; 'otro' es cualquiera de la sala que no haya hablado.
+const DICE_ARMARIO = {
+  gorra: { quien: ['palicaso'], lineas: [['palicaso', '¡Escucha! Yo llevé una así en el… bueno, te lo cuento otro día. ¿Por dónde iba?']] },
+  cascos: { quien: ['pompa'], lineas: [['pompa', '…Esos son míos.'], ['pompa', '…Cuídalos.']] },
+  chistera: { quien: ['lasslow'], lineas: [['lasslow', 'Caballero. Por fin alguien en esta casa… JA… perdón. Le queda soberbia.']] },
+  corona: { quien: ['blancaso'], lineas: [['blancaso', 'Rey de la aso. ¿El rey paga la cuota? Lo apunto.']] },
+  gafas: { quien: ['cotine'], lineas: [['cotine', '¿Eso se come?'], ['cotine', '(ñam) No. Vale. Te quedan bien igual.']] },
+  antifaz: { quien: ['perico'], lineas: [['perico', '¡Monchiman! ¡Monchiman!'], ['otro', 'Ya, Periquito, ya.'], ['perico', 'Pin pin.']] },
+  bufanda: { quien: ['cotine'], lineas: [['cotine', 'Si me la dejas, no me la como. Casi.']] },
+  cadena: { quien: ['perico'], lineas: [['perico', 'Brilla. Brilla. Pa la percha. Pa la percha.'], ['vuper', 'Ni hablar.']] },
+  dorado: { quien: ['palicaso'], lineas: [['palicaso', '¡Mira! ¡Pareces una estrella! Como yo, que una vez…']] },
+  neon: { quien: ['pompa'], lineas: [['pompa', '…Se te ve desde el techo.']] },
+  arcoiris: { quien: ['niebla'], lineas: [['niebla', 'Qué bonito. ¿Es nuevo?'], ['niebla', 'Ah, mira. Acierto una.']] },
+};
+
+// Se llama al cargar una sala del barrio (escenas/barrio.js). Por `cuandoLibre` y `voz`: nunca encima de nada.
+function reaccionArmario(s) {
+  if (!s || !s.time) return;
+  const a = armario();
+  const sala = s.sala;
+  s.time.delayedCall(1400, () => s.cuandoLibre(() => {
+    if (s.sala !== sala || s.modal || !s.sys.isActive() || !s.jugador || !s.cosas) return;
+    const presentes = s.cosas.filter(c => c.img && c.img.active && QUIEN[c.id]);
+    const por = id => presentes.find(c => c.id === id);
+    for (const hueco of ['cabeza', 'ojos', 'cuello', 'piel']) {
+      const p = prendaPuesta(hueco);
+      const D = p && DICE_ARMARIO[p.id];
+      if (!D || a.vista[p.id] || !D.quien.some(por)) continue;
+      const habla = D.quien.map(por).find(Boolean);
+      const otro = presentes.find(c => c.id !== habla.id);
+      const yo = { id: 'vuper', img: s.jugador, x: s.px, y: s.py, alto: s.jugador.displayHeight };
+      const lineas = D.lineas.map(([q, f]) => [q === 'vuper' ? yo : q === 'otro' ? (otro || yo) : por(q) || habla, f]);
+      // Se apunta como vista solo cuando de verdad suena (la voz puede esperar en la cola o descartarse).
+      s.voz(() => {
+        if (s.sala !== sala || a.vista[p.id]) return;
+        a.vista[p.id] = Date.now();
+        guardarPartida();
+        lineas.forEach(([c, f], i) => s.time.delayedCall(i * 2400, () => {
+          if (s.sala === sala && !s.modal) s.burbujaAmbiente(c === yo ? { ...yo, x: s.px, y: s.py } : c, f);
+        }));
+      }, { prioridad: 2, dura: lineas.length * 2400, encolar: true });
+      return;
+    }
+  }));
 }

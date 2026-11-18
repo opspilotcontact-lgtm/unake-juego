@@ -14,9 +14,15 @@ const MEJORAS_NEGOCIO = [
   { id: 'bolsitas', nombre: 'Máquina de bolsitas', desc: 'Fabrica lo de la aso para liar', base: 220 },
 ];
 const NIVEL_MAX = 5;
-// Hasta qué nivel deja subir cada mejora según el capítulo. Hoy no hay puerta: el director la conecta
-// con los capítulos nuevos (barrio.js debe usarla en vez de NIVEL_MAX al comprar y al pintar).
-function nivelMaxPorCapitulo(cap) { return NIVEL_MAX; }
+// Puerta por acto: hasta qué nivel deja subir cada mejora. Acto I → 2, II → 3, III → 4, IV → 5.
+// `cap` es el índice de capítulo (ESTADO.capitulo); se compara con la posición de los ids de cada acto.
+// Un id que aún no existe en CAPITULOS vale Infinity (nunca se alcanza), así que no hay que tocar índices.
+const PUERTAS_NIVEL = [['inspeccion', 5], ['furgo', 4], ['mejor-amigo', 3]]; // acto IV, III, II (el I es 2)
+function nivelMaxPorCapitulo(cap) {
+  const c = cap || 0;
+  const p = PUERTAS_NIVEL.find(([id]) => c >= capIdx(id));
+  return p ? p[1] : 2;
+}
 // Los niveles 4 y 5 salen x2 y x3 (se indexa por el nivel que ya se tiene).
 const MULT_PRECIO_NIVEL = [1, 1, 1, 2, 3];
 const RANGOS = [
@@ -54,8 +60,8 @@ function cuentasNegocio() {
   const aforo = 2 + 2 * niv.sofas + salas.reduce((x, a) => x + a.aforo, 0);
   const atraccion = 1 + 1.6 * niv.neon + 1.2 * niv.dj + salas.reduce((x, a) => x + a.atraccion, 0) + bonoDeco('atraccion');
   const clientes = Math.min(aforo, atraccion);
-  const porCliente = 1 + 0.5 * niv.barra + bonoDeco('porCliente');
-  const porMin = clientes * porCliente + 2 * niv.maquina + 1.5 * niv.horno;
+  const porCliente = 1 + 0.35 * niv.barra + bonoDeco('porCliente');
+  const porMin = clientes * porCliente + 1 * niv.maquina + 1 * niv.horno;
   const tope = Math.round(Math.max(60, porMin * (45 + 10 * niv.maquina) * (1 + bonoDeco('tope'))));
   const minPorBolsita = niv.bolsitas ? 24 / niv.bolsitas : 0;
   const rango = RANGOS.filter(([n]) => total >= n).pop()[1];
@@ -87,8 +93,8 @@ function rangoSiguiente(total) {
 // personaje que pega. Al terminarla, la sala abre: más aforo, más clientela y sitio para decorar.
 const AMPLIACIONES = [
   {
-    id: 'reservado', nombre: 'El reservado', precio: 350, aforo: 4, atraccion: 1.5, quien: 'palicaso',
-    requiere: () => cuentasNegocio().total >= 4, requisito: 'Negocio a nivel 4',
+    id: 'reservado', nombre: 'El reservado', precio: 700, aforo: 4, atraccion: 1.5, quien: 'palicaso',
+    requiere: () => desdeCapId('mejor-amigo') && cuentasNegocio().total >= 4, requisito: 'Desde el acto II · negocio a nivel 4',
     obra: {
       titulo: 'Inauguración: el reservado',
       texto: '«¡Escucha! Si abrimos el reservado, cabe medio barrio más. Tráeme {n} cajas de material y hacemos la noche de estreno en la barra.»',
@@ -96,8 +102,8 @@ const AMPLIACIONES = [
     },
   },
   {
-    id: 'bano', nombre: 'Los baños de Unaké', precio: 600, aforo: 3, atraccion: 1, quien: 'blancaso',
-    requiere: () => !!negocio().salas.reservado, requisito: 'Abrir antes el reservado',
+    id: 'bano', nombre: 'Los baños de Unaké', precio: 1300, aforo: 3, atraccion: 1, quien: 'blancaso',
+    requiere: () => desdeCapId('furgo') && !!negocio().salas.reservado, requisito: 'Desde el acto III · abre antes el reservado',
     obra: {
       titulo: 'Obra: los baños',
       texto: '«Los baños dan miedo hasta a Puky. Bueno, a Puky no. Se han volado {n} facturas de la fontanería: búscalas y cuadramos la obra.»',
@@ -105,8 +111,8 @@ const AMPLIACIONES = [
     },
   },
   {
-    id: 'techo', nombre: 'El techo de la Pompa', precio: 1000, aforo: 5, atraccion: 2.5, quien: 'pompa',
-    requiere: () => !!negocio().salas.bano, requisito: 'Abrir antes los baños',
+    id: 'techo', nombre: 'El techo de la Pompa', precio: 3000, aforo: 5, atraccion: 2.5, quien: 'pompa',
+    requiere: () => desdeCapId('inspeccion') && !!negocio().salas.bano, requisito: 'Desde el acto IV · abre antes los baños',
     obra: {
       titulo: 'Estreno: el techo',
       texto: '«…Si me dejáis el techo entero, pincho para todo el barrio. Busca mis {n} discos y subimos.»',
@@ -117,16 +123,16 @@ const AMPLIACIONES = [
 
 // ---------- Decoración: opcional, se ve en el sitio y mejora algo ----------
 const DECORACION = [
-  { id: 'bola', nombre: 'Bola de discoteca', precio: 90, sala: 'dentro', x: 640, y: 150, efecto: '+0,5 de clientela', bono: { atraccion: 0.5 } },
-  { id: 'planta', nombre: 'Planta-nube', precio: 70, sala: 'dentro', x: 70, y: 540, efecto: 'El hambre sube un 10 % más lento', bono: { hambre: -0.1 } },
-  { id: 'poster', nombre: 'Póster de los hermanos Aso', precio: 60, sala: 'dentro', x: 420, y: 340, efecto: '+0,2 por cliente', bono: { porCliente: 0.2 } },
-  { id: 'pinball', nombre: 'Máquina de pinball', precio: 160, sala: 'dentro', x: 1235, y: 600, efecto: '+0,3 por cliente', bono: { porCliente: 0.3 } },
-  { id: 'pecera', nombre: 'Pecera con pez colocado', precio: 140, sala: 'reservado', x: 1110, y: 560, efecto: 'La caja aguanta un 20 % más', bono: { tope: 0.2 } },
-  { id: 'alfombra', nombre: 'Alfombra de neón', precio: 120, sala: 'reservado', x: 640, y: 672, efecto: '+1 de clientela', bono: { atraccion: 1 } },
-  { id: 'lava', nombre: 'Lámpara de lava', precio: 110, sala: 'cuarto', x: 300, y: 470, efecto: 'El colocón dura un 15 % más', bono: { colocon: -0.15 } },
-  { id: 'estatua', nombre: 'Estatua de Monchiman', precio: 300, sala: 'cuarto', x: 840, y: 600, efecto: 'Las misiones pagan un 10 % más', bono: { pago: 0.1 } },
-  { id: 'trono', nombre: 'El trono de Puky', precio: 200, sala: 'bano', x: 1180, y: 690, efecto: 'Puky deja de colarse en la barra', bono: { sinPuky: 1 } },
-  { id: 'gramola', nombre: 'Gramola del techo', precio: 260, sala: 'techo', x: 1020, y: 520, efecto: '+1,5 de clientela', bono: { atraccion: 1.5 } },
+  { id: 'bola', nombre: 'Bola de discoteca', precio: 135, sala: 'dentro', x: 640, y: 150, efecto: '+0,5 de clientela', bono: { atraccion: 0.5 } },
+  { id: 'planta', nombre: 'Planta-nube', precio: 105, sala: 'dentro', x: 70, y: 540, efecto: 'El hambre sube un 10 % más lento', bono: { hambre: -0.1 } },
+  { id: 'poster', nombre: 'Póster de los hermanos Aso', precio: 90, sala: 'dentro', x: 420, y: 340, efecto: '+0,2 por cliente', bono: { porCliente: 0.2 } },
+  { id: 'pinball', nombre: 'Máquina de pinball', precio: 240, sala: 'dentro', x: 1235, y: 600, efecto: '+0,3 por cliente', bono: { porCliente: 0.3 } },
+  { id: 'pecera', nombre: 'Pecera con pez colocado', precio: 210, sala: 'reservado', x: 1110, y: 560, efecto: 'La caja aguanta un 20 % más', bono: { tope: 0.2 } },
+  { id: 'alfombra', nombre: 'Alfombra de neón', precio: 180, sala: 'reservado', x: 640, y: 672, efecto: '+1 de clientela', bono: { atraccion: 1 } },
+  { id: 'lava', nombre: 'Lámpara de lava', precio: 165, sala: 'cuarto', x: 300, y: 470, efecto: 'El colocón dura un 15 % más', bono: { colocon: -0.15 } },
+  { id: 'estatua', nombre: 'Estatua de Monchiman', precio: 450, sala: 'cuarto', x: 840, y: 600, efecto: 'Las misiones pagan un 10 % más', bono: { pago: 0.1 } },
+  { id: 'trono', nombre: 'El trono de Puky', precio: 300, sala: 'bano', x: 1180, y: 690, efecto: 'Puky deja de colarse en la barra', bono: { sinPuky: 1 } },
+  { id: 'gramola', nombre: 'Gramola del techo', precio: 390, sala: 'techo', x: 1020, y: 520, efecto: '+1,5 de clientela', bono: { atraccion: 1.5 } },
 ];
 
 function bonoDeco(k) {
