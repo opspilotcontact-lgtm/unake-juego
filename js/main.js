@@ -1,5 +1,16 @@
 // Arranca el juego cuando la letra de dibujo animado (Caprasimo) ya está cargada.
 
+// Atajo de pruebas: ?cap=<id> deja la partida al principio de ese capítulo (p. ej. ?cap=pompa, ?cap=furgo).
+// Se aplica una sola vez y se quita de la dirección, así recargar no vuelve a pisar la partida.
+(function saltoDeCapitulo() {
+  const id = new URLSearchParams(location.search).get('cap');
+  if (!id || !CAPITULOS.some(c => c.id === id)) return;
+  Object.assign(ESTADO, { dentro: true, introVista: true, ayudaVista: true, edadOk: true, capId: id, introCapId: null, capVersion: 2,
+    hucha: Math.max(ESTADO.hucha || 0, 300), monchis: Math.max(ESTADO.monchis || 0, 500) });
+  delete ESTADO.tarea; migrarCapitulos(); guardarPartida();
+  history.replaceState(null, '', location.pathname);
+})();
+
 function arrancar() {
   window.juego = new Phaser.Game({
     type: Phaser.AUTO,
